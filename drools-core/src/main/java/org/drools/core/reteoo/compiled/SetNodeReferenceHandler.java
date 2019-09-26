@@ -46,7 +46,7 @@ public class SetNodeReferenceHandler extends AbstractCompilerHandler {
         String assignmentStatement;
 
         // for non alphas, we just need to cast to the right variable type
-        assignmentStatement = getVariableName(sink) + " = (" + variableType.getName() + ")" + nodeVariableName + ";";
+        assignmentStatement = getVariableName(sink) + " = (" + variableType.getCanonicalName() + ")" + nodeVariableName + ";";
 
         return assignmentStatement;
     }
@@ -57,7 +57,7 @@ public class SetNodeReferenceHandler extends AbstractCompilerHandler {
 
         // we need the constraint for an alpha node assignment, so generate a cast, plus the method call to get
         // the constraint
-        assignmentStatement = getVariableName(alphaNode) + " = (" + variableType.getName() + ") ((" + AlphaNode.class.getName() + ")" + nodeVariableName + ").getConstraint();";
+        assignmentStatement = getVariableName(alphaNode) + " = (" + variableType.getCanonicalName() + ") ((" + AlphaNode.class.getName() + ")" + nodeVariableName + ").getConstraint();";
 
         return assignmentStatement;
     }

@@ -16,6 +16,12 @@
 
 package org.drools.core.reteoo.compiled;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+
 import org.drools.core.base.ValueType;
 import org.drools.core.reteoo.AlphaNode;
 import org.drools.core.reteoo.BetaNode;
@@ -24,8 +30,6 @@ import org.drools.core.reteoo.Sink;
 import org.drools.core.reteoo.WindowNode;
 import org.drools.core.rule.ContextEntry;
 import org.drools.core.rule.IndexableConstraint;
-
-import java.util.*;
 
 /**
  * This handler is used to create the member declarations section of a generated subclass of a {@link CompiledNetwork}.
@@ -67,14 +71,14 @@ public class DeclarationsHandler extends AbstractCompilerHandler {
         // comment for variable declaration is just the toString of the node
         String comment = alphaNode.toString().replaceAll("\\n", "");
 
-        return PRIVATE_MODIFIER + " " + variableType.getName() + " " + variableName + "; // " + comment;
+        return PRIVATE_MODIFIER + " " + variableType.getCanonicalName() + " " + variableName + "; // " + comment;
     }
 
     private String getContextVariableDeclaration(AlphaNode alphaNode){
         Class<?> variableType = ContextEntry.class;
         String variableName = getContextVariableName(alphaNode);
 
-        return PRIVATE_MODIFIER + " " + variableType.getName() + " " + variableName + ";";
+        return PRIVATE_MODIFIER + " " + variableType.getCanonicalName() + " " + variableName + ";";
     }
 
     private String getVariableDeclaration(Sink sink) {
@@ -83,7 +87,7 @@ public class DeclarationsHandler extends AbstractCompilerHandler {
         // comment for variable declaration is just the toString of the node
         String comment = sink.toString();
 
-        return PRIVATE_MODIFIER + " " + declarationType.getName() + " " + variableName + "; // " + comment;
+        return PRIVATE_MODIFIER + " " + declarationType.getCanonicalName() + " " + variableName + "; // " + comment;
     }
 
     private String getVariableDeclaration(String varName) {
