@@ -650,9 +650,9 @@ public interface DrlGenericVisitor<R, A> extends GenericVisitor<R,A> {
         return defaultMethod(n, arg);
     }
 
-    default R visit(MapCreationLiteralExpression n, A arg) { return null; };
+    default R visit(MapCreationLiteralExpression n, A arg) { return defaultMethod(n, arg); };
 
-    default R visit(MapCreationLiteralExpressionKeyValuePair n, A arg) { return null; };
+    default R visit(MapCreationLiteralExpressionKeyValuePair n, A arg) { return defaultMethod(n, arg); };
 
-    default R visit(WithStatement withStatement, A arg) { return null; };
+    default R visit(WithStatement n, A arg) { return defaultMethod(n, arg); };
 }
