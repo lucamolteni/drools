@@ -114,7 +114,7 @@ public abstract class PatternDSL implements DSLNode {
             ConstraintExpression constraintExpression = ConstraintExpression.createConstraintExpression(patternType, constraint, isPositional);
 
             DrlxParseResult drlxParseResult = constraintParser.drlxParse(patternType, patternIdentifier, constraintExpression, isPositional);
-            Object parsedExpression = ((ExprConstraintDescr)constraint).getParsedExpression();
+            Object compiledExpression = ((ExprConstraintDescr)constraint).getParsedExpression();
 
 
             String expression = constraintExpression.getExpression();

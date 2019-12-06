@@ -20,7 +20,8 @@ import org.drools.compiler.lang.descr.PackageDescr;
 import org.drools.compiler.lang.descr.PatternDescr;
 import org.drools.compiler.lang.descr.RuleDescr;
 import org.drools.core.addon.TypeResolver;
-import org.drools.mvelcompiler.MvelCompiler;
+import org.drools.mvelcompiler.CompiledConstraint;
+import org.drools.mvelcompiler.ConstraintCompiler;
 import org.drools.mvelcompiler.ParsingResult;
 import org.drools.mvelcompiler.context.MvelCompilerContext;
 
@@ -28,7 +29,7 @@ import static org.drools.modelcompiler.builder.generator.DrlxParseUtil.THIS_PLAC
 
 public class ExpressionTyperVisitor implements DescrVisitor {
 
-    private MvelCompiler mvelCompiler;
+    private ConstraintCompiler constraintCompiler;
     private MvelCompilerContext mvelCompilerContext;
 
     public void typeExpression(PackageDescr packageDescr, TypeResolver typeResolver) {
@@ -38,7 +39,7 @@ public class ExpressionTyperVisitor implements DescrVisitor {
         imports.add("java.lang.*");
         imports.add("java.math.*");
         imports.forEach(typeResolver::addImport);
-        mvelCompiler = new MvelCompiler(mvelCompilerContext);
+        constraintCompiler = new ConstraintCompiler(mvelCompilerContext);
         this.visit(packageDescr);
     }
 
@@ -131,8 +132,7 @@ public class ExpressionTyperVisitor implements DescrVisitor {
         String expression = descr.getExpression();
         String withThis = THIS_PLACEHOLDER + "." + expression;
         System.out.println("expression = " + withThis);
-        ParsingResult parsingResult = mvelCompiler.compileExpression(withThis);
-
+        CompiledConstraint parsingResult = constraintCompiler.compileExpression(withThis);
         descr.setParsedExpression(parsingResult);
 
         System.out.println("Compiled expression: " + parsingResult);
