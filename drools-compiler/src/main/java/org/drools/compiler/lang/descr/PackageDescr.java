@@ -305,4 +305,9 @@ public class PackageDescr extends BaseDescr
             }
         }
     }
+
+    @Override
+    public void accept(DescrVisitor visitor) {
+        visitor.visit(this);
+    }
 }

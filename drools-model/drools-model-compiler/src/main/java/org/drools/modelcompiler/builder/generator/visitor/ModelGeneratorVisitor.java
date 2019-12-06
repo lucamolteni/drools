@@ -13,8 +13,10 @@ import org.drools.compiler.lang.descr.FromDescr;
 import org.drools.compiler.lang.descr.NamedConsequenceDescr;
 import org.drools.compiler.lang.descr.NotDescr;
 import org.drools.compiler.lang.descr.OrDescr;
+import org.drools.compiler.lang.descr.PackageDescr;
 import org.drools.compiler.lang.descr.PatternDescr;
 import org.drools.compiler.lang.descr.PatternSourceDescr;
+import org.drools.compiler.lang.descr.RuleDescr;
 import org.drools.modelcompiler.builder.PackageModel;
 import org.drools.modelcompiler.builder.generator.RuleContext;
 import org.drools.modelcompiler.builder.generator.visitor.accumulate.AccumulateVisitor;
@@ -128,6 +130,16 @@ public class ModelGeneratorVisitor implements DescrVisitor {
                 patternVisitor.visit(descr).buildPattern();
             }
         }
+    }
+
+    @Override
+    public void visit(PackageDescr descr) {
+
+    }
+
+    @Override
+    public void visit(RuleDescr descr) {
+
     }
 
     public boolean initPattern(PatternDescr descr) {

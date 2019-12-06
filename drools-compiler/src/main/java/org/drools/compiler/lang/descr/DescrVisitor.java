@@ -26,4 +26,8 @@ public interface DescrVisitor {
 
     void visit(PatternDescr descr);
 
+    void visit(PackageDescr descr);
+
+    void visit(RuleDescr descr);
+
 }

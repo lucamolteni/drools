@@ -375,4 +375,9 @@ public class RuleDescr extends AnnotatedBaseDescr
         }
         return props;
     }
+
+    @Override
+    public void accept(DescrVisitor visitor) {
+        visitor.visit(this);
+    }
 }

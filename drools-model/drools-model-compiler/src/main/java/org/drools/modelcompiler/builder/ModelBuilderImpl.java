@@ -179,6 +179,9 @@ public class ModelBuilderImpl<T extends PackageSources> extends KnowledgeBuilder
             final DialectCompiletimeRegistry dialectCompiletimeRegistry = pkgRegistry.getDialectCompiletimeRegistry();
             return new PackageModel(releaseId, pkgName, this.getBuilderConfiguration(), isPattern, dialectCompiletimeRegistry, exprIdGenerator);
         });
+
+        new RulesPrettyPrinter().prettyPrintRule(packageDescr);
+
         generateModel(this, pkg, packageDescr, model, isPattern);
     }
 

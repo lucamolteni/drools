@@ -71,22 +71,22 @@ public class RuleWriter {
 
                 String addFileName = classOptional.get().getNameAsString();
 
-                if(pkgModel.getConfiguration().isExternaliseCanonicalModelLambda()) {
-                    CompilationUnit postProcessedCU = cu.clone();
-                    if (pkgModel.getRuleUnits().isEmpty()) {
-                        new ExecModelLambdaPostProcessor(
-                                pkgModel.getLambdaClasses(),
-                                pkgModel.getName(),
-                                pkgModel.getRulesFileNameWithPackage(),
-                                pkgModel.getImports(),
-                                pkgModel.getStaticImports(),
-                                postProcessedCU
-                        ).convertLambdas();
-                    }
-                    rules.add(new RuleFileSource(addFileName, postProcessedCU));
-                } else {
+//                if(pkgModel.getConfiguration().isExternaliseCanonicalModelLambda()) {
+//                    CompilationUnit postProcessedCU = cu.clone();
+//                    if (pkgModel.getRuleUnits().isEmpty()) {
+//                        new ExecModelLambdaPostProcessor(
+//                                pkgModel.getLambdaClasses(),
+//                                pkgModel.getName(),
+//                                pkgModel.getRulesFileNameWithPackage(),
+//                                pkgModel.getImports(),
+//                                pkgModel.getStaticImports(),
+//                                postProcessedCU
+//                        ).convertLambdas();
+//                    }
+//                    rules.add(new RuleFileSource(addFileName, postProcessedCU));
+//                } else {
                     rules.add(new RuleFileSource(addFileName, cu));
-                }
+//                }
             }
         }
         return rules;
