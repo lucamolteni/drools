@@ -69,6 +69,14 @@ public class DroolsMvelParserTest {
     final ParseStart<DrlxExpression> parser = DrlxParser.buildDrlxParserWithArguments(operators);
 
     @Test
+    public void testBinding() {
+        String expr = "i : intValue";
+        DrlxExpression expression = parseExpression(parser, expr );
+        assertEquals("i", expression.getBind().asString());
+        assertEquals("intValue", printConstraint(expression.getExpr()));
+    }
+
+    @Test
     public void testParseSimpleExpr() {
         String expr = "name == \"Mark\"";
         Expression expression = parseExpression( parser, expr ).getExpr();
