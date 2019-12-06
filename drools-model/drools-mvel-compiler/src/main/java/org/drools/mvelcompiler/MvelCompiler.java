@@ -1,6 +1,7 @@
 package org.drools.mvelcompiler;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -8,7 +9,9 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import org.drools.mvel.parser.MvelParser;
@@ -57,6 +60,15 @@ public class MvelCompiler {
 
         return new ParsingResult(statements)
                 .setUsedBindings(allUsedBindings);
+    }
+
+    public ParsingResult compileExpression(String mvelBlock) {
+        Expression mvelExpression = MvelParser.parseExpression(mvelBlock);
+        TypedExpression rhs = new RHSPhase(mvelCompilerContext).invoke(mvelExpression);
+        Expression expr = (Expression) rhs.toJavaExpression();
+        ExpressionStmt exprStmt = new ExpressionStmt(expr);
+        return new ParsingResult(Arrays.asList(exprStmt))
+                .setUsedBindings(new HashSet<>());
     }
 
     private Stream<String> transformStatementWithPreprocessing(Statement s) {

@@ -90,6 +90,12 @@ public class RHSPhase implements DrlGenericVisitor<TypedExpression, RHSPhase.Con
         return statement.accept(this, ctx);
     }
 
+    public TypedExpression invoke(Expression expression) {
+        Context ctx = new Context(null);
+
+        return expression.accept(this, ctx);
+    }
+
     @Override
     public TypedExpression visit(DrlNameExpr n, Context arg) {
         return n.getName().accept(this, arg);

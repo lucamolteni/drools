@@ -19,13 +19,12 @@ import org.drools.compiler.lang.descr.OrDescr;
 import org.drools.compiler.lang.descr.PackageDescr;
 import org.drools.compiler.lang.descr.PatternDescr;
 import org.drools.compiler.lang.descr.RuleDescr;
-import org.drools.core.addon.ClassTypeResolver;
 import org.drools.core.addon.TypeResolver;
 import org.drools.mvelcompiler.MvelCompiler;
+import org.drools.mvelcompiler.ParsingResult;
 import org.drools.mvelcompiler.context.MvelCompilerContext;
 
 import static org.drools.modelcompiler.builder.generator.DrlxParseUtil.THIS_PLACEHOLDER;
-import static org.drools.modelcompiler.builder.generator.DrlxParseUtil.addCurlyBracesToBlock;
 
 public class ExpressionTyperVisitor implements DescrVisitor {
 
@@ -132,7 +131,7 @@ public class ExpressionTyperVisitor implements DescrVisitor {
         String expression = descr.getExpression();
         String withThis = THIS_PLACEHOLDER + "." + expression;
         System.out.println("expression = " + withThis);
-        mvelCompiler.compile(addCurlyBracesToBlock(expression));
-        System.out.println("Compiled expression: " + expression);
+        ParsingResult parsingResult = mvelCompiler.compileExpression(expression);
+        System.out.println("Compiled expression: " + parsingResult);
     }
 }
