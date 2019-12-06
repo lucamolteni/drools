@@ -1,7 +1,9 @@
 package org.drools.mvelcompiler;
 
-import com.github.javaparser.ast.expr.Expression;
-import org.drools.mvel.parser.MvelParser;
+import java.util.ArrayList;
+
+import org.drools.mvel.parser.DrlxParser;
+import org.drools.mvel.parser.ast.expr.DrlxExpression;
 import org.drools.mvelcompiler.ast.TypedExpression;
 import org.drools.mvelcompiler.context.MvelCompilerContext;
 
@@ -13,9 +15,9 @@ public class ConstraintCompiler {
         this.mvelCompilerContext = mvelCompilerContext;
     }
 
-    public CompiledConstraint compileExpression(String mvelBlock) {
-        Expression mvelExpression = MvelParser.parseExpression(mvelBlock);
-        TypedExpression rhs = new RHSPhase(mvelCompilerContext).invoke(mvelExpression);
+    public CompiledConstraint compileExpression(String constraintExpression) {
+        DrlxExpression mvelExpression = new DrlxParser(new ArrayList<>()).parse(constraintExpression);
+        TypedExpression rhs = new RHSPhase(mvelCompilerContext).invoke(mvelExpression.getExpr());
         return new CompiledConstraint(rhs);
     }
 }

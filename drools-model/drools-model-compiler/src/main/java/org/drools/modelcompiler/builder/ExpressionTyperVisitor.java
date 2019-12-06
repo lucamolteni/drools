@@ -130,11 +130,7 @@ public class ExpressionTyperVisitor implements DescrVisitor {
     @Override
     public void visit(ExprConstraintDescr descr) {
         String expression = descr.getExpression();
-        String withThis = THIS_PLACEHOLDER + "." + expression;
-        System.out.println("expression = " + withThis);
-        CompiledConstraint parsingResult = constraintCompiler.compileExpression(withThis);
+        CompiledConstraint parsingResult = constraintCompiler.compileExpression(expression);
         descr.setParsedExpression(parsingResult);
-
-        System.out.println("Compiled expression: " + parsingResult);
     }
 }

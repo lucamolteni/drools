@@ -37,6 +37,12 @@ import static org.drools.mvel.parser.Providers.provider;
 
 public class DrlxParser {
 
+    private Collection<String> operators;
+
+    public DrlxParser(Collection<String> operators) {
+        this.operators = operators;
+    }
+
     private DrlxParser() {
         // Creating instances of util classes is forbidden.
     }
@@ -54,6 +60,11 @@ public class DrlxParser {
 
     public static <T extends DrlxExpression> T parseExpression(ParseStart<DrlxExpression> parser, final String expression) {
         return (T) simplifiedParse(parser, provider(expression));
+    }
+
+    public  <T extends DrlxExpression> T parse(final String expression) {
+        ParseStart<DrlxExpression> parser = buildDrlxParserWithArguments(operators);
+        return parseExpression(parser, expression);
     }
 
     private static <T extends Node> T simplifiedParse(ParseStart<T> context, Provider provider) {
