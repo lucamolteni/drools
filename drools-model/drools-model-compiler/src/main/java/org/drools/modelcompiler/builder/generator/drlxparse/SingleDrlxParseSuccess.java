@@ -348,9 +348,15 @@ public class SingleDrlxParseSuccess extends AbstractDrlxParseSuccess {
 
     @Override
     public String toString() {
+        String exprString = "";
+        try {
+            exprString = this.expr.toString();
+        } catch (NullPointerException e) {
+            e.printStackTrace(); // this shouldn't really crash
+        }
         return "SingleDrlxParseSuccess{" +
                 "patternType=" + patternType +
-                ", expr=" + expr +
+                ", expr=" + exprString +
                 ", exprType=" + exprType +
                 ", exprId='" + exprId + '\'' +
                 ", patternBinding='" + patternBinding + '\'' +

@@ -106,8 +106,6 @@ public class ExpressionTyperVisitor implements DescrVisitor {
         System.out.println("PatternDescr: ");
         System.out.println("Identifier: " + descr.getIdentifier());
         System.out.println("Object Type: " + descr.getObjectType());
-        // This could be in a different phase
-        mvelCompilerContext.addDeclaration(THIS_PLACEHOLDER, descr.getObjectType());
         for (BaseDescr bd : descr.getDescrs()) {
             bd.accept(this);
         }
