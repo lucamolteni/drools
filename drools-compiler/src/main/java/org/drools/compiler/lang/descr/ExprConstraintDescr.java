@@ -92,4 +92,14 @@ public class ExprConstraintDescr extends BaseDescr implements ExpressionDescr {
     public void accept(DescrVisitor visitor) {
         visitor.visit(this);
     }
+
+    private Object parsedExpression;
+
+    public Object getParsedExpression() {
+        return parsedExpression;
+    }
+
+    public void setParsedExpression(Object parsedExpression) {
+        this.parsedExpression = parsedExpression;
+    }
 }

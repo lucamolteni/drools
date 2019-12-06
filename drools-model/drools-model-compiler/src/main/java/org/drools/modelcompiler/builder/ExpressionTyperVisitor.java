@@ -132,6 +132,9 @@ public class ExpressionTyperVisitor implements DescrVisitor {
         String withThis = THIS_PLACEHOLDER + "." + expression;
         System.out.println("expression = " + withThis);
         ParsingResult parsingResult = mvelCompiler.compileExpression(withThis);
+
+        descr.setParsedExpression(parsingResult);
+
         System.out.println("Compiled expression: " + parsingResult);
     }
 }
