@@ -180,7 +180,7 @@ public class ModelBuilderImpl<T extends PackageSources> extends KnowledgeBuilder
             return new PackageModel(releaseId, pkgName, this.getBuilderConfiguration(), isPattern, dialectCompiletimeRegistry, exprIdGenerator);
         });
 
-        new RulesPrettyPrinter().prettyPrintRule(packageDescr);
+        new ExpressionTyperVisitor().typeExpression(packageDescr, pkg.getTypeResolver());
 
         generateModel(this, pkg, packageDescr, model, isPattern);
     }

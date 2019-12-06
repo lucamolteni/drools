@@ -8,6 +8,7 @@ import org.drools.compiler.lang.descr.ConditionalBranchDescr;
 import org.drools.compiler.lang.descr.DescrVisitor;
 import org.drools.compiler.lang.descr.EvalDescr;
 import org.drools.compiler.lang.descr.ExistsDescr;
+import org.drools.compiler.lang.descr.ExprConstraintDescr;
 import org.drools.compiler.lang.descr.ForallDescr;
 import org.drools.compiler.lang.descr.FromDescr;
 import org.drools.compiler.lang.descr.NamedConsequenceDescr;
@@ -139,6 +140,11 @@ public class ModelGeneratorVisitor implements DescrVisitor {
 
     @Override
     public void visit(RuleDescr descr) {
+
+    }
+
+    @Override
+    public void visit(ExprConstraintDescr descr) {
 
     }
 

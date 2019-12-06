@@ -30,4 +30,6 @@ public interface DescrVisitor {
 
     void visit(RuleDescr descr);
 
+    void visit(ExprConstraintDescr descr);
+
 }

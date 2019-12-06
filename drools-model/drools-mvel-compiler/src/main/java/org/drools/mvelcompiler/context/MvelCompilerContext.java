@@ -19,6 +19,11 @@ public class MvelCompilerContext {
         return this;
     }
 
+    public MvelCompilerContext addDeclaration(String name, String clazzName) {
+        contextDeclarations.addDeclarations(new Declaration(name, resolveType(clazzName)));
+        return this;
+    }
+
     public MvelCompilerContext addCreatedDeclaration(String name, Class<?> clazz) {
         contextDeclarations.addDeclarations(new Declaration(name, clazz, true));
         return this;

@@ -88,4 +88,8 @@ public class ExprConstraintDescr extends BaseDescr implements ExpressionDescr {
     public boolean isNegated() {
         return negated;
     }
+
+    public void accept(DescrVisitor visitor) {
+        visitor.visit(this);
+    }
 }
