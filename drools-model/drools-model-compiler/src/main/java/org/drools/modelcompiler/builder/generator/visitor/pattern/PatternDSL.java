@@ -115,7 +115,8 @@ public abstract class PatternDSL implements DSLNode {
 
             DrlxParseResult drlxParseResult = constraintParser.drlxParse(patternType, patternIdentifier, constraintExpression, isPositional);
             Object compiledExpression = ((ExprConstraintDescr)constraint).getParsedExpression();
-
+            System.out.println("drlxParseResult = " + drlxParseResult);
+            System.out.println("compiledExpression = " + compiledExpression);
 
             String expression = constraintExpression.getExpression();
             if (drlxParseResult.isSuccess() && (( DrlxParseSuccess ) drlxParseResult).isRequiresSplit() && (( DrlxParseSuccess ) drlxParseResult).getExpr().isBinaryExpr()) {

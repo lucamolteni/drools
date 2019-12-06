@@ -345,5 +345,32 @@ public class SingleDrlxParseSuccess extends AbstractDrlxParseSuccess {
                 .setLeft( new TypedExpression( this.expr, boolean.class ) )
                 .setRight( new TypedExpression( otherDrlx.expr, boolean.class ) );
     }
+
+    @Override
+    public String toString() {
+        return "SingleDrlxParseSuccess{" +
+                "patternType=" + patternType +
+                ", expr=" + expr +
+                ", exprType=" + exprType +
+                ", exprId='" + exprId + '\'' +
+                ", patternBinding='" + patternBinding + '\'' +
+                ", isPatternBindingUnification=" + isPatternBindingUnification +
+                ", exprBinding='" + exprBinding + '\'' +
+                ", decodeConstraintType=" + decodeConstraintType +
+                ", usedDeclarations=" + usedDeclarations +
+                ", usedDeclarationsOnLeft=" + usedDeclarationsOnLeft +
+                ", reactOnProperties=" + reactOnProperties +
+                ", left=" + left +
+                ", right=" + right +
+                ", rightLiteral=" + rightLiteral +
+                ", isStatic=" + isStatic +
+                ", isValidExpression=" + isValidExpression +
+                ", skipThisAsParam=" + skipThisAsParam +
+                ", isBetaNode=" + isBetaNode +
+                ", requiresSplit=" + requiresSplit +
+                ", unification=" + unification +
+                ", temporal=" + temporal +
+                '}';
+    }
 }
 
