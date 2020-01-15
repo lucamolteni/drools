@@ -47,36 +47,36 @@ public class DeclaredClassBuilder {
             if (ensureJavaTypeConsistency(typeDescr, def, pkgRegistry.getTypeResolver())) {
                 switch (type.getKind()) {
                     case TRAIT:
-                        try {
-                            buildClass(def, fullName, dialect, this.kbuilder.getBuilderConfiguration().getClassBuilderFactory().getTraitBuilder(), pkgRegistry);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            this.kbuilder.addBuilderResult(new TypeDeclarationError(typeDescr,
-                                                                                    "Unable to compile declared trait " + fullName +
-                                                                                            ": " + e.getMessage() + ";"));
-                        }
-                        break;
-                    case ENUM:
-                        try {
-                            buildClass(def, fullName, dialect, this.kbuilder.getBuilderConfiguration().getClassBuilderFactory().getEnumClassBuilder(), pkgRegistry);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            this.kbuilder.addBuilderResult(new TypeDeclarationError(typeDescr,
-                                                                                    "Unable to compile declared enum " + fullName +
-                                                                                            ": " + e.getMessage() + ";"));
-                        }
-                        break;
-                    case CLASS:
-                    default:
-                        try {
-                            buildClass(def, fullName, dialect, this.kbuilder.getBuilderConfiguration().getClassBuilderFactory().getBeanClassBuilder(), pkgRegistry);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            this.kbuilder.addBuilderResult(new TypeDeclarationError(typeDescr,
-                                                                                    "Unable to create a class for declared type " + fullName +
-                                                                                            ": " + e.getMessage() + ";"));
-                        }
-                        break;
+//                        try {
+//                            buildClass(def, fullName, dialect, this.kbuilder.getBuilderConfiguration().getClassBuilderFactory().getTraitBuilder(), pkgRegistry);
+//                        } catch (Exception e) {
+//                            e.printStackTrace();
+//                            this.kbuilder.addBuilderResult(new TypeDeclarationError(typeDescr,
+//                                                                                    "Unable to compile declared trait " + fullName +
+//                                                                                            ": " + e.getMessage() + ";"));
+//                        }
+//                        break;
+//                    case ENUM:
+//                        try {
+//                            buildClass(def, fullName, dialect, this.kbuilder.getBuilderConfiguration().getClassBuilderFactory().getEnumClassBuilder(), pkgRegistry);
+//                        } catch (Exception e) {
+//                            e.printStackTrace();
+//                            this.kbuilder.addBuilderResult(new TypeDeclarationError(typeDescr,
+//                                                                                    "Unable to compile declared enum " + fullName +
+//                                                                                            ": " + e.getMessage() + ";"));
+//                        }
+//                        break;
+//                    case CLASS:
+//                    default:
+//                        try {
+//                            buildClass(def, fullName, dialect, this.kbuilder.getBuilderConfiguration().getClassBuilderFactory().getBeanClassBuilder(), pkgRegistry);
+//                        } catch (Exception e) {
+//                            e.printStackTrace();
+//                            this.kbuilder.addBuilderResult(new TypeDeclarationError(typeDescr,
+//                                                                                    "Unable to create a class for declared type " + fullName +
+//                                                                                            ": " + e.getMessage() + ";"));
+//                        }
+//                        break;
                 }
             }
         }

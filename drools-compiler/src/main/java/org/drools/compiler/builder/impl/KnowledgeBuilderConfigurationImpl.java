@@ -37,7 +37,6 @@ import org.drools.compiler.rule.builder.util.AccumulateUtil;
 import org.drools.core.base.evaluators.EvaluatorDefinition;
 import org.drools.core.base.evaluators.EvaluatorRegistry;
 import org.drools.core.definitions.InternalKnowledgePackage;
-import org.drools.core.factmodel.ClassBuilderFactory;
 import org.drools.core.util.ClassUtils;
 import org.drools.core.util.ConfFileUtils;
 import org.drools.core.util.StringUtils;
@@ -142,8 +141,6 @@ public class KnowledgeBuilderConfigurationImpl
     private Map<String, ResultSeverity>       severityMap;
 
     private DroolsCompilerComponentFactory    componentFactory;
-
-    private ClassBuilderFactory               classBuilderFactory;
 
     private LanguageLevelOption               languageLevel           = DrlParser.DEFAULT_LANGUAGE_LEVEL;
 
@@ -259,7 +256,6 @@ public class KnowledgeBuilderConfigurationImpl
 
         this.componentFactory = new DroolsCompilerComponentFactory();
 
-        this.classBuilderFactory = new ClassBuilderFactory();
     }
 
     private void buildSeverityMap() {
@@ -713,14 +709,6 @@ public class KnowledgeBuilderConfigurationImpl
 
     public void setComponentFactory(DroolsCompilerComponentFactory componentFactory) {
         this.componentFactory = componentFactory;
-    }
-
-    public ClassBuilderFactory getClassBuilderFactory() {
-        return classBuilderFactory;
-    }
-
-    public void setClassBuilderFactory(ClassBuilderFactory classBuilderFactory) {
-        this.classBuilderFactory = classBuilderFactory;
     }
 
     public LanguageLevelOption getLanguageLevel() {

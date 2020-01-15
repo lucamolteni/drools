@@ -148,24 +148,24 @@ public class RuleBuilder {
             String adFqn = ad.getFullyQualifiedName();
             if (adFqn != null) {
                 AnnotationDefinition annotationDefinition;
-                try {
-                    annotationDefinition = AnnotationDefinition.build( context.getDialect().getTypeResolver().resolveType( adFqn ),
-                                                                       ad.getValueMap(),
-                                                                       context.getDialect().getTypeResolver() );
-                } catch (NoSuchMethodException e) {
-                    throw new RuntimeException( e );
-                } catch (ClassNotFoundException e) {
-                    throw new RuntimeException( e );
-                }
-                if ( annotationDefinition.getValues().size() == 1 && annotationDefinition.getValues().containsKey( AnnotationDescr.VALUE ) ) {
-                    rule.addMetaAttribute( metaAttr, annotationDefinition.getPropertyValue( AnnotationDescr.VALUE ) );
-                } else {
-                    Map<String, Object> map = new HashMap<String, Object>( annotationDefinition.getValues().size() );
-                    for ( String key : annotationDefinition.getValues().keySet() ) {
-                        map.put( key, annotationDefinition.getPropertyValue( key ) );
-                    }
-                    rule.addMetaAttribute( metaAttr, map );
-                }
+//                try {
+//                    annotationDefinition = AnnotationDefinition.build( context.getDialect().getTypeResolver().resolveType( adFqn ),
+//                                                                       ad.getValueMap(),
+//                                                                       context.getDialect().getTypeResolver() );
+//                } catch (NoSuchMethodException e) {
+//                    throw new RuntimeException( e );
+//                } catch (ClassNotFoundException e) {
+//                    throw new RuntimeException( e );
+//                }
+//                if ( annotationDefinition.getValues().size() == 1 && annotationDefinition.getValues().containsKey( AnnotationDescr.VALUE ) ) {
+//                    rule.addMetaAttribute( metaAttr, annotationDefinition.getPropertyValue( AnnotationDescr.VALUE ) );
+//                } else {
+//                    Map<String, Object> map = new HashMap<String, Object>( annotationDefinition.getValues().size() );
+//                    for ( String key : annotationDefinition.getValues().keySet() ) {
+//                        map.put( key, annotationDefinition.getPropertyValue( key ) );
+//                    }
+//                    rule.addMetaAttribute( metaAttr, map );
+//                }
             } else {
                 if ( ad.hasValue() ) {
                     if ( ad.getValues().size() == 1 ) {

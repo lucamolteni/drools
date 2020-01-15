@@ -10,4 +10,12 @@ public interface ClassDefinition extends FactType {
     List<FactField> getFields();
 
     boolean isTraitable();
+
+    List<String> getModifiedPropsByMethod(String methodName, int argsNr);
+
+    FactField getField(final String fieldName);
+
+    FieldDefinition getField(int index);
+
+    Class<?> getDefinedClass();
 }

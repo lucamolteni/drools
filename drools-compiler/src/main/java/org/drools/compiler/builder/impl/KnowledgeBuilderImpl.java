@@ -284,7 +284,8 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder,
         }
 
         processBuilder = ProcessBuilderFactory.newProcessBuilder(this);
-        typeBuilder = new TypeDeclarationBuilder(this);
+        // TODO init type declaration builder
+        typeBuilder = null;
     }
 
     public KnowledgeBuilderImpl(InternalKnowledgeBase kBase,
@@ -310,7 +311,8 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder,
         this.kBase = kBase;
 
         processBuilder = ProcessBuilderFactory.newProcessBuilder(this);
-        typeBuilder = new TypeDeclarationBuilder(this);
+        // TODO init type declaration builder
+        typeBuilder = null;
     }
 
     public void setReleaseId( ReleaseId releaseId ) {

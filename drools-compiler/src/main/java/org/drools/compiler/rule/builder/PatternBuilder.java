@@ -502,22 +502,24 @@ public class PatternBuilder
     }
 
     private AnnotationDefinition buildAnnotationDef(AnnotationDescr annotationDescr, TypeResolver resolver) {
-        try {
-            return AnnotationDefinition.build(resolver.resolveType(annotationDescr.getFullyQualifiedName()),
-                                              annotationDescr.getValueMap(),
-                                              resolver);
-        } catch (Exception e) {
-            e.printStackTrace();
-            AnnotationDefinition annotationDefinition = new AnnotationDefinition(annotationDescr.getFullyQualifiedName());
-            for (String propKey : annotationDescr.getValues().keySet()) {
-                Object value = annotationDescr.getValue(propKey);
-                if (value instanceof AnnotationDescr) {
-                    value = buildAnnotationDef((AnnotationDescr) value, resolver);
-                }
-                annotationDefinition.getValues().put(propKey, new AnnotationDefinition.AnnotationPropertyVal(propKey, null, value, null));
-            }
-            return annotationDefinition;
-        }
+
+        return null;
+//        try {
+//            return AnnotationDefinition.build(resolver.resolveType(annotationDescr.getFullyQualifiedName()),
+//                                              annotationDescr.getValueMap(),
+//                                              resolver);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            AnnotationDefinition annotationDefinition = new AnnotationDefinition(annotationDescr.getFullyQualifiedName());
+//            for (String propKey : annotationDescr.getValues().keySet()) {
+//                Object value = annotationDescr.getValue(propKey);
+//                if (value instanceof AnnotationDescr) {
+//                    value = buildAnnotationDef((AnnotationDescr) value, resolver);
+//                }
+//                annotationDefinition.getValues().put(propKey, new AnnotationDefinition.AnnotationPropertyVal(propKey, null, value, null));
+//            }
+//            return annotationDefinition;
+//        }
     }
 
     protected void processListenedPropertiesAnnotation(RuleBuildContext context, PatternDescr patternDescr, Pattern pattern) {
@@ -564,7 +566,7 @@ public class PatternBuilder
             if (constr instanceof EvaluatorConstraint && ((EvaluatorConstraint) constr).isSelf()) {
                 EvaluatorConstraint ec = ((EvaluatorConstraint) constr);
                 if (ec.getEvaluator().getOperator() == IsAEvaluatorDefinition.ISA || ec.getEvaluator().getOperator() == IsAEvaluatorDefinition.NOT_ISA) {
-                    listenedProperties.add(TraitableBean.TRAITSET_FIELD_NAME);
+//                    listenedProperties.add(TraitableBean.TRAITSET_FIELD_NAME);
                 }
             }
         }
