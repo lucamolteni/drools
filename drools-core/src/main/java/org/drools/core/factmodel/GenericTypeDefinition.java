@@ -65,22 +65,12 @@ public class GenericTypeDefinition implements Serializable {
         return rawType;
     }
 
-    public String getDescriptor() {
-        throw new UnsupportedOperationException();
-//        return BuildUtils.getTypeDescriptor( rawType );
+    public List<GenericTypeDefinition> getGenericTypes() {
+        return genericTypes;
     }
 
     public boolean hasGenerics() {
         return genericTypes != null;
-    }
-
-    public String getSignature() {
-        String descriptor = getDescriptor();
-        if (genericTypes == null) {
-            return descriptor;
-        }
-        return descriptor.substring( 0, descriptor.length()-1 ) +
-                "<" + genericTypes.stream().map( GenericTypeDefinition::getSignature ).collect( joining() ) + ">;";
     }
 
     public GenericTypeDefinition map( Function<String, String> transformer ) {
