@@ -16,6 +16,7 @@ package org.drools.core.factmodel;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
@@ -27,7 +28,7 @@ public class GenericTypeDefinition implements Serializable {
     private final List<GenericTypeDefinition> genericTypes;
 
     public GenericTypeDefinition( String rawType ) {
-        this(rawType, null);
+        this(rawType, Collections.emptyList());
     }
 
     private GenericTypeDefinition( String rawType, List<GenericTypeDefinition> genericTypes ) {

@@ -17,6 +17,7 @@
 package org.drools.core.factmodel;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 
 import static java.util.stream.Collectors.joining;
@@ -34,7 +35,9 @@ public class GenericTypeDefinitionTraits {
 
     public GenericTypeDefinitionTraits(GenericTypeDefinition genericTypeDefinition) {
         this.rawType = genericTypeDefinition.getRawType();
-        this.genericTypes = genericTypeDefinition.getGenericTypes().stream().map(GenericTypeDefinitionTraits::new).collect(toList());
+        this.genericTypes = genericTypeDefinition.getGenericTypes().stream()
+                .filter(Objects::nonNull)
+                .map(GenericTypeDefinitionTraits::new).collect(toList());
     }
 
     public String getDescriptor() {
