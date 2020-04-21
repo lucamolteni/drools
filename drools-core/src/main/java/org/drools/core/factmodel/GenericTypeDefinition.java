@@ -66,8 +66,7 @@ public class GenericTypeDefinition implements Serializable {
     }
 
     public String getDescriptor() {
-//        return BuildUtils.getTypeDescriptor( rawType );
-        throw new UnsupportedOperationException();
+        return BuildUtils.getTypeDescriptor( rawType );
     }
 
     public boolean hasGenerics() {

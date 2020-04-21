@@ -89,6 +89,10 @@ public class PatternDescr extends AnnotatedBaseDescr
         return genericType != null;
     }
 
+    public GenericTypeDefinition getGenericType() {
+        return genericType == null ? new GenericTypeDefinition(objectType) : genericType;
+    }
+
     public String getIdentifier() {
         return this.identifier;
     }
