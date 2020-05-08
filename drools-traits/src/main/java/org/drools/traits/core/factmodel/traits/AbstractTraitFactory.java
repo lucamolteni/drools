@@ -26,7 +26,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.BitSet;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.drools.core.base.ClassFieldAccessor;
@@ -60,10 +59,6 @@ public abstract class AbstractTraitFactory<T extends Thing<K>, K extends Traitab
 
     protected static final String PACKAGE = "org.drools.core.factmodel.traits.";
 
-    protected Map<String, Constructor> factoryCache = new HashMap<>();
-
-    protected Map<Class, Class<? extends CoreWrapper<?>>> wrapperCache = new HashMap<>();
-
     public AbstractTraitFactory() {
     }
 
@@ -95,14 +90,10 @@ public abstract class AbstractTraitFactory<T extends Thing<K>, K extends Traitab
 
     public void writeExternal(ObjectOutput out) throws IOException {
         out.writeObject(mode);
-        out.writeObject(factoryCache);
-        out.writeObject(wrapperCache);
     }
 
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         mode = (VirtualPropertyMode) in.readObject();
-        factoryCache = (Map<String, Constructor>) in.readObject();
-        wrapperCache = (Map<Class, Class<? extends CoreWrapper<?>>>) in.readObject();
     }
 
     @Deprecated()
@@ -122,13 +113,7 @@ public abstract class AbstractTraitFactory<T extends Thing<K>, K extends Traitab
 
         String key = getKey(core.getClass(), trait);
 
-        Constructor<T> konst;
-        synchronized (this) {
-            konst = factoryCache.get(key);
-            if (konst == null) {
-                konst = cacheConstructor(key, core, trait);
-            }
-        }
+        Constructor<T> konst = createConstructor(key, core, trait);
 
         T proxy = null;
         HierarchyEncoder hier = getHierarchyEncoder();
@@ -151,7 +136,7 @@ public abstract class AbstractTraitFactory<T extends Thing<K>, K extends Traitab
         throw new LogicalTypeInconsistencyException("Could not apply trait " + trait + " to object " + core, trait, core.getClass());
     }
 
-    protected Constructor<T> cacheConstructor(String key, K core, Class<?> trait) {
+    protected Constructor<T> createConstructor(String key, K core, Class<?> trait) {
         Class<T> proxyClass = buildProxyClass(core, trait);
         if (proxyClass == null) {
             return null;
@@ -170,7 +155,6 @@ public abstract class AbstractTraitFactory<T extends Thing<K>, K extends Traitab
                     throw new RuntimeException(" This should not happen : unexpected property wrapping method " + mode);
             }
 
-            factoryCache.put(key, konst);
             return konst;
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
@@ -264,19 +248,11 @@ public abstract class AbstractTraitFactory<T extends Thing<K>, K extends Traitab
     }
 
     public synchronized <K> CoreWrapper<K> getCoreWrapper(Class<K> coreKlazz, ClassDefinition coreDef) {
-        if (wrapperCache == null) {
-            wrapperCache = new HashMap<>();
-        }
         Class<? extends CoreWrapper<K>> wrapperClass = null;
-        if (wrapperCache.containsKey(coreKlazz)) {
-            wrapperClass = (Class<? extends CoreWrapper<K>>) wrapperCache.get(coreKlazz);
-        } else {
-            try {
-                wrapperClass = buildCoreWrapper(coreKlazz, coreDef);
-            } catch (IOException | ClassNotFoundException e) {
-                return null;
-            }
-            wrapperCache.put(coreKlazz, wrapperClass);
+        try {
+            wrapperClass = buildCoreWrapper(coreKlazz, coreDef);
+        } catch (IOException | ClassNotFoundException e) {
+            return null;
         }
 
         try {
