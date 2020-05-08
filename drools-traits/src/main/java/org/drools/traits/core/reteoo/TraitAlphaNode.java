@@ -14,6 +14,9 @@ import org.kie.api.runtime.rule.Operator;
 
 public class TraitAlphaNode extends AlphaNode {
 
+    public TraitAlphaNode() {
+    }
+
     public TraitAlphaNode(int id, AlphaNodeFieldConstraint constraint, ObjectSource objectSource, BuildContext context) {
         super(id, constraint, objectSource, context);
     }
