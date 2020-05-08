@@ -27,7 +27,6 @@ import org.drools.core.common.WorkingMemoryFactory;
 import org.drools.core.factmodel.ClassBuilderFactory;
 import org.drools.core.factmodel.traits.TraitFactory;
 import org.drools.core.factmodel.traits.TraitRegistry;
-import org.drools.core.impl.KnowledgeBaseImpl;
 import org.drools.core.reteoo.builder.NodeFactory;
 import org.drools.core.rule.LogicTransformerFactory;
 import org.drools.core.spi.FactHandleFactory;
@@ -37,8 +36,8 @@ import org.drools.core.util.TripleStore;
 public interface KieComponentFactory {
 
     static KieComponentFactory createKieComponentFactory() {
-        Optional<KieComponentFactory> kieComponentFactory = ServiceRegistryUtils.optionalService(KieComponentFactory.class);
-        return kieComponentFactory.orElseGet(DefaultKieComponentFactory::new);
+        Optional<KieComponentFactoryFactory> kieComponentFactory = ServiceRegistryUtils.optionalService(KieComponentFactoryFactory.class);
+        return kieComponentFactory.map(KieComponentFactoryFactory::createKieComponentFactory).orElseGet(DefaultKieComponentFactory::new);
     }
 
     FactHandleFactory getFactHandleFactoryService();
