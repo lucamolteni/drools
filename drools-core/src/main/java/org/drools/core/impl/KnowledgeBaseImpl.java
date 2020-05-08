@@ -212,7 +212,7 @@ public class KnowledgeBaseImpl
 
         this.factHandleFactory = kieComponentFactory.getFactHandleFactoryService();
         TraitFactory traitFactory = kieComponentFactory.getTraitFactory();
-        if(traitFactory != null) { // TODO fix this
+        if(traitFactory != null) {
             traitFactory.setRuleBase(this);
         }
         kieComponentFactory.getTripleStore().setId(id);

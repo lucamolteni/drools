@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 
+import org.drools.compiler.KieTraitsCompiler;
+import org.drools.compiler.builder.impl.KnowledgeBuilderImpl;
 import org.drools.compiler.compiler.AnalysisResult;
 import org.drools.compiler.compiler.BoundIdentifiers;
 import org.drools.compiler.compiler.DescrBuildError;
@@ -69,7 +71,7 @@ import org.drools.core.base.EvaluatorWrapper;
 import org.drools.core.base.SimpleValueType;
 import org.drools.core.base.ValueType;
 import org.drools.core.base.evaluators.EvaluatorDefinition.Target;
-import org.drools.core.base.evaluators.IsAEvaluatorDefinition;
+//import org.drools.core.base.evaluators.IsAEvaluatorDefinition;
 import org.drools.core.base.mvel.ActivationPropertyHandler;
 import org.drools.core.base.mvel.MVELCompilationUnit;
 import org.drools.core.base.mvel.MVELCompilationUnit.PropertyHandlerFactoryFixer;
@@ -560,13 +562,10 @@ public class PatternBuilder
             }
         }
 
-        for (Constraint constr : pattern.getConstraints()) {
-            if (constr instanceof EvaluatorConstraint && ((EvaluatorConstraint) constr).isSelf()) {
-                EvaluatorConstraint ec = ((EvaluatorConstraint) constr);
-                if (ec.getEvaluator().getOperator() == IsAEvaluatorDefinition.ISA || ec.getEvaluator().getOperator() == IsAEvaluatorDefinition.NOT_ISA) {
-                    listenedProperties.add(TraitableBean.TRAITSET_FIELD_NAME);
-                }
-            }
+        // TODO LM review this
+        KieTraitsCompiler traits = ((KnowledgeBuilderImpl) context.getKnowledgeBuilder()).getTraits();
+        if(traits != null && traits.isAEvaluatorPresent(pattern.getConstraints())) {
+            listenedProperties.add(TraitableBean.TRAITSET_FIELD_NAME);
         }
         pattern.setListenedProperties(listenedProperties);
     }

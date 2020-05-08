@@ -67,8 +67,6 @@ import org.drools.core.spi.DataProvider;
 import org.drools.core.spi.ObjectType;
 import org.drools.core.time.impl.Timer;
 
-import static org.drools.core.reteoo.KieComponentFactory.fromTraitRegistry;
-
 public class PhreakNodeFactory implements NodeFactory, Serializable {
 
     private static final NodeFactory INSTANCE = new PhreakNodeFactory();
@@ -94,20 +92,8 @@ public class PhreakNodeFactory implements NodeFactory, Serializable {
         return new RuleTerminalNode( id, source, rule, subrule, subruleIndex, context );
     }
 
-        public ObjectTypeNode buildObjectTypeNode( int id, EntryPointNode objectSource, ObjectType objectType, BuildContext context ) {
-        if ( objectType.getValueType().equals( ValueType.TRAIT_TYPE ) ) {
-
-
-            if ( TraitProxy.class.isAssignableFrom( ( (ClassObjectType) objectType ).getClassType() ) ) {
-                return new TraitProxyObjectTypeNode( id, objectSource, objectType, context );
-            } else {
-                return fromTraitRegistry(traitCoreService -> traitCoreService.createTraitObjectTypeNode( id, objectSource, objectType, context ))
-                        .orElseThrow(() -> new RuntimeException("Cannot create traitObjectTypeNode"));
-            }
-        } else {
-            return new ObjectTypeNode( id, objectSource, objectType, context );
-        }
-
+    public ObjectTypeNode buildObjectTypeNode(int id, EntryPointNode objectSource, ObjectType objectType, BuildContext context) {
+        return new ObjectTypeNode(id, objectSource, objectType, context);
     }
 
     public EvalConditionNode buildEvalNode(final int id,

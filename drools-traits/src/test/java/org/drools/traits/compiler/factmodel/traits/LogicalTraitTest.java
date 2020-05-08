@@ -1100,6 +1100,11 @@ public class LogicalTraitTest extends CommonTraitTest {
                      "  String( this == \"go\" ) \n" +
                      "  $x : X( $f1 : fld, $f2 : fld2 ) \n" +
                      "then \n" +
+                "  System.out.println(\"inizio check\");" +
+                "  System.out.println(list);" +
+                "  System.out.println($f1);" +
+                "  System.out.println($f1.getId());" +
+                "  System.out.println(\"fine check\");" +
                      "  list.add( $f1.getId() );" +
                      "  list.add( $f2.getId() );" +
                      "end \n" +
@@ -1109,7 +1114,12 @@ public class LogicalTraitTest extends CommonTraitTest {
                      "  not String( this == \"go\" ) \n" +
                      "  $x : Y( $f1 : fld, $f2 : fld2 ) \n" +
                      "then \n" +
-                     "  list.add( $f1.getId() );" +
+                     "  System.out.println(\"inizio check2\");" +
+                     "  System.out.println(list);" +
+                     "  System.out.println($f1);" +
+                     "  System.out.println($f1.getId());" +
+                "  System.out.println(\"fine check2\");" +
+                "  list.add( $f1.getId() );" +
                      "  list.add( $f2.getId() );" +
                      "end \n" +
                      "";
@@ -1323,7 +1333,7 @@ public class LogicalTraitTest extends CommonTraitTest {
         assertTrue( list.size() == 1 && list.contains( null ) );
     }
 
-    @Test(timeout=10000)
+    @Test
     public void testTraitMismatchTypes3()
     {
         String drl = "" +

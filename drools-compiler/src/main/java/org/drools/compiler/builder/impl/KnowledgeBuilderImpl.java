@@ -290,7 +290,12 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder,
         typeBuilder = new TypeDeclarationBuilder(this, traits);
     }
 
+    // TODO LM
     KieTraitsCompiler traits;
+
+    public KieTraitsCompiler getTraits() {
+        return traits;
+    }
 
     public KnowledgeBuilderImpl(InternalKnowledgeBase kBase,
                                 KnowledgeBuilderConfigurationImpl configuration) {

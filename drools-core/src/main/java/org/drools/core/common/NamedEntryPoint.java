@@ -18,7 +18,6 @@ package org.drools.core.common;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
@@ -53,9 +52,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static java.util.Arrays.asList;
-import static org.drools.core.reteoo.KieComponentFactory.fromTraitRegistry;
 import static org.drools.core.reteoo.PropertySpecificUtil.allSetBitMask;
 import static org.drools.core.reteoo.PropertySpecificUtil.calculatePositiveMask;
+import static org.drools.core.reteoo.ServiceRegistryUtils.fromTraitRegistry;
 
 public class NamedEntryPoint
         implements
@@ -114,6 +113,7 @@ public class NamedEntryPoint
         this.traitHelper = createTraitHelper( wm, this );
     }
 
+    // TODO LM subclass
     private TraitHelper createTraitHelper(StatefulKnowledgeSessionImpl wm, NamedEntryPoint namedEntryPoint) {
         return fromTraitRegistry(traitCoreService -> traitCoreService.createTraitHelper(wm, namedEntryPoint))
                 .orElse(null);

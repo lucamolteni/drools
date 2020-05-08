@@ -29,7 +29,6 @@ import java.util.jar.JarOutputStream;
 import org.drools.core.base.ClassFieldAccessorCache;
 import org.drools.core.base.ClassFieldAccessorStore;
 import org.drools.core.factmodel.ClassBuilder;
-import org.drools.core.factmodel.ClassBuilderFactory;
 import org.drools.core.factmodel.ClassDefinition;
 import org.drools.core.factmodel.FieldDefinition;
 import org.drools.core.rule.JavaDialectRuntimeData;
@@ -80,7 +79,7 @@ public class ClassBuilderTest {
     @Test
     public void testBuildClass() {
         try {
-            ClassBuilder builder = new ClassBuilderFactory().getBeanClassBuilder();
+            ClassBuilder builder = new TraitClassBuilderFactory().getBeanClassBuilder();
 
             ClassDefinition classDef = new ClassDefinition( "org.drools.TestClass1",
                                                             null,
@@ -156,7 +155,7 @@ public class ClassBuilderTest {
     @Test
     public void testEquals() {
         try {
-            ClassBuilder builder = new ClassBuilderFactory().getBeanClassBuilder();
+            ClassBuilder builder = new TraitClassBuilderFactory().getBeanClassBuilder();
 
             ClassDefinition classDef = new ClassDefinition( "org.drools.TestClass2",
                                                             null,
@@ -279,7 +278,7 @@ public class ClassBuilderTest {
     @Test
     public void testHashCode() {
         try {
-            ClassBuilder builder = new ClassBuilderFactory().getBeanClassBuilder();
+            ClassBuilder builder = new TraitClassBuilderFactory().getBeanClassBuilder();
 
             ClassDefinition classDef = new ClassDefinition( "org.drools.TestClass3",
                                                             null,
@@ -322,7 +321,7 @@ public class ClassBuilderTest {
     @Test
     public void testToString() {
         try {
-            ClassBuilder builder = new ClassBuilderFactory().getBeanClassBuilder();
+            ClassBuilder builder = new TraitClassBuilderFactory().getBeanClassBuilder();
 
             ClassDefinition classDef = new ClassDefinition( "org.drools.TestClass4",
                                                             null,
@@ -408,7 +407,7 @@ public class ClassBuilderTest {
     @Test
     public void testConstructorWithFields() {
         try {
-            ClassBuilder builder = new ClassBuilderFactory().getBeanClassBuilder();
+            ClassBuilder builder = new TraitClassBuilderFactory().getBeanClassBuilder();
 
             ClassDefinition classDef = new ClassDefinition( "org.drools.TestClass5",
                                                             null,
@@ -519,7 +518,7 @@ public class ClassBuilderTest {
     @Test
     public void testGetResourcesJBRULES3122() {
         try {
-            ClassBuilder builder = new ClassBuilderFactory().getBeanClassBuilder();
+            ClassBuilder builder = new TraitClassBuilderFactory().getBeanClassBuilder();
 
             ClassDefinition classDef = new ClassDefinition("org.drools.TestClass4", null, new String[] {});
             Class clazz = build(builder, classDef);

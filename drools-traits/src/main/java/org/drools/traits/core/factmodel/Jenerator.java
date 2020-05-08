@@ -20,7 +20,6 @@ package org.drools.traits.core.factmodel;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 import org.drools.core.factmodel.ClassBuilder;
-import org.drools.core.factmodel.ClassBuilderFactory;
 import org.drools.core.factmodel.ClassDefinition;
 import org.drools.core.factmodel.Fact;
 import org.drools.core.factmodel.Field;
@@ -63,7 +62,7 @@ public class Jenerator {
         String packagePath = packageName.replace('.', '/');
 
         for (int i = 0; i < facts.length; i++) {
-            ClassBuilder cb = new ClassBuilderFactory().getBeanClassBuilder();
+            ClassBuilder cb = new TraitClassBuilderFactory().getBeanClassBuilder();
             ClassDefinition classDef = new ClassDefinition(packageName, null, new String[]{"java.io.Serializable"} );
             for (int j = 0; j < facts[i].fields.size(); j++) {
                 Field fd = (Field) facts[i].fields.get(j);

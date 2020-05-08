@@ -54,7 +54,7 @@ import org.drools.reflective.classloader.ProjectClassLoader;
 import org.kie.api.marshalling.ObjectMarshallingStrategy;
 import org.kie.api.marshalling.ObjectMarshallingStrategy.Context;
 
-import static org.drools.core.reteoo.KieComponentFactory.fromTraitRegistry;
+import static org.drools.core.reteoo.ServiceRegistryUtils.fromTraitRegistry;
 
 public class PersisterHelper {
     public static WorkingMemoryAction readWorkingMemoryAction(MarshallerReaderContext context) throws IOException,
@@ -226,6 +226,7 @@ public class PersisterHelper {
             return;
         }
 
+        // TODO LM subclass
         Optional<TraitFactory> optTraitFactory = fromTraitRegistry(TraitCoreService::createTraitFactory);
         optTraitFactory.ifPresent(traitFactory -> {
             List<String> runtimeClassNames = new ArrayList( pcl.getStore().keySet() );

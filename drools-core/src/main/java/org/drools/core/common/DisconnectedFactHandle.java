@@ -44,7 +44,7 @@ import org.drools.core.spi.Tuple;
 import org.drools.core.xml.jaxb.util.JaxbUnknownAdapter;
 import org.kie.api.runtime.rule.FactHandle;
 
-import static org.drools.core.reteoo.KieComponentFactory.fromTraitRegistry;
+import static org.drools.core.reteoo.ServiceRegistryUtils.fromTraitRegistry;
 
 @XmlRootElement(name="disconnected-fact-handle")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -423,6 +423,7 @@ public class DisconnectedFactHandle
 
     private TraitTypeEnum determineTraitType() {
         if ( isTraitOrTraitable() ) {
+            // TODO LM subclass
             Optional<TraitFactory> traitFactory = fromTraitRegistry(TraitCoreService::createTraitFactory);
             return traitFactory.map(t -> t.determineTraitType(object)).orElse(TraitTypeEnum.NON_TRAIT);
         } else {

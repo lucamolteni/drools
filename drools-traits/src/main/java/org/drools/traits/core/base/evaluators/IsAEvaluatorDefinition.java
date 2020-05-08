@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.drools.core.base.evaluators;
+package org.drools.traits.core.base.evaluators;
 
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -25,6 +25,8 @@ import java.util.Iterator;
 
 import org.drools.core.base.BaseEvaluator;
 import org.drools.core.base.ValueType;
+import org.drools.core.base.evaluators.EvaluatorDefinition;
+import org.drools.core.base.evaluators.Operator;
 import org.drools.core.common.InternalFactHandle;
 import org.drools.core.common.InternalWorkingMemory;
 import org.drools.core.factmodel.traits.CoreWrapper;
@@ -57,7 +59,7 @@ public class IsAEvaluatorDefinition implements EvaluatorDefinition {
 
     protected static final String   isAOp = "isA";
 
-    public static Operator          ISA;
+    public static Operator ISA;
     public static Operator          NOT_ISA;
 
     private static String[]         SUPPORTED_IDS;

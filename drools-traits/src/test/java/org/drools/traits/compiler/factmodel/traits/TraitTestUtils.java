@@ -16,9 +16,10 @@
 
 package org.drools.traits.compiler.factmodel.traits;
 
+import org.drools.core.reteoo.DefaultKieComponentFactory;
 import org.drools.traits.core.factmodel.traits.TraitClassBuilderImpl;
 import org.drools.traits.core.factmodel.traits.TraitFactoryImpl;
-import org.drools.core.reteoo.KieComponentFactory;
+import org.drools.traits.core.reteoo.TraitKieComponentFactory;
 import org.drools.traits.core.util.StandaloneTraitFactory;
 import org.drools.reflective.classloader.ProjectClassLoader;
 
@@ -27,8 +28,8 @@ public class TraitTestUtils {
     public static StandaloneTraitFactory createStandaloneTraitFactory() {
         return new StandaloneTraitFactory(ProjectClassLoader.createProjectClassLoader()) {
             @Override
-            protected KieComponentFactory getComponentFactory() {
-                KieComponentFactory componentFactory = super.getComponentFactory();
+            protected DefaultKieComponentFactory getComponentFactory() {
+                TraitKieComponentFactory componentFactory = (TraitKieComponentFactory) super.getComponentFactory();
                 componentFactory.setTraitFactory(new TraitFactoryImpl());
                 componentFactory.getClassBuilderFactory().setTraitBuilder(new TraitClassBuilderImpl());
                 return componentFactory;

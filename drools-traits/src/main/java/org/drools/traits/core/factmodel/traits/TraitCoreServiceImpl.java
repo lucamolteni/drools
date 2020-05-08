@@ -17,18 +17,14 @@
 package org.drools.traits.core.factmodel.traits;
 
 import org.drools.core.base.TraitHelper;
+import org.drools.core.base.evaluators.EvaluatorDefinition;
+import org.drools.core.common.InternalWorkingMemoryActions;
+import org.drools.core.common.InternalWorkingMemoryEntryPoint;
 import org.drools.core.factmodel.traits.TraitCoreService;
 import org.drools.core.factmodel.traits.TraitFactory;
 import org.drools.core.factmodel.traits.TraitRegistry;
 import org.drools.traits.core.base.TraitHelperImpl;
-import org.drools.core.common.InternalWorkingMemoryActions;
-import org.drools.core.common.InternalWorkingMemoryEntryPoint;
-import org.drools.core.factmodel.ClassBuilder;
-import org.drools.core.reteoo.EntryPointNode;
-import org.drools.core.reteoo.ObjectTypeNode;
-import org.drools.traits.core.reteoo.TraitObjectTypeNode;
-import org.drools.core.reteoo.builder.BuildContext;
-import org.drools.core.spi.ObjectType;
+import org.drools.traits.core.base.evaluators.IsAEvaluatorDefinition;
 
 public class TraitCoreServiceImpl implements TraitCoreService {
 
@@ -43,13 +39,8 @@ public class TraitCoreServiceImpl implements TraitCoreService {
     }
 
     @Override
-    public ClassBuilder createTraitProxyClassBuilder() {
-        return new TraitMapProxyClassBuilderImpl();
-    }
-
-    @Override
-    public ClassBuilder createPropertyWrapperBuilder() {
-        return new TraitMapPropertyWrapperClassBuilderImpl();
+    public EvaluatorDefinition createIsAEvaluator() {
+        return new IsAEvaluatorDefinition();
     }
 
     @Override
@@ -60,15 +51,5 @@ public class TraitCoreServiceImpl implements TraitCoreService {
     @Override
     public TraitHelper createTraitHelper(InternalWorkingMemoryActions workingMemory, InternalWorkingMemoryEntryPoint nep) {
         return new TraitHelperImpl(workingMemory, nep);
-    }
-
-    @Override
-    public Class<?> baseTraitProxyClass() {
-        return TraitProxyImpl.class;
-    }
-
-    @Override
-    public ObjectTypeNode createTraitObjectTypeNode(int id, EntryPointNode source, ObjectType objectType, BuildContext context) {
-        return new TraitObjectTypeNode(id, source, objectType, context );
     }
 }

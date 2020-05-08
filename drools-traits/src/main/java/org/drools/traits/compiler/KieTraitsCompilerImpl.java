@@ -16,9 +16,15 @@
 
 package org.drools.traits.compiler;
 
+import java.util.List;
+
 import org.drools.compiler.KieTraitsCompiler;
 import org.drools.compiler.UpdateTypeDeclarationDescr;
 import org.drools.core.factmodel.ClassBuilder;
+import org.drools.core.factmodel.traits.TraitableBean;
+import org.drools.core.rule.constraint.EvaluatorConstraint;
+import org.drools.core.spi.Constraint;
+import org.drools.traits.core.base.evaluators.IsAEvaluatorDefinition;
 import org.drools.traits.core.factmodel.traits.TraitClassBuilderImpl;
 
 public class KieTraitsCompilerImpl implements KieTraitsCompiler {
@@ -32,5 +38,18 @@ public class KieTraitsCompilerImpl implements KieTraitsCompiler {
     @Override
     public ClassBuilder getTraitBuilder() {
         return new TraitClassBuilderImpl();
+    }
+
+    @Override
+    public boolean isAEvaluatorPresent(List<Constraint> constraints) {
+        for (Constraint constr : constraints) {
+            if (constr instanceof EvaluatorConstraint && ((EvaluatorConstraint) constr).isSelf()) {
+                EvaluatorConstraint ec = ((EvaluatorConstraint) constr);
+                if (ec.getEvaluator().getOperator() == IsAEvaluatorDefinition.ISA || ec.getEvaluator().getOperator() == IsAEvaluatorDefinition.NOT_ISA) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

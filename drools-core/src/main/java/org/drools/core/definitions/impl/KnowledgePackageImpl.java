@@ -67,7 +67,7 @@ import org.kie.api.io.Resource;
 import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.rule.AccumulateFunction;
 
-import static org.drools.core.reteoo.KieComponentFactory.fromTraitRegistry;
+import static org.drools.core.reteoo.ServiceRegistryUtils.fromTraitRegistry;
 
 public class KnowledgePackageImpl
         implements
@@ -684,6 +684,7 @@ public class KnowledgePackageImpl
 
    public TraitRegistry getTraitRegistry() {
         if (traitRegistry == null) {
+            // TODO LM Subclass
             traitRegistry = fromTraitRegistry(TraitCoreService::createRegistry)
                     .orElse(null);
         }

@@ -22,7 +22,6 @@ import java.util.Date;
 import org.drools.core.base.ClassFieldAccessorCache;
 import org.drools.core.base.ClassFieldAccessorStore;
 import org.drools.core.factmodel.ClassBuilder;
-import org.drools.core.factmodel.ClassBuilderFactory;
 import org.drools.core.factmodel.ClassDefinition;
 import org.drools.core.factmodel.FieldDefinition;
 import org.drools.core.rule.JavaDialectRuntimeData;
@@ -76,7 +75,7 @@ public class InstancesHashcodedTest {
         cd.addField(new FieldDefinition("issueDate", "java.util.Date", false));
         cd.addField(new FieldDefinition("cycleCode", "java.lang.String", false));
 
-        ClassBuilder cb = new ClassBuilderFactory().getBeanClassBuilder();
+        ClassBuilder cb = new TraitClassBuilderFactory().getBeanClassBuilder();
 
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.YEAR, 2006);

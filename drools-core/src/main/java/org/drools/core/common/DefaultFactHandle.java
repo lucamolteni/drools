@@ -41,7 +41,7 @@ import org.drools.core.util.AbstractBaseLinkedListNode;
 import org.drools.core.util.StringUtils;
 import org.kie.api.runtime.rule.FactHandle;
 
-import static org.drools.core.reteoo.KieComponentFactory.fromTraitRegistry;
+import static org.drools.core.reteoo.ServiceRegistryUtils.fromTraitRegistry;
 
 /**
  * Implementation of <code>FactHandle</code>.
@@ -199,6 +199,7 @@ public class DefaultFactHandle extends AbstractBaseLinkedListNode<DefaultFactHan
         if ( klass.isAssignableFrom( object.getClass() ) ) {
             return (K) object;
         } else if ( this.isTraitOrTraitable() ) {
+            // TODO LM subclass
             Optional<TraitHelper> traitFactory = fromTraitRegistry(TraitCoreService::createTraitHelper);
             return traitFactory.map(t -> {
                 K k = t.extractTrait( this, klass );

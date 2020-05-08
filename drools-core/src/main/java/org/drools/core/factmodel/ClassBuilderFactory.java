@@ -16,95 +16,24 @@
 
 package org.drools.core.factmodel;
 
-import java.io.Serializable;
-
-import org.drools.core.factmodel.traits.TraitCoreService;
-
-import static org.drools.core.reteoo.KieComponentFactory.fromTraitRegistry;
-
-public class ClassBuilderFactory implements Serializable {
-
-
-    // Generic beans
-
-    private  BeanClassBuilder beanClassBuilder = new DefaultBeanClassBuilder(true);
-
-    public ClassBuilder getBeanClassBuilder() {
-        return beanClassBuilder;
-    }
-
-    public void setBeanClassBuilder( BeanClassBuilder bcb ) {
-        beanClassBuilder = bcb;
-    }
-
-    public void setDefaultBeanClassBuilder() {
-        beanClassBuilder = new DefaultBeanClassBuilder(true) ;
-    }
-
-    public static ClassBuilder getDefaultBeanClassBuilder() {
+public interface ClassBuilderFactory {
+    static ClassBuilder getDefaultBeanClassBuilder() {
         return new DefaultBeanClassBuilder(true);
     }
 
-    private  EnumClassBuilder enumClassBuilder = new DefaultEnumClassBuilder();
+    ClassBuilder getBeanClassBuilder();
 
-    public EnumClassBuilder getEnumClassBuilder() {
-        return enumClassBuilder;
-    }
+    EnumClassBuilder getEnumClassBuilder();
 
-    public void setEnumClassBuilder( EnumClassBuilder ecb ) {
-        enumClassBuilder = ecb;
-    }
+    ClassBuilder getTraitBuilder();
 
-    public void setDefaultEnumClassBuilder() {
-        enumClassBuilder = new DefaultEnumClassBuilder();
-    }
+    void setTraitBuilder(ClassBuilder tcb);
 
-    public static EnumClassBuilder getDefaultEnumClassBuilder() {
-        return new DefaultEnumClassBuilder();
-    }
+    ClassBuilder getPropertyWrapperBuilder();
 
+    void setPropertyWrapperBuilder(ClassBuilder pcb);
 
+    ClassBuilder getTraitProxyBuilder();
 
-
-    // Trait interfaces
-    private ClassBuilder traitBuilder;
-
-    public ClassBuilder getTraitBuilder() {
-        return traitBuilder;
-    }
-
-    public void setTraitBuilder( ClassBuilder tcb ) {
-        traitBuilder = tcb;
-    }
-
-    // Trait property wrappers
-
-
-    private ClassBuilder propertyWrapperBuilder;
-
-    public ClassBuilder getPropertyWrapperBuilder() {
-        if (propertyWrapperBuilder == null) {
-            propertyWrapperBuilder = fromTraitRegistry(TraitCoreService::createPropertyWrapperBuilder).orElse(null);
-        }
-        return propertyWrapperBuilder;
-    }
-
-    public void setPropertyWrapperBuilder( ClassBuilder pcb ) {
-        propertyWrapperBuilder = pcb;
-    }
-
-    // Trait proxy wrappers
-
-    private ClassBuilder traitProxyBuilder;
-
-    public ClassBuilder getTraitProxyBuilder() {
-        if (traitProxyBuilder == null) {
-            traitProxyBuilder = fromTraitRegistry(TraitCoreService::createTraitProxyClassBuilder).orElse(null);
-        }
-        return traitProxyBuilder;
-    }
-
-    public void setTraitProxyBuilder(ClassBuilder tpcb ) {
-        traitProxyBuilder = tpcb;
-    }
+    void setTraitProxyBuilder(ClassBuilder tpcb);
 }

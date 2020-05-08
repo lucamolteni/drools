@@ -72,6 +72,8 @@ import org.kie.internal.utils.ChainedProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.drools.core.reteoo.KieComponentFactory.createKieComponentFactory;
+
 /**
  * This class configures the package compiler.
  * Dialects and their DialectConfigurations  are handled by the DialectRegistry
@@ -259,7 +261,7 @@ public class KnowledgeBuilderConfigurationImpl
 
         this.componentFactory = new DroolsCompilerComponentFactory();
 
-        this.classBuilderFactory = new ClassBuilderFactory();
+        this.classBuilderFactory = createKieComponentFactory().getClassBuilderFactory();
     }
 
     private void buildSeverityMap() {

@@ -26,6 +26,8 @@ import org.drools.core.factmodel.AnnotationDefinition;
 import org.drools.core.factmodel.ClassDefinition;
 import org.drools.core.factmodel.traits.CoreWrapper;
 import org.drools.core.factmodel.traits.Trait;
+import org.drools.core.reteoo.DefaultKieComponentFactory;
+import org.drools.core.reteoo.KieComponentFactory;
 import org.drools.core.util.HierarchyEncoder;
 import org.drools.core.util.TripleFactory;
 import org.drools.core.util.TripleFactoryImpl;
@@ -36,13 +38,13 @@ import org.drools.core.factmodel.traits.Thing;
 import org.drools.traits.core.factmodel.traits.TraitRegistryImpl;
 import org.drools.core.factmodel.traits.TraitableBean;
 import org.drools.traits.core.factmodel.traits.VirtualPropertyMode;
-import org.drools.core.reteoo.KieComponentFactory;
 import org.drools.reflective.classloader.ProjectClassLoader;
+import org.drools.traits.core.reteoo.TraitKieComponentFactory;
 
 public class StandaloneTraitFactory<T extends Thing<K>, K extends TraitableBean> extends AbstractTraitFactory<T,K> {
 
     private ProjectClassLoader classLoader;
-    private KieComponentFactory kieComponentFactory;
+    private TraitKieComponentFactory kieComponentFactory;
     private TraitRegistryImpl registry;
     private ClassFieldAccessorStore store;
     private HierarchyEncoder encoder;
@@ -51,14 +53,14 @@ public class StandaloneTraitFactory<T extends Thing<K>, K extends TraitableBean>
     private TripleFactory tripleFactory;
 
     public StandaloneTraitFactory( ProjectClassLoader classLoader ) {
-        this( classLoader, new KieComponentFactory() );
+        this( classLoader, new TraitKieComponentFactory() );
     }
 
-    public StandaloneTraitFactory( ProjectClassLoader classLoader, KieComponentFactory factory ) {
+    public StandaloneTraitFactory( ProjectClassLoader classLoader, TraitKieComponentFactory factory ) {
         this( classLoader, factory, VirtualPropertyMode.MAP );
     }
 
-    public StandaloneTraitFactory( ProjectClassLoader classLoader, KieComponentFactory factory, VirtualPropertyMode mode ) {
+    public StandaloneTraitFactory(ProjectClassLoader classLoader, TraitKieComponentFactory factory, VirtualPropertyMode mode ) {
         this.classLoader = classLoader;
         this.kieComponentFactory = factory;
         this.registry = (TraitRegistryImpl) kieComponentFactory.getTraitRegistry();
