@@ -19,7 +19,6 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -31,11 +30,10 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+
 import org.drools.core.WorkingMemoryEntryPoint;
 import org.drools.core.base.ArrayElements;
 import org.drools.core.base.DroolsQuery;
-import org.drools.core.factmodel.traits.TraitCoreService;
-import org.drools.core.factmodel.traits.TraitFactory;
 import org.drools.core.factmodel.traits.TraitTypeEnum;
 import org.drools.core.reteoo.LeftTuple;
 import org.drools.core.reteoo.RightTuple;
@@ -43,8 +41,6 @@ import org.drools.core.rule.EntryPointId;
 import org.drools.core.spi.Tuple;
 import org.drools.core.xml.jaxb.util.JaxbUnknownAdapter;
 import org.kie.api.runtime.rule.FactHandle;
-
-import static org.drools.core.reteoo.ServiceRegistryUtils.fromTraitRegistry;
 
 @XmlRootElement(name="disconnected-fact-handle")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -102,7 +98,7 @@ public class DisconnectedFactHandle
         this.recency = recency;
         this.entryPointId = entryPointId;
         this.object = object;
-        this.traitType = isTraitOrTraitable ? determineTraitType() : TraitTypeEnum.NON_TRAIT;
+        this.traitType = TraitTypeEnum.NON_TRAIT; // Traits are not tested with DisconnectedFactHandle
     }
 
     public DisconnectedFactHandle(long id,
@@ -419,16 +415,6 @@ public class DisconnectedFactHandle
                                             ClassNotFoundException {
         String externalForm = (String) in.readObject();
         parseExternalForm( externalForm );
-    }
-
-    private TraitTypeEnum determineTraitType() {
-        if ( isTraitOrTraitable() ) {
-            // TODO LM subclass
-            Optional<TraitFactory> traitFactory = fromTraitRegistry(TraitCoreService::createTraitFactory);
-            return traitFactory.map(t -> t.determineTraitType(object)).orElse(TraitTypeEnum.NON_TRAIT);
-        } else {
-            return TraitTypeEnum.NON_TRAIT;
-        }
     }
 
     @Override
