@@ -44,11 +44,6 @@ public class TraitCoreServiceImpl implements TraitCoreService {
     }
 
     @Override
-    public TraitHelper createTraitHelper() {
-        return new TraitHelperImpl();
-    }
-
-    @Override
     public TraitHelper createTraitHelper(InternalWorkingMemoryActions workingMemory, InternalWorkingMemoryEntryPoint nep) {
         return new TraitHelperImpl(workingMemory, nep);
     }

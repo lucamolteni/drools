@@ -29,7 +29,5 @@ public interface TraitCoreService {
 
     EvaluatorDefinition createIsAEvaluator();
 
-    TraitHelper createTraitHelper();
-
     TraitHelper createTraitHelper(InternalWorkingMemoryActions workingMemory, InternalWorkingMemoryEntryPoint nep);
 }
