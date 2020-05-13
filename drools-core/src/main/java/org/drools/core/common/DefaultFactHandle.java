@@ -61,28 +61,28 @@ public class DefaultFactHandle extends AbstractBaseLinkedListNode<DefaultFactHan
 
     static final String     FACT_FORMAT_VERSION = "0";
 
-    private long                    id;
-    private long                    recency;
-    private Object                  object;
-    private EqualityKey             key;
-    private int                     objectHashCode;
-    private int                     identityHashCode;
+    protected long                    id;
+    protected long                    recency;
+    protected Object                  object;
+    private EqualityKey               key;
+    private int                       objectHashCode;
+    protected int                     identityHashCode;
 
-    private EntryPointId            entryPointId;
+    protected EntryPointId            entryPointId;
 
-    private boolean                 disconnected;
+    private boolean                   disconnected;
 
-    private TraitTypeEnum           traitType;
+    protected TraitTypeEnum           traitType;
 
-    private boolean                 valid = true;
+    private boolean                   valid = true;
 
-    private boolean                 negated;
+    private boolean                   negated;
 
-    private String                  objectClassName;
+    private String                    objectClassName;
 
-    protected LinkedTuples          linkedTuples;
+    protected LinkedTuples            linkedTuples;
 
-    private InternalFactHandle      parentHandle;
+    private InternalFactHandle        parentHandle;
 
     protected transient WorkingMemoryEntryPoint wmEntryPoint;
 
@@ -129,13 +129,27 @@ public class DefaultFactHandle extends AbstractBaseLinkedListNode<DefaultFactHan
                              final long recency,
                              final WorkingMemoryEntryPoint wmEntryPoint,
                              final boolean isTraitOrTraitable ) {
-        this(id, identityHashCode, object, recency, wmEntryPoint == null ? null : wmEntryPoint.getEntryPoint(), determineTraitType(object, isTraitOrTraitable));
+        this(id, identityHashCode, object, recency, wmEntryPoint == null ? null : wmEntryPoint.getEntryPoint(), isTraitOrTraitable);
         if (wmEntryPoint != null) {
             setLinkedTuples( wmEntryPoint.getKnowledgeBase() );
             this.wmEntryPoint = wmEntryPoint;
         } else {
             this.linkedTuples = new SingleLinkedTuples();
         }
+    }
+
+    protected DefaultFactHandle(final long id,
+                             final int identityHashCode,
+                             final Object object,
+                             final long recency,
+                             final EntryPointId entryPointId,
+                             final boolean isTraitOrTraitable ) {
+        this.id = id;
+        this.entryPointId = entryPointId;
+        this.recency = recency;
+        setObject( object );
+        this.identityHashCode = identityHashCode;
+        this.traitType = determineTraitType(object, isTraitOrTraitable);
     }
 
     protected DefaultFactHandle(final long id,
@@ -198,17 +212,6 @@ public class DefaultFactHandle extends AbstractBaseLinkedListNode<DefaultFactHan
     public <K> K as( Class<K> klass ) throws ClassCastException {
         if ( klass.isAssignableFrom( object.getClass() ) ) {
             return (K) object;
-        } else if ( this.isTraitOrTraitable() ) {
-            // TODO LM subclass
-            Optional<TraitHelper> traitFactory = fromTraitRegistry(TraitCoreService::createTraitHelper);
-            return traitFactory.map(t -> {
-                K k = t.extractTrait( this, klass );
-                if ( k != null ) {
-                    return  k;
-                } else {
-                    throw new RuntimeException(String.format("Cannot trait to %s", klass));
-                }
-            }).orElseThrow(() -> new RuntimeException(String.format("Cannot trait to %s", klass)));
         }
         throw new ClassCastException( "The Handle's Object can't be cast to " + klass );
     }
@@ -380,7 +383,7 @@ public class DefaultFactHandle extends AbstractBaseLinkedListNode<DefaultFactHan
         return wmEntryPoint;
     }
 
-    private void setLinkedTuples( InternalKnowledgeBase kbase ) {
+    protected void setLinkedTuples( InternalKnowledgeBase kbase ) {
         linkedTuples = kbase != null && kbase.getConfiguration().isMultithreadEvaluation() ?
                        new CompositeLinkedTuples() :
                        new SingleLinkedTuples();
@@ -473,13 +476,8 @@ public class DefaultFactHandle extends AbstractBaseLinkedListNode<DefaultFactHan
         handle.objectClassName = elements.length > 7 ? elements[7] : null;
     }
 
-    private static TraitTypeEnum determineTraitType(Object object, boolean isTraitOrTraitable) {
-        if (isTraitOrTraitable) {
-            Optional<TraitFactory> traitFactory = fromTraitRegistry(TraitCoreService::createTraitFactory);
-            return traitFactory.map(t -> t.determineTraitType(object)).orElse(TraitTypeEnum.NON_TRAIT);
-        } else {
-            return TraitTypeEnum.NON_TRAIT;
-        }
+    protected TraitTypeEnum determineTraitType(Object object, boolean isTraitOrTraitable) {
+        return TraitTypeEnum.NON_TRAIT;
     }
 
     public boolean isTraitable() {
@@ -506,7 +504,7 @@ public class DefaultFactHandle extends AbstractBaseLinkedListNode<DefaultFactHan
         return false;
     }
 
-    protected static class SingleLinkedTuples implements LinkedTuples {
+    public static class SingleLinkedTuples implements LinkedTuples {
         private RightTuple firstRightTuple;
         private RightTuple lastRightTuple;
 

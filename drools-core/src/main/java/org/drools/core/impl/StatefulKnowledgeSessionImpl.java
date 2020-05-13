@@ -744,7 +744,8 @@ public class StatefulKnowledgeSessionImpl extends AbstractRuntime
 
     public InternalFactHandle initInitialFact(InternalKnowledgeBase kBase, InternalWorkingMemoryEntryPoint entryPoint, EntryPointId epId, MarshallerReaderContext context) {
         InitialFact initialFact = InitialFactImpl.getInstance();
-        InternalFactHandle handle = new DefaultFactHandle(0, initialFact, 0, entryPoint );
+        InternalFactHandle handle = this.kBase.getConfiguration().getComponentFactory().getFactHandleFactoryService()
+                    .createDefaultFactHandle(0, initialFact, 0, entryPoint);
 
         ObjectTypeNode otn = entryPoint.getEntryPointNode().getObjectTypeNodes().get( InitialFact_ObjectType );
         if (otn != null) {
@@ -1196,7 +1197,7 @@ public class StatefulKnowledgeSessionImpl extends AbstractRuntime
     }
 
     public FactHandleFactory getFactHandleFactory() {
-        return this.handleFactory;
+        return this.kBase.getConfiguration().getComponentFactory().getFactHandleFactoryService();
     }
 
     public void setGlobal(final String identifier,
