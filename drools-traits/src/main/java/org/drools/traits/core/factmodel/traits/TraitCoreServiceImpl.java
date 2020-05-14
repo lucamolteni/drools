@@ -21,7 +21,6 @@ import org.drools.core.base.evaluators.EvaluatorDefinition;
 import org.drools.core.common.InternalWorkingMemoryActions;
 import org.drools.core.common.InternalWorkingMemoryEntryPoint;
 import org.drools.core.factmodel.traits.TraitCoreService;
-import org.drools.core.factmodel.traits.TraitFactory;
 import org.drools.core.factmodel.traits.TraitRegistry;
 import org.drools.traits.core.base.TraitHelperImpl;
 import org.drools.traits.core.base.evaluators.IsAEvaluatorDefinition;
@@ -31,11 +30,6 @@ public class TraitCoreServiceImpl implements TraitCoreService {
     @Override
     public TraitRegistry createRegistry() {
         return new TraitRegistryImpl();
-    }
-
-    @Override
-    public TraitFactory createTraitFactory() {
-        return new TraitFactoryImpl();
     }
 
     @Override

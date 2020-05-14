@@ -25,8 +25,6 @@ public interface TraitCoreService {
 
     TraitRegistry createRegistry();
 
-    TraitFactory createTraitFactory();
-
     EvaluatorDefinition createIsAEvaluator();
 
     TraitHelper createTraitHelper(InternalWorkingMemoryActions workingMemory, InternalWorkingMemoryEntryPoint nep);

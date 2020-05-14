@@ -227,7 +227,7 @@ public class PersisterHelper {
         }
 
         // TODO LM subclass
-        Optional<TraitFactory> optTraitFactory = fromTraitRegistry(TraitCoreService::createTraitFactory);
+        Optional<TraitFactory> optTraitFactory = Optional.ofNullable(context.kBase.getConfiguration().getComponentFactory().getTraitFactory());
         optTraitFactory.ifPresent(traitFactory -> {
             List<String> runtimeClassNames = new ArrayList( pcl.getStore().keySet() );
             Collections.sort( runtimeClassNames );

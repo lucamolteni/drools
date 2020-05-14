@@ -1,16 +1,10 @@
 package org.drools.traits.core.common;
 
-import java.util.Optional;
-
 import org.drools.core.WorkingMemoryEntryPoint;
 import org.drools.core.common.DefaultFactHandle;
-import org.drools.core.factmodel.traits.TraitCoreService;
 import org.drools.core.factmodel.traits.TraitFactory;
 import org.drools.core.factmodel.traits.TraitTypeEnum;
-import org.drools.core.rule.EntryPointId;
 import org.drools.traits.core.base.TraitHelperImpl;
-
-import static org.drools.core.reteoo.ServiceRegistryUtils.fromTraitRegistry;
 
 public class TraitDefaultFactHandle extends DefaultFactHandle {
 
@@ -32,27 +26,19 @@ public class TraitDefaultFactHandle extends DefaultFactHandle {
                              final long recency,
                              final WorkingMemoryEntryPoint wmEntryPoint,
                              final boolean isTraitOrTraitable ) {
-        this(id, identityHashCode, object, recency, wmEntryPoint == null ? null : wmEntryPoint.getEntryPoint(), isTraitOrTraitable);
+        this.id = id;
+        this.entryPointId = wmEntryPoint == null ? null : wmEntryPoint.getEntryPoint();
+        this.wmEntryPoint = wmEntryPoint;
+        this.recency = recency;
+        setObject(object);
+        this.identityHashCode = identityHashCode;
+        this.traitType = determineTraitType(object, isTraitOrTraitable);
         if (wmEntryPoint != null) {
             setLinkedTuples( wmEntryPoint.getKnowledgeBase() );
             this.wmEntryPoint = wmEntryPoint;
         } else {
             this.linkedTuples = new SingleLinkedTuples();
         }
-    }
-
-    protected TraitDefaultFactHandle(final long id,
-                                final int identityHashCode,
-                                final Object object,
-                                final long recency,
-                                final EntryPointId entryPointId,
-                                final boolean isTraitOrTraitable ) {
-        this.id = id;
-        this.entryPointId = entryPointId;
-        this.recency = recency;
-        setObject( object );
-        this.identityHashCode = identityHashCode;
-        this.traitType = determineTraitType(object, isTraitOrTraitable);
     }
 
     @Override
@@ -74,8 +60,8 @@ public class TraitDefaultFactHandle extends DefaultFactHandle {
     @Override
     protected TraitTypeEnum determineTraitType(Object object, boolean isTraitOrTraitable) {
         if (isTraitOrTraitable) {
-            Optional<TraitFactory> traitFactory = fromTraitRegistry(TraitCoreService::createTraitFactory);
-            return traitFactory.map(t -> t.determineTraitType(object)).orElse(TraitTypeEnum.NON_TRAIT);
+            TraitFactory traitFactory = getWorkingMemory().getKnowledgeBase().getConfiguration().getComponentFactory().getTraitFactory();
+            return traitFactory.determineTraitType(object);
         } else {
             return TraitTypeEnum.NON_TRAIT;
         }
