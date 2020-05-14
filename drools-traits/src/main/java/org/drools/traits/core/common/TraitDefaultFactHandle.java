@@ -2,9 +2,11 @@ package org.drools.traits.core.common;
 
 import org.drools.core.WorkingMemoryEntryPoint;
 import org.drools.core.common.DefaultFactHandle;
-import org.drools.core.factmodel.traits.TraitFactory;
+import org.drools.core.factmodel.traits.CoreWrapper;
 import org.drools.core.factmodel.traits.TraitTypeEnum;
+import org.drools.core.factmodel.traits.TraitableBean;
 import org.drools.traits.core.base.TraitHelperImpl;
+import org.drools.traits.core.factmodel.traits.TraitProxyImpl;
 
 public class TraitDefaultFactHandle extends DefaultFactHandle {
 
@@ -60,10 +62,21 @@ public class TraitDefaultFactHandle extends DefaultFactHandle {
     @Override
     protected TraitTypeEnum determineTraitType(Object object, boolean isTraitOrTraitable) {
         if (isTraitOrTraitable) {
-            TraitFactory traitFactory = getWorkingMemory().getKnowledgeBase().getConfiguration().getComponentFactory().getTraitFactory();
-            return traitFactory.determineTraitType(object);
+            return determineTraitType(object);
         } else {
             return TraitTypeEnum.NON_TRAIT;
+        }
+    }
+
+    public TraitTypeEnum determineTraitType(Object object ) {
+        if ( object instanceof TraitProxyImpl) {
+            return TraitTypeEnum.TRAIT;
+        } else if ( object instanceof CoreWrapper) {
+            return TraitTypeEnum.WRAPPED_TRAITABLE;
+        } else if ( object instanceof TraitableBean) {
+            return TraitTypeEnum.TRAITABLE;
+        } else {
+            return TraitTypeEnum.LEGACY_TRAITABLE;
         }
     }
 }

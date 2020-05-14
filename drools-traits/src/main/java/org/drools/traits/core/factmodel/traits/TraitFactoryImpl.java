@@ -17,23 +17,28 @@
 package org.drools.traits.core.factmodel.traits;
 
 import java.io.Externalizable;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import com.google.protobuf.ByteString;
 import org.drools.core.base.ClassFieldAccessorStore;
 import org.drools.core.definitions.InternalKnowledgePackage;
 import org.drools.core.definitions.impl.KnowledgePackageImpl;
-import org.drools.core.factmodel.traits.CoreWrapper;
 import org.drools.core.factmodel.traits.Thing;
 import org.drools.core.factmodel.traits.TraitFactory;
-import org.drools.core.factmodel.traits.TraitTypeEnum;
 import org.drools.core.factmodel.traits.TraitableBean;
 import org.drools.core.impl.InternalKnowledgeBase;
+import org.drools.core.marshalling.impl.MarshallerWriteContext;
+import org.drools.core.marshalling.impl.ProtobufMessages;
 import org.drools.core.reteoo.KieComponentFactory;
 import org.drools.core.util.ClassUtils;
 import org.drools.core.util.HierarchyEncoder;
 import org.drools.core.util.TripleFactory;
 import org.drools.core.util.TripleStore;
+import org.drools.reflective.classloader.ProjectClassLoader;
 import org.kie.api.KieBase;
 import org.mvel2.asm.Opcodes;
 
@@ -103,30 +108,35 @@ public class TraitFactoryImpl<T extends Thing<K>, K extends TraitableBean> exten
         return traitPackage.getClassFieldAccessorStore();
     }
 
-
-    public InternalKnowledgeBase getKnowledgeBase() {
-        return kBase;
-    }
-
     public void setRuleBase( InternalKnowledgeBase kBase ) {
         this.kBase = kBase;
     }
 
-    @Override
-    public TraitTypeEnum determineTraitType(Object object ) {
-        if ( object instanceof TraitProxyImpl) {
-            return TraitTypeEnum.TRAIT;
-        } else if ( object instanceof CoreWrapper) {
-            return TraitTypeEnum.WRAPPED_TRAITABLE;
-        } else if ( object instanceof TraitableBean ) {
-            return TraitTypeEnum.TRAITABLE;
-        } else {
-            return TraitTypeEnum.LEGACY_TRAITABLE;
-        }
+    public boolean isRuntimeClass( String resourceName ) {
+        return runtimeClasses != null && runtimeClasses.contains( resourceName );
     }
 
     @Override
-    public boolean isRuntimeClass( String resourceName ) {
-        return runtimeClasses != null && runtimeClasses.contains( resourceName );
+    public void writeRuntimeDefinedClasses(MarshallerWriteContext context, ProtobufMessages.Header.Builder _header) {
+        if (context.kBase == null) {
+            return;
+        }
+
+        ProjectClassLoader pcl = (ProjectClassLoader) (context.kBase).getRootClassLoader();
+        if (pcl.getStore() == null || pcl.getStore().isEmpty()) {
+            return;
+        }
+
+        List<String> runtimeClassNames = new ArrayList(pcl.getStore().keySet());
+        Collections.sort(runtimeClassNames);
+        ProtobufMessages.RuntimeClassDef.Builder _classDef = ProtobufMessages.RuntimeClassDef.newBuilder();
+        for (String resourceName : runtimeClassNames) {
+            if (isRuntimeClass(resourceName)) {
+                _classDef.clear();
+                _classDef.setClassFqName(resourceName);
+                _classDef.setClassDef(ByteString.copyFrom(pcl.getStore().get(resourceName)));
+                _header.addRuntimeClassDefinitions(_classDef.build());
+            }
+        }
     }
 }
