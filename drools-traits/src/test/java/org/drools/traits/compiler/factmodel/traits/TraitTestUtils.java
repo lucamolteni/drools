@@ -30,7 +30,7 @@ public class TraitTestUtils {
             @Override
             protected DefaultKieComponentFactory getComponentFactory() {
                 TraitKieComponentFactory componentFactory = (TraitKieComponentFactory) super.getComponentFactory();
-                componentFactory.setTraitFactory(new TraitFactoryImpl());
+                componentFactory.setTraitFactory(new TraitFactoryImpl(null));
                 componentFactory.getClassBuilderFactory().setTraitBuilder(new TraitClassBuilderImpl());
                 return componentFactory;
             }

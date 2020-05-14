@@ -27,6 +27,7 @@ import org.drools.core.common.WorkingMemoryFactory;
 import org.drools.core.factmodel.ClassBuilderFactory;
 import org.drools.core.factmodel.traits.TraitFactory;
 import org.drools.core.factmodel.traits.TraitRegistry;
+import org.drools.core.impl.InternalKnowledgeBase;
 import org.drools.core.reteoo.builder.NodeFactory;
 import org.drools.core.rule.LogicTransformerFactory;
 import org.drools.core.spi.FactHandleFactory;
@@ -63,6 +64,8 @@ public interface KieComponentFactory {
     TripleFactory getTripleFactory();
 
     LogicTransformerFactory getLogicTransformerFactory();
+
+    TraitFactory initTraitFactory(InternalKnowledgeBase knowledgeBase);
 
     TraitFactory getTraitFactory();
 

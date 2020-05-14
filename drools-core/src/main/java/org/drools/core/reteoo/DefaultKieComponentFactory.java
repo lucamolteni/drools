@@ -34,7 +34,7 @@ import org.drools.core.factmodel.ClassBuilderFactory;
 import org.drools.core.factmodel.DefaultClassBuilderFactory;
 import org.drools.core.factmodel.traits.TraitFactory;
 import org.drools.core.factmodel.traits.TraitRegistry;
-import org.drools.core.impl.KnowledgeBaseImpl;
+import org.drools.core.impl.InternalKnowledgeBase;
 import org.drools.core.reteoo.builder.NodeFactory;
 import org.drools.core.reteoo.builder.PhreakNodeFactory;
 import org.drools.core.rule.DefaultLogicTransformerFactory;
@@ -133,6 +133,11 @@ public class DefaultKieComponentFactory implements Serializable,
     @Override
     public LogicTransformerFactory getLogicTransformerFactory() {
         return logicTransformerFactory;
+    }
+
+    @Override
+    public TraitFactory initTraitFactory(InternalKnowledgeBase knowledgeBase) {
+        return null;
     }
 
     @Override

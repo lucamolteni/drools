@@ -1,6 +1,7 @@
 package org.drools.traits.core.reteoo;
 
 import org.drools.core.factmodel.ClassBuilderFactory;
+import org.drools.core.impl.InternalKnowledgeBase;
 import org.drools.core.impl.KnowledgeBaseImpl;
 import org.drools.core.spi.FactHandleFactory;
 import org.drools.traits.core.factmodel.TraitClassBuilderFactory;
@@ -35,10 +36,15 @@ public class TraitKieComponentFactory extends DefaultKieComponentFactory {
     private TraitFactory traitFactory;
 
     @Override
-    public TraitFactory getTraitFactory() {
+    public TraitFactory initTraitFactory(InternalKnowledgeBase knowledgeBase) {
         if(traitFactory == null) {
-            traitFactory = new TraitFactoryImpl<>();
+            traitFactory = new TraitFactoryImpl<>(knowledgeBase);
         }
+        return traitFactory;
+    }
+
+    @Override
+    public TraitFactory getTraitFactory() {
         return traitFactory;
     }
 

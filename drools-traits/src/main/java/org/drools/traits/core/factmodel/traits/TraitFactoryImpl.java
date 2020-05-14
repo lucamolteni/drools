@@ -61,6 +61,10 @@ public class TraitFactoryImpl<T extends Thing<K>, K extends TraitableBean> exten
     public TraitFactoryImpl() {
     }
 
+    public TraitFactoryImpl(InternalKnowledgeBase kBase) {
+        this.kBase = kBase;
+    }
+
     protected Class<?> registerAndLoadTypeDefinition( String proxyName, byte[] proxy ) throws ClassNotFoundException {
         registerRuntimeClass( proxyName );
         return kBase.registerAndLoadTypeDefinition( proxyName, proxy );
