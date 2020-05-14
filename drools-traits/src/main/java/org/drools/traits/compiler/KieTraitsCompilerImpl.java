@@ -20,12 +20,9 @@ import java.util.List;
 
 import org.drools.compiler.KieTraitsCompiler;
 import org.drools.compiler.UpdateTypeDeclarationDescr;
-import org.drools.core.factmodel.ClassBuilder;
-import org.drools.core.factmodel.traits.TraitableBean;
 import org.drools.core.rule.constraint.EvaluatorConstraint;
 import org.drools.core.spi.Constraint;
 import org.drools.traits.core.base.evaluators.IsAEvaluatorDefinition;
-import org.drools.traits.core.factmodel.traits.TraitClassBuilderImpl;
 
 public class KieTraitsCompilerImpl implements KieTraitsCompiler {
 
@@ -33,11 +30,6 @@ public class KieTraitsCompilerImpl implements KieTraitsCompiler {
     @Override
     public UpdateTypeDeclarationDescr updateTypeDescr() {
         return new UpdateTraitInformation();
-    }
-
-    @Override
-    public ClassBuilder getTraitBuilder() {
-        return new TraitClassBuilderImpl();
     }
 
     @Override

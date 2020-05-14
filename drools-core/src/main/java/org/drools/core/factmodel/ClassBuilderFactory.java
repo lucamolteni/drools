@@ -16,6 +16,8 @@
 
 package org.drools.core.factmodel;
 
+import org.drools.core.rule.TypeDeclaration;
+
 public interface ClassBuilderFactory {
     static ClassBuilder getDefaultBeanClassBuilder() {
         return new DefaultBeanClassBuilder(true);
@@ -25,15 +27,9 @@ public interface ClassBuilderFactory {
 
     EnumClassBuilder getEnumClassBuilder();
 
-    ClassBuilder getTraitBuilder();
-
-    void setTraitBuilder(ClassBuilder tcb);
-
     ClassBuilder getPropertyWrapperBuilder();
 
     void setPropertyWrapperBuilder(ClassBuilder pcb);
 
-    ClassBuilder getTraitProxyBuilder();
-
-    void setTraitProxyBuilder(ClassBuilder tpcb);
+    ClassBuilder getClassBuilder(TypeDeclaration type);
 }

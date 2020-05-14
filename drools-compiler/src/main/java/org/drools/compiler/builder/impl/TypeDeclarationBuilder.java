@@ -34,6 +34,7 @@ import org.drools.compiler.lang.descr.PackageDescr;
 import org.drools.compiler.lang.descr.QualifiedName;
 import org.drools.compiler.lang.descr.TypeDeclarationDescr;
 import org.drools.core.definitions.InternalKnowledgePackage;
+import org.drools.core.factmodel.ClassBuilder;
 import org.drools.core.factmodel.ClassDefinition;
 import org.drools.core.rule.TypeDeclaration;
 import org.kie.api.io.Resource;
@@ -274,10 +275,11 @@ public class TypeDeclarationBuilder {
             success = ! kbuilder.hasErrors();
 
             if ( success ) {
-                declaredClassBuilder.generateBeanFromDefinition( typeDescr,
-                                                                 type,
-                                                                 pkgRegistry,
-                                                                 def );
+                ClassBuilder classBuilder = kbuilder.getBuilderConfiguration().getClassBuilderFactory().getClassBuilder(type);
+                declaredClassBuilder.generateBeanFromDefinition(typeDescr,
+                                                                type,
+                                                                pkgRegistry,
+                                                                def, classBuilder);
             }
             success = ! kbuilder.hasErrors();
 

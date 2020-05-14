@@ -26,7 +26,6 @@ import org.drools.core.factmodel.AnnotationDefinition;
 import org.drools.core.factmodel.ClassDefinition;
 import org.drools.core.factmodel.traits.CoreWrapper;
 import org.drools.core.factmodel.traits.Trait;
-import org.drools.core.reteoo.DefaultKieComponentFactory;
 import org.drools.core.reteoo.KieComponentFactory;
 import org.drools.core.util.HierarchyEncoder;
 import org.drools.core.util.TripleFactory;
@@ -35,6 +34,7 @@ import org.drools.core.util.TripleStore;
 import org.drools.traits.core.factmodel.traits.AbstractTraitFactory;
 import org.drools.traits.core.factmodel.traits.LogicalTypeInconsistencyException;
 import org.drools.core.factmodel.traits.Thing;
+import org.drools.traits.core.factmodel.traits.TraitClassBuilderImpl;
 import org.drools.traits.core.factmodel.traits.TraitRegistryImpl;
 import org.drools.core.factmodel.traits.TraitableBean;
 import org.drools.traits.core.factmodel.traits.VirtualPropertyMode;
@@ -196,7 +196,7 @@ public class StandaloneTraitFactory<T extends Thing<K>, K extends TraitableBean>
                 String[] supers = new String[] { Thing.class.getName(), trait.getName() };
                 extDef.setInterfaces( supers );
 
-                byte[] ext = getComponentFactory().getClassBuilderFactory().getTraitBuilder().buildClass( extDef, classLoader );
+                byte[] ext = new TraitClassBuilderImpl().buildClass(extDef, classLoader );
                 Class<?> klass = registerAndLoadTypeDefinition( extName, ext );
 
                 ClassDefinition tDef = buildClassDefinition( trait, trait );

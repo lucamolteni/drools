@@ -115,7 +115,6 @@ import org.drools.core.builder.conf.impl.JaxbConfigurationImpl;
 import org.drools.core.definitions.InternalKnowledgePackage;
 import org.drools.core.definitions.impl.KnowledgePackageImpl;
 import org.drools.core.definitions.rule.impl.RuleImpl;
-import org.drools.core.factmodel.ClassBuilderFactory;
 import org.drools.core.impl.InternalKnowledgeBase;
 import org.drools.core.impl.KnowledgeBaseFactory;
 import org.drools.core.io.impl.BaseResource;
@@ -322,11 +321,6 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder,
         processBuilder = ProcessBuilderFactory.newProcessBuilder(this);
 
         this.traits = ServiceRegistry.getInstance().get(KieTraitsCompiler.class);
-
-        if(traits != null) {
-            ClassBuilderFactory classBuilderFactory = getBuilderConfiguration().getClassBuilderFactory();
-            classBuilderFactory.setTraitBuilder(traits.getTraitBuilder());
-        }
 
         typeBuilder = new TypeDeclarationBuilder(this, traits);
     }

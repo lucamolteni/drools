@@ -47,6 +47,7 @@ import org.drools.core.util.HierarchyEncoder;
 import org.drools.core.util.TripleFactory;
 import org.drools.core.util.TripleStore;
 import org.drools.core.util.asm.ClassFieldInspector;
+import org.drools.traits.core.factmodel.TraitClassBuilderFactory;
 import org.mvel2.asm.MethodVisitor;
 import org.mvel2.asm.Opcodes;
 import org.mvel2.asm.Type;
@@ -68,7 +69,7 @@ public abstract class AbstractTraitFactory<T extends Thing<K>, K extends Traitab
     }
 
     protected static void setMode(VirtualPropertyMode newMode, KieComponentFactory rcf) {
-        ClassBuilderFactory cbf = rcf.getClassBuilderFactory();
+        TraitClassBuilderFactory cbf = (TraitClassBuilderFactory) rcf.getClassBuilderFactory();
         TraitFactoryImpl traitFactory = (TraitFactoryImpl) rcf.getTraitFactory();
         traitFactory.mode = newMode;
         switch (newMode) {
@@ -243,7 +244,7 @@ public abstract class AbstractTraitFactory<T extends Thing<K>, K extends Traitab
             e.printStackTrace();
         }
 
-        TraitProxyClassBuilder proxyBuilder = (TraitProxyClassBuilder) rcf.getClassBuilderFactory().getTraitProxyBuilder();
+        TraitProxyClassBuilder proxyBuilder = (TraitProxyClassBuilder) ((TraitClassBuilderFactory) rcf.getClassBuilderFactory()).getTraitProxyBuilder();
 
         proxyBuilder.init(tdef, rcf.getBaseTraitProxyClass(), getTraitRegistry());
         try {

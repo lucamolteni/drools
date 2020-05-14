@@ -18,15 +18,12 @@ package org.drools.compiler;
 
 import java.util.List;
 
-import org.drools.core.factmodel.ClassBuilder;
 import org.drools.core.spi.Constraint;
 import org.kie.api.internal.utils.KieService;
 
 public interface KieTraitsCompiler extends KieService {
 
     UpdateTypeDeclarationDescr updateTypeDescr();
-
-    ClassBuilder getTraitBuilder();
 
     boolean isAEvaluatorPresent(List<Constraint> constraints);
 }

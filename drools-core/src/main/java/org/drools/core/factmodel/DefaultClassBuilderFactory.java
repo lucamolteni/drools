@@ -18,6 +18,8 @@ package org.drools.core.factmodel;
 
 import java.io.Serializable;
 
+import org.drools.core.rule.TypeDeclaration;
+
 public class DefaultClassBuilderFactory implements Serializable,
                                                    ClassBuilderFactory {
 
@@ -41,15 +43,6 @@ public class DefaultClassBuilderFactory implements Serializable,
     }
 
     @Override
-    public ClassBuilder getTraitBuilder() {
-        return null;
-    }
-
-    @Override
-    public void setTraitBuilder(ClassBuilder tcb) {
-    }
-
-    @Override
     public ClassBuilder getPropertyWrapperBuilder() {
         return null;
     }
@@ -60,12 +53,10 @@ public class DefaultClassBuilderFactory implements Serializable,
     }
 
     @Override
-    public ClassBuilder getTraitProxyBuilder() {
-        return null;
-    }
-
-    @Override
-    public void setTraitProxyBuilder(ClassBuilder tpcb) {
-
+    public ClassBuilder getClassBuilder(TypeDeclaration type) {
+        switch (type.getKind()) {
+            case ENUM: return getEnumClassBuilder();
+            case CLASS: default: return getBeanClassBuilder();
+        }
     }
 }

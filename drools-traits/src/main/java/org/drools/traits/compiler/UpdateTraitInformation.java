@@ -28,6 +28,7 @@ import org.drools.core.factmodel.ClassDefinition;
 import org.drools.core.factmodel.FieldDefinition;
 import org.drools.core.factmodel.traits.Thing;
 import org.drools.core.factmodel.traits.Trait;
+import org.drools.traits.core.factmodel.traits.TraitClassBuilderImpl;
 import org.drools.traits.core.factmodel.traits.TraitFactoryImpl;
 import org.drools.traits.core.factmodel.traits.TraitRegistryImpl;
 import org.drools.core.factmodel.traits.Traitable;
@@ -105,10 +106,10 @@ public class UpdateTraitInformation implements UpdateTypeDeclarationDescr {
                         tempDef.setAbstrakt(true);
                         tempDeclr.setTypeClassDef(tempDef);
 
-                        declaredClassBuilder.generateBeanFromDefinition( tempDescr,
-                                                                         tempDeclr,
-                                                                         pkgRegistry,
-                                                                         tempDef );
+                        declaredClassBuilder.generateBeanFromDefinition(tempDescr,
+                                                                        tempDeclr,
+                                                                        pkgRegistry,
+                                                                        tempDef, new TraitClassBuilderImpl());
                         try {
                             Class<?> clazz = pkgRegistry.getTypeResolver().resolveType(tempDescr.getType().getFullName());
                             tempDeclr.setTypeClass(clazz);

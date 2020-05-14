@@ -31,7 +31,6 @@ public class TraitTestUtils {
             protected DefaultKieComponentFactory getComponentFactory() {
                 TraitKieComponentFactory componentFactory = (TraitKieComponentFactory) super.getComponentFactory();
                 componentFactory.setTraitFactory(new TraitFactoryImpl(null));
-                componentFactory.getClassBuilderFactory().setTraitBuilder(new TraitClassBuilderImpl());
                 return componentFactory;
             }
         };

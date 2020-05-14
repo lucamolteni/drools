@@ -2,26 +2,11 @@ package org.drools.traits.core.factmodel;
 
 import org.drools.core.factmodel.ClassBuilder;
 import org.drools.core.factmodel.DefaultClassBuilderFactory;
-import org.drools.core.factmodel.traits.TraitCoreService;
+import org.drools.core.rule.TypeDeclaration;
+import org.drools.traits.core.factmodel.traits.TraitClassBuilderImpl;
 import org.drools.traits.core.factmodel.traits.TraitMapPropertyWrapperClassBuilderImpl;
-import org.drools.traits.core.factmodel.traits.TraitMapProxyClassBuilderImpl;
-
-import static org.drools.core.reteoo.ServiceRegistryUtils.fromTraitRegistry;
 
 public class TraitClassBuilderFactory extends DefaultClassBuilderFactory {
-
-    // Trait interfaces
-    private ClassBuilder traitBuilder;
-
-    @Override
-    public ClassBuilder getTraitBuilder() {
-        return traitBuilder;
-    }
-
-    @Override
-    public void setTraitBuilder(ClassBuilder tcb) {
-        traitBuilder = tcb;
-    }
 
     // Trait property wrappers
     private ClassBuilder propertyWrapperBuilder;
@@ -40,19 +25,25 @@ public class TraitClassBuilderFactory extends DefaultClassBuilderFactory {
     }
 
     // Trait proxy wrappers
-
     private ClassBuilder traitProxyBuilder;
 
-    @Override
     public ClassBuilder getTraitProxyBuilder() {
         if (traitProxyBuilder == null) {
-            traitProxyBuilder = new TraitMapProxyClassBuilderImpl();
+            traitProxyBuilder = new TraitClassBuilderImpl();
         }
         return traitProxyBuilder;
     }
 
-    @Override
     public void setTraitProxyBuilder(ClassBuilder tpcb) {
         traitProxyBuilder = tpcb;
+    }
+
+    @Override
+    public ClassBuilder getClassBuilder(TypeDeclaration type) {
+        switch (type.getKind()) {
+            case TRAIT: return getTraitProxyBuilder();
+            case ENUM: return getEnumClassBuilder();
+            case CLASS: default: return getBeanClassBuilder();
+        }
     }
 }
