@@ -1053,7 +1053,7 @@ public class StatefulKnowledgeSessionImpl extends AbstractRuntime
             for (EntryPointNode addedNode : kBase.getAddedEntryNodeCache()) {
                 EntryPointId id = addedNode.getEntryPoint();
                 if (EntryPointId.DEFAULT.equals(id)) continue;
-                WorkingMemoryEntryPoint wmEntryPoint = new NamedEntryPoint(id, addedNode, this);
+                WorkingMemoryEntryPoint wmEntryPoint = createNamedEntryPoint(addedNode, id, this);
                 entryPoints.put(id.getEntryPointId(), wmEntryPoint);
             }
         }
@@ -1065,6 +1065,10 @@ public class StatefulKnowledgeSessionImpl extends AbstractRuntime
         }
     }
 
+    public NamedEntryPoint createNamedEntryPoint(EntryPointNode addedNode, EntryPointId id, StatefulKnowledgeSessionImpl wm) {
+        return kBase.getConfiguration().getComponentFactory().getNamedEntryPointFactory().createNamedEntryPoint(addedNode, id, wm);
+    }
+
     protected void initDefaultEntryPoint() {
         this.defaultEntryPoint = createDefaultEntryPoint();
         this.entryPoints.clear();
@@ -1073,7 +1077,7 @@ public class StatefulKnowledgeSessionImpl extends AbstractRuntime
 
     protected InternalWorkingMemoryEntryPoint createDefaultEntryPoint() {
         EntryPointNode epn = this.kBase.getRete().getEntryPointNode( EntryPointId.DEFAULT );
-        return new NamedEntryPoint( EntryPointId.DEFAULT, epn, this );
+        return createNamedEntryPoint(epn, EntryPointId.DEFAULT, this);
     }
 
     public SessionConfiguration getSessionConfiguration() {

@@ -19,9 +19,13 @@ package org.drools.core.reteoo;
 import java.util.Optional;
 
 import org.drools.core.base.FieldDataFactory;
+import org.drools.core.base.TraitHelper;
 import org.drools.core.common.AgendaFactory;
 import org.drools.core.common.AgendaGroupFactory;
 import org.drools.core.common.BeliefSystemFactory;
+import org.drools.core.common.InternalWorkingMemoryActions;
+import org.drools.core.common.InternalWorkingMemoryEntryPoint;
+import org.drools.core.common.NamedEntryPointFactory;
 import org.drools.core.common.PropagationContextFactory;
 import org.drools.core.common.WorkingMemoryFactory;
 import org.drools.core.factmodel.ClassBuilderFactory;
@@ -42,6 +46,8 @@ public interface KieComponentFactory {
     }
 
     FactHandleFactory getFactHandleFactoryService();
+
+    NamedEntryPointFactory getNamedEntryPointFactory();
 
     WorkingMemoryFactory getWorkingMemoryFactory();
 
@@ -72,6 +78,8 @@ public interface KieComponentFactory {
     TraitRegistry getTraitRegistry();
 
     TripleStore getTripleStore();
+
+    TraitHelper createTraitHelper(InternalWorkingMemoryActions workingMemory, InternalWorkingMemoryEntryPoint nep);
 
     ClassBuilderFactory getClassBuilderFactory();
 

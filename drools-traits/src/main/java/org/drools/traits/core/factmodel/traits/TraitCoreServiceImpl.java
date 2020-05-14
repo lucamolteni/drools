@@ -36,9 +36,4 @@ public class TraitCoreServiceImpl implements TraitCoreService {
     public EvaluatorDefinition createIsAEvaluator() {
         return new IsAEvaluatorDefinition();
     }
-
-    @Override
-    public TraitHelper createTraitHelper(InternalWorkingMemoryActions workingMemory, InternalWorkingMemoryEntryPoint nep) {
-        return new TraitHelperImpl(workingMemory, nep);
-    }
 }

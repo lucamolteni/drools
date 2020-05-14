@@ -16,16 +16,11 @@
 
 package org.drools.core.factmodel.traits;
 
-import org.drools.core.base.TraitHelper;
 import org.drools.core.base.evaluators.EvaluatorDefinition;
-import org.drools.core.common.InternalWorkingMemoryActions;
-import org.drools.core.common.InternalWorkingMemoryEntryPoint;
 
 public interface TraitCoreService {
 
     TraitRegistry createRegistry();
 
     EvaluatorDefinition createIsAEvaluator();
-
-    TraitHelper createTraitHelper(InternalWorkingMemoryActions workingMemory, InternalWorkingMemoryEntryPoint nep);
 }

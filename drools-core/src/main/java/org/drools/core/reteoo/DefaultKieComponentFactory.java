@@ -20,10 +20,16 @@ import java.io.Serializable;
 
 import org.drools.core.base.FieldDataFactory;
 import org.drools.core.base.FieldFactory;
+import org.drools.core.base.TraitDisabledHelper;
+import org.drools.core.base.TraitHelper;
 import org.drools.core.common.AgendaFactory;
 import org.drools.core.common.AgendaGroupFactory;
 import org.drools.core.common.BeliefSystemFactory;
 import org.drools.core.common.DefaultAgendaFactory;
+import org.drools.core.common.DefaultNamedEntryPointFactory;
+import org.drools.core.common.InternalWorkingMemoryActions;
+import org.drools.core.common.InternalWorkingMemoryEntryPoint;
+import org.drools.core.common.NamedEntryPointFactory;
 import org.drools.core.common.PhreakBeliefSystemFactory;
 import org.drools.core.common.PhreakPropagationContextFactory;
 import org.drools.core.common.PhreakWorkingMemoryFactory;
@@ -58,6 +64,11 @@ public class DefaultKieComponentFactory implements Serializable,
     @Override
     public FactHandleFactory getFactHandleFactoryService() {
         return handleFactory;
+    }
+
+    @Override
+    public NamedEntryPointFactory getNamedEntryPointFactory() {
+        return new DefaultNamedEntryPointFactory();
     }
 
     private WorkingMemoryFactory wmFactory = PhreakWorkingMemoryFactory.getInstance();
@@ -155,6 +166,11 @@ public class DefaultKieComponentFactory implements Serializable,
     @Override
     public TripleStore getTripleStore() {
         return tripleStore;
+    }
+
+    @Override
+    public TraitHelper createTraitHelper(InternalWorkingMemoryActions workingMemory, InternalWorkingMemoryEntryPoint nep) {
+        return new TraitDisabledHelper();
     }
 
     private ClassBuilderFactory classBuilderFactory = new DefaultClassBuilderFactory();
