@@ -56,6 +56,7 @@ import org.drools.core.definitions.InternalKnowledgePackage;
 import org.drools.core.definitions.impl.KnowledgePackageImpl;
 import org.drools.core.definitions.rule.impl.RuleImpl;
 import org.drools.core.event.KieBaseEventSupport;
+import org.drools.core.factmodel.ClassDefinition;
 import org.drools.core.factmodel.traits.TraitRegistry;
 import org.drools.core.management.DroolsManagementAgent;
 import org.drools.core.reteoo.AsyncReceiveNode;
@@ -498,8 +499,7 @@ public class KnowledgeBaseImpl
             droolsStream.close();
         }
 
-        // TODO reenable this
-//        this.getConfiguration().getComponentFactory().getTraitFactory().setRuleBase(this);
+        this.getConfiguration().getComponentFactory().initTraitFactory(this);
 
         rewireReteAfterDeserialization();
     }
@@ -1055,11 +1055,9 @@ public class KnowledgeBaseImpl
                 throw new RuntimeException( "Registering null bytes for class " + className );
             }
 
-
-            // TODO instantiate this
-//            if (newDecl.getTypeClassDef() == null) {
-//                newDecl.setTypeClassDef( new ClassDefinition() );
-//            }
+            if (newDecl.getTypeClassDef() == null) {
+                newDecl.setTypeClassDef( new ClassDefinition() );
+            }
             newDecl.setTypeClass( definedKlass );
 
             this.classTypeDeclaration.put( className, newDecl );
