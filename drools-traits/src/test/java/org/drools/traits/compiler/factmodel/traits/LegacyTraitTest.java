@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import org.drools.core.factmodel.traits.Trait;
+import org.drools.traits.compiler.CommonTraitTest;
 import org.drools.traits.core.factmodel.traits.LogicalTypeInconsistencyException;
 import org.drools.traits.core.factmodel.traits.TraitFactoryImpl;
 import org.drools.core.factmodel.traits.Traitable;
@@ -47,7 +48,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
-public class LegacyTraitTest {
+public class LegacyTraitTest extends CommonTraitTest {
 
     public VirtualPropertyMode mode;
 

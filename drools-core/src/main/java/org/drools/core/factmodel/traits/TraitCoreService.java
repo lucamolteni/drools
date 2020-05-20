@@ -16,11 +16,7 @@
 
 package org.drools.core.factmodel.traits;
 
-import org.drools.core.base.evaluators.EvaluatorDefinition;
-
 public interface TraitCoreService {
 
     TraitRegistry createRegistry();
-
-    EvaluatorDefinition createIsAEvaluator();
 }

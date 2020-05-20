@@ -18,9 +18,6 @@ package org.drools.core.base.evaluators;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.drools.core.factmodel.traits.TraitCoreService;
-import org.drools.core.reteoo.ServiceRegistryUtils;
-
 public class BuiltInEvaluatorDefinitions {
     
     private final static List<EvaluatorDefinition> EVALUATOR_DEFINITIONS = new ArrayList<EvaluatorDefinition>();
@@ -40,9 +37,6 @@ public class BuiltInEvaluatorDefinitions {
         EVALUATOR_DEFINITIONS.add( new StartedByEvaluatorDefinition() );
         EVALUATOR_DEFINITIONS.add( new CoincidesEvaluatorDefinition() );
         EVALUATOR_DEFINITIONS.add( new StrEvaluatorDefinition() );
-
-        // TODO LM
-        ServiceRegistryUtils.fromTraitRegistry(TraitCoreService::createIsAEvaluator).ifPresent(EVALUATOR_DEFINITIONS::add);
     }
 
     public static List<EvaluatorDefinition> getEvaluatorDefinitions() {
