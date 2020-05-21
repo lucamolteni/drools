@@ -36,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 import java.util.UUID;
@@ -44,7 +45,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Supplier;
 
-import org.drools.compiler.KieTraitsCompiler;
 import org.drools.compiler.builder.DroolsAssemblerContext;
 import org.drools.compiler.builder.impl.errors.MissingImplementationException;
 import org.drools.compiler.compiler.AnnotationDeclarationError;
@@ -285,8 +285,7 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder,
         }
 
         processBuilder = ProcessBuilderFactory.newProcessBuilder(this);
-        KieTraitsCompiler traits = ServiceRegistry.getInstance().get(KieTraitsCompiler.class);
-        typeBuilder = new TypeDeclarationBuilder(this, traits);
+        this.typeBuilder = createTypeDeclarationBuilder();
     }
 
     public KnowledgeBuilderImpl(InternalKnowledgeBase kBase,
@@ -313,8 +312,15 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder,
 
         processBuilder = ProcessBuilderFactory.newProcessBuilder(this);
 
-        KieTraitsCompiler traits = ServiceRegistry.getInstance().get(KieTraitsCompiler.class);
-        typeBuilder = new TypeDeclarationBuilder(this, traits);
+        this.typeBuilder = createTypeDeclarationBuilder();
+    }
+
+    private TypeDeclarationBuilder createTypeDeclarationBuilder() {
+        TypeDeclarationBuilderFactory typeDeclarationBuilderFactory =
+                Optional.ofNullable(ServiceRegistry.getInstance().get(TypeDeclarationBuilderFactory.class))
+                        .orElse(new DefaultTypeDeclarationBuilderFactory());
+
+        return typeDeclarationBuilderFactory.createTypeDeclarationBuilder(this);
     }
 
     public void setReleaseId( ReleaseId releaseId ) {
