@@ -562,11 +562,6 @@ public class PatternBuilder
             }
         }
 
-        // TODO LM review this
-        KieTraitsCompiler traits = ((KnowledgeBuilderImpl) context.getKnowledgeBuilder()).getTraits();
-        if(traits != null && traits.isAEvaluatorPresent(pattern.getConstraints())) {
-            listenedProperties.add(TraitableBean.TRAITSET_FIELD_NAME);
-        }
         pattern.setListenedProperties(listenedProperties);
     }
 

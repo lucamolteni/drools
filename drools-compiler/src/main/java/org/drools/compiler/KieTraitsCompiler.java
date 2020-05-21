@@ -16,14 +16,9 @@
 
 package org.drools.compiler;
 
-import java.util.List;
-
-import org.drools.core.spi.Constraint;
 import org.kie.api.internal.utils.KieService;
 
 public interface KieTraitsCompiler extends KieService {
 
     UpdateTypeDeclarationDescr updateTypeDescr();
-
-    boolean isAEvaluatorPresent(List<Constraint> constraints);
 }

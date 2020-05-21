@@ -16,32 +16,13 @@
 
 package org.drools.traits.compiler;
 
-import java.util.List;
-
 import org.drools.compiler.KieTraitsCompiler;
 import org.drools.compiler.UpdateTypeDeclarationDescr;
-import org.drools.core.rule.constraint.EvaluatorConstraint;
-import org.drools.core.spi.Constraint;
-import org.drools.traits.core.base.evaluators.IsAEvaluatorDefinition;
 
 public class KieTraitsCompilerImpl implements KieTraitsCompiler {
-
 
     @Override
     public UpdateTypeDeclarationDescr updateTypeDescr() {
         return new UpdateTraitInformation();
-    }
-
-    @Override
-    public boolean isAEvaluatorPresent(List<Constraint> constraints) {
-        for (Constraint constr : constraints) {
-            if (constr instanceof EvaluatorConstraint && ((EvaluatorConstraint) constr).isSelf()) {
-                EvaluatorConstraint ec = ((EvaluatorConstraint) constr);
-                if (ec.getEvaluator().getOperator() == IsAEvaluatorDefinition.ISA || ec.getEvaluator().getOperator() == IsAEvaluatorDefinition.NOT_ISA) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 }
