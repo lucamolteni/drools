@@ -22,8 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.drools.compiler.KieTraitsCompiler;
-import org.drools.compiler.UpdateTypeDeclarationDescr;
 import org.drools.compiler.compiler.PackageRegistry;
 import org.drools.compiler.compiler.TypeDeclarationError;
 import org.drools.compiler.lang.descr.AbstractClassTypeDeclarationDescr;
@@ -53,9 +51,7 @@ public class TypeDeclarationBuilder {
     protected TypeDeclarationConfigurator typeDeclarationConfigurator;
     protected DeclaredClassBuilder declaredClassBuilder;
 
-    protected KieTraitsCompiler kieTraitsCompiler;
-
-    TypeDeclarationBuilder(KnowledgeBuilderImpl kbuilder, KieTraitsCompiler kieTraitsCompiler) {
+    public TypeDeclarationBuilder(KnowledgeBuilderImpl kbuilder) {
         this.kbuilder = kbuilder;
         this.classDeclarationExtractor = new TypeDeclarationCache( kbuilder );
         this.typeDeclarationNameResolver = new TypeDeclarationNameResolver( kbuilder );
@@ -63,7 +59,6 @@ public class TypeDeclarationBuilder {
         this.classDefinitionFactory = new ClassDefinitionFactory( kbuilder );
         this.typeDeclarationConfigurator = new TypeDeclarationConfigurator( kbuilder );
         this.declaredClassBuilder = new DeclaredClassBuilder( kbuilder );
-        this.kieTraitsCompiler = kieTraitsCompiler;
     }
 
     public TypeDeclaration getAndRegisterTypeDeclaration( Class<?> cls, String packageName ) {
@@ -266,11 +261,8 @@ public class TypeDeclarationBuilder {
             }
             success = ( def != null ) && ( ! kbuilder.hasErrors() );
 
-            if(kieTraitsCompiler != null) {
-                UpdateTypeDeclarationDescr updateTypeDescr = kieTraitsCompiler.updateTypeDescr();
-                if (success) {
-                    updateTypeDescr.updateTraitInformation(kbuilder, declaredClassBuilder, typeDescr, type, def, pkgRegistry);
-                }
+            if(success) {
+                this.postGenerateDeclaredBean(typeDescr, type, def, pkgRegistry);
             }
             success = ! kbuilder.hasErrors();
 
@@ -309,7 +301,9 @@ public class TypeDeclarationBuilder {
         }
     }
 
-
+    protected void postGenerateDeclaredBean(AbstractClassTypeDeclarationDescr typeDescr, TypeDeclaration type, ClassDefinition def, PackageRegistry pkgRegistry) {
+        // currently used only in drools-traits module
+    }
 
     protected void normalizeForeignPackages( PackageDescr packageDescr ) {
         Map<String, PackageDescr> foreignPackages = null;

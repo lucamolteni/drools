@@ -16,14 +16,10 @@
 
 package org.drools.compiler.builder.impl;
 
-import org.drools.compiler.KieTraitsCompiler;
-import org.kie.api.internal.utils.ServiceRegistry;
-
 public class DefaultTypeDeclarationBuilderFactory implements TypeDeclarationBuilderFactory {
 
     @Override
     public TypeDeclarationBuilder createTypeDeclarationBuilder(KnowledgeBuilderImpl kbuilder) {
-        KieTraitsCompiler traits = ServiceRegistry.getInstance().get(KieTraitsCompiler.class);
-        return new TypeDeclarationBuilder(kbuilder, traits);
+        return new TypeDeclarationBuilder(kbuilder);
     }
 }

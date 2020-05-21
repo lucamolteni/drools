@@ -29,8 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 
-import org.drools.compiler.KieTraitsCompiler;
-import org.drools.compiler.builder.impl.KnowledgeBuilderImpl;
 import org.drools.compiler.compiler.AnalysisResult;
 import org.drools.compiler.compiler.BoundIdentifiers;
 import org.drools.compiler.compiler.DescrBuildError;
@@ -71,7 +69,6 @@ import org.drools.core.base.EvaluatorWrapper;
 import org.drools.core.base.SimpleValueType;
 import org.drools.core.base.ValueType;
 import org.drools.core.base.evaluators.EvaluatorDefinition.Target;
-//import org.drools.core.base.evaluators.IsAEvaluatorDefinition;
 import org.drools.core.base.mvel.ActivationPropertyHandler;
 import org.drools.core.base.mvel.MVELCompilationUnit;
 import org.drools.core.base.mvel.MVELCompilationUnit.PropertyHandlerFactoryFixer;

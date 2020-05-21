@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
-package org.drools.compiler;
+package org.drools.traits.compiler.builder.impl;
 
-import org.drools.compiler.builder.impl.DeclaredClassBuilder;
 import org.drools.compiler.builder.impl.KnowledgeBuilderImpl;
-import org.drools.compiler.compiler.PackageRegistry;
-import org.drools.compiler.lang.descr.AbstractClassTypeDeclarationDescr;
-import org.drools.core.factmodel.ClassDefinition;
-import org.drools.core.rule.TypeDeclaration;
+import org.drools.compiler.builder.impl.TypeDeclarationBuilder;
+import org.drools.compiler.builder.impl.TypeDeclarationBuilderFactory;
 
-public interface UpdateTypeDeclarationDescr {
+public class TraitTypeDeclarationBuilderFactory implements TypeDeclarationBuilderFactory {
 
-    void updateTraitInformation(KnowledgeBuilderImpl kbuilder, DeclaredClassBuilder declaredClassBuilder, AbstractClassTypeDeclarationDescr typeDescr, TypeDeclaration type, ClassDefinition def, PackageRegistry pkgRegistry);
+    public TraitTypeDeclarationBuilderFactory() {
+    }
+
+    @Override
+    public TypeDeclarationBuilder createTypeDeclarationBuilder(KnowledgeBuilderImpl kbuilder) {
+        return new TraitsTypeDeclarationBuilderImpl(kbuilder);
+    }
 }
