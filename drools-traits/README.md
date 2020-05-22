@@ -1,22 +1,24 @@
 Descoping Traits guide
 ======================
+
 This guide will help you understand how we did the traits descoping:
 
-The idea behind was to try and have a pluggable implementation: something that if user needed, it could import adding the
-module to mvn and start using traits.
-
-The new `drools-traits` module depends on `drools-core` and `drools-compiler`, and every specific implementation code related to traits
-is hopefully isolated in this module.
+The idea behind it was to have a pluggable implementation: to use it you can import it by adding the module to Maven.
+The new `drools-traits` Maven module depends on `drools-core` and `drools-compiler`, and every specific traits implementation code is hopefully isolated in this module.
 
 Packages
 ======== 
+
 As the traits feature was originally heavily intertwined in both core and compiler, I decided to move classes from both modules into a single module, preserving the original package name and adding the `.trait` prefix, to avoid the split package problem.
 
-We have now `org.drools.traits.core.*` and `org.drools.traits.compiler.*` depending on whether the original class was inside core or compiler.
+We have now `org.drools.traits.core.*` and `org.drools.traits.compiler.*` depending on whether the original file was inside core or compiler.
 
 You'll find many classes with only the package changed, such as 
 
-`org.drools.core.factmodel.traits.LogicalTypeInconsistencyException.java`
+`org.drools.core.factmodel.traits.LogicalTypeInconsistencyException.java` 
+
+became
+
 `org.drools.traits.core.factmodel.traits.LogicalTypeInconsistencyException.java` 
 
 Notice the double `.traits`, I'm open for suggestions here
@@ -24,23 +26,23 @@ Notice the double `.traits`, I'm open for suggestions here
 Interfaces
 ===========
 
-In the module `drools-core` inside the `org.drools.core.factmodel.traits` package there are only interfaces now. 
-I tried to keep them to the bare minimum but I couldn't remove most of them  as the traits-related method (such as `don`, `shed`) are in `DefaultKnowledgeHelper` and they cannot be removed without breaking the API. 
+Inside the `org.drools.core.factmodel.traits` package, in the `drools-core` module, there are now only interfaces. 
+I tried to keep them to the bare minimum but I couldn't remove most of them as the traits-related method (such as `don`, `shed`) are in `DefaultKnowledgeHelper` and they cannot be removed without breaking the API. 
 
 When I moved the classes between modules I tried to keep the source code identical except for changing the package (as described in the Packages section) and to rename the class with the `-Impl` suffix, keeping the interface in the original module, i.e.
 
 `org.drools.core.factmodel.traits.TraitFactory` was transformed into an interface with just one method, and it was created a 
 `org.drools.traits.core.factmodel.traits.TraitFactoryImpl` inside the `drools-traits` module.
+https://github.com/kiegroup/drools/pull/2887/files#diff-08cd5643f232535394581edeab619a00
 
-Take a look at another example such as `TraitRegistry` 
-https://github.com/kiegroup/drools/pull/2887/files#diff-6a70e4d76093ef8e591283577874b074R7
+Take a look at another example such as `TraitRegistry` https://github.com/kiegroup/drools/pull/2887/files#diff-6a70e4d76093ef8e591283577874b074R7
 
-If a class or an interface was used only by traits specific code, I moved it inside the `drools-traits` module and no sign of that code is present anymore in `drools-core` or `drools-compiler`.
+If a class or an interface was used only by traits specific code, I moved it inside the `drools-traits` module.
 
 Injecting Components
 ====================
 
-To have specific traits code, you must instantiate traits specific classes using our service loader mechanism.
+To use traits, you must instantiate traits-specific classes using our service loader mechanism.
 The `kie.conf` file provided as an example in the `drools-traits` supports the execution of all the traits related tests in the original modules 
 https://github.com/kiegroup/drools/pull/2887/files#diff-ff3ee1dbc977e7b1dd4cfb16c52cbfca
 
@@ -52,7 +54,7 @@ org.drools.core.factmodel.traits.TraitCoreService=org.drools.traits.core.factmod
 ```
 
 When we'll merge the issue, they'll be probably two, I'm not sure if it's possible to have just one. We'll probably need one injected in `-compiler` and one in `-core` but I'm not sure about this. 
-Nevertheless wasn't able to reduce them yet.
+Nevertheless I wasn't able to reduce the number yet.
  
 Details of the three components are explained later in this document. 
 
@@ -60,16 +62,18 @@ Details of the three components are explained later in this document.
 Subtyping and Factories
 =======================
 
-`drools-core` delegates most of the instance creation to factory classes. 
-For example the constructor of `org.drools.core.reteoo.AlphaNode` is never called directly, to create Alpha Nodes we use `org.drools.core.reteoo.builder.PhreakNodeFactory`.
+`drools-core` delegates most of the instances creation to factory classes. 
+For example the constructor of `org.drools.core.reteoo.AlphaNode` is never called directly, we use `org.drools.core.reteoo.builder.PhreakNodeFactory`.
 
 At the same time Alpha Node had inside traits specific code that could be removed, such as in `calculateDeclaredMask` https://github.com/kiegroup/drools/pull/2887/files#diff-daf38b3d53b080cc1724b7d830e78c01L330
 
 By providing a different implementation of the `org.drools.core.reteoo.builder.PhreakNodeFactory` => `org.drools.traits.core.reteoo.TraitPhreakNodeFactory` I could create instances of `org.drools.traits.core.reteoo.TraitAlphaNode` and move all the traits specific code there (https://github.com/kiegroup/drools/pull/2887/files#diff-2a6e70d7a533b488281fea5ccf5cfc39)
  
-The problem was that, even though we had factories, the way to provide different implementation of such factories was removed some time ago in the code. 
+The problem was that, even though we had factories, the mechanism to provide different implementation of such factories was removed some time ago in the code. 
+
 The root object creating all those factories is `org.drools.core.reteoo.KieComponentFactory` and that was instantiated directly in `org.drools.core.RuleBaseConfiguration`.
-If this object hadn't been stateful we could had injected the object itself in the `kie.conf` file, but unfortunately the memory state of the component is really important and a new instance has to be created each time only in the `init` method in `org.drools.core.RuleBaseConfiguration`.
+If this object hadn't been stateful we could had injected the object itself in the `kie.conf` file, but unfortunately the lifecycle of the component is really important and a new instance has to be created only once in the `init` method in `org.drools.core.RuleBaseConfiguration`. 
+By injecting the `KieComponentFactory` in the service loader, we would have had a Singleton KieComponentFactory per class loader.
 
 To inject a different `org.drools.core.reteoo.KieComponentFactory` I created then a `org.drools.core.reteoo.KieComponentFactoryFactory` that can be injected in the `kie.conf` file i.e.:
 
@@ -91,7 +95,6 @@ Other example of subclassed objects:
 
 When factory classes were missing (such as in NamedEntryPoint) they were created
 https://github.com/kiegroup/drools/pull/2887/files#diff-396566b11c71c507cb114bf327022c95R10
-
 
 IsA EvaluatorDefinition
 =======================
