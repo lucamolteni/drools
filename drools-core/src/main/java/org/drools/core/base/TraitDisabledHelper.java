@@ -11,6 +11,10 @@ import org.drools.core.spi.Activation;
 import org.drools.core.util.bitmask.BitMask;
 import org.kie.api.internal.runtime.beliefs.Mode;
 
+/*
+    Noop implementation used when drools-traits is not in the dependencies.
+    Shouldn't never be called, if it happens it means we're trying to use traits without a feasible implementation
+ */
 public class TraitDisabledHelper implements TraitHelper {
 
     @Override

@@ -39,7 +39,8 @@ public class DeclaredClassBuilder {
     public void generateBeanFromDefinition(AbstractClassTypeDeclarationDescr typeDescr,
                                            TypeDeclaration type,
                                            PackageRegistry pkgRegistry,
-                                           ClassDefinition def, ClassBuilder classBuilder) {
+                                           ClassDefinition def,
+                                           ClassBuilder classBuilder) {
 
         if (type.isNovel()) {
             String fullName = typeDescr.getType().getFullName();

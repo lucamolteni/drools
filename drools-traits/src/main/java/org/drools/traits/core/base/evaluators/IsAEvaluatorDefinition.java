@@ -59,7 +59,7 @@ public class IsAEvaluatorDefinition implements EvaluatorDefinition {
 
     protected static final String   isAOp = "isA";
 
-    public static Operator ISA;
+    public static Operator          ISA;
     public static Operator          NOT_ISA;
 
     private static String[]         SUPPORTED_IDS;
