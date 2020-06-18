@@ -38,6 +38,7 @@ import org.drools.core.base.evaluators.EvaluatorDefinition;
 import org.drools.core.base.evaluators.EvaluatorRegistry;
 import org.drools.core.definitions.InternalKnowledgePackage;
 import org.drools.core.factmodel.ClassBuilderFactory;
+import org.drools.core.reteoo.KieComponentFactory;
 import org.drools.core.util.ClassUtils;
 import org.drools.core.util.ConfFileUtils;
 import org.drools.core.util.StringUtils;
@@ -146,6 +147,8 @@ public class KnowledgeBuilderConfigurationImpl
     private DroolsCompilerComponentFactory    componentFactory;
 
     private ClassBuilderFactory               classBuilderFactory;
+
+    private KieComponentFactory               kieComponentFactory;
 
     private LanguageLevelOption               languageLevel           = DrlParser.DEFAULT_LANGUAGE_LEVEL;
 
@@ -261,7 +264,8 @@ public class KnowledgeBuilderConfigurationImpl
 
         this.componentFactory = new DroolsCompilerComponentFactory();
 
-        this.classBuilderFactory = createKieComponentFactory().getClassBuilderFactory();
+        this.kieComponentFactory = createKieComponentFactory();
+        this.classBuilderFactory = kieComponentFactory.getClassBuilderFactory();
     }
 
     private void buildSeverityMap() {
@@ -723,6 +727,10 @@ public class KnowledgeBuilderConfigurationImpl
 
     public void setClassBuilderFactory(ClassBuilderFactory classBuilderFactory) {
         this.classBuilderFactory = classBuilderFactory;
+    }
+
+    public KieComponentFactory getKieComponentFactory() {
+        return kieComponentFactory;
     }
 
     public LanguageLevelOption getLanguageLevel() {

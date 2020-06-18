@@ -28,6 +28,7 @@ import org.drools.core.common.InternalWorkingMemoryEntryPoint;
 import org.drools.core.common.NamedEntryPointFactory;
 import org.drools.core.common.PropagationContextFactory;
 import org.drools.core.common.WorkingMemoryFactory;
+import org.drools.core.definitions.InternalKnowledgePackage;
 import org.drools.core.factmodel.ClassBuilderFactory;
 import org.drools.core.factmodel.traits.TraitFactory;
 import org.drools.core.factmodel.traits.TraitRegistry;
@@ -84,4 +85,6 @@ public interface KieComponentFactory {
     ClassBuilderFactory getClassBuilderFactory();
 
     Class<?> getBaseTraitProxyClass();
+
+    InternalKnowledgePackage createKnowledgePackage(String name);
 }

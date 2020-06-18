@@ -36,6 +36,8 @@ import org.drools.core.common.PhreakWorkingMemoryFactory;
 import org.drools.core.common.PriorityQueueAgendaGroupFactory;
 import org.drools.core.common.PropagationContextFactory;
 import org.drools.core.common.WorkingMemoryFactory;
+import org.drools.core.definitions.InternalKnowledgePackage;
+import org.drools.core.definitions.impl.KnowledgePackageImpl;
 import org.drools.core.factmodel.ClassBuilderFactory;
 import org.drools.core.factmodel.DefaultClassBuilderFactory;
 import org.drools.core.factmodel.traits.TraitFactory;
@@ -183,5 +185,10 @@ public class DefaultKieComponentFactory implements Serializable,
     @Override
     public Class<?> getBaseTraitProxyClass() {
         return null;
+    }
+
+    @Override
+    public InternalKnowledgePackage createKnowledgePackage(String name) {
+        return new KnowledgePackageImpl(name);
     }
 }

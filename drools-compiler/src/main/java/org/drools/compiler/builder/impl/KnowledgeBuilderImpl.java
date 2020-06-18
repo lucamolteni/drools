@@ -999,7 +999,7 @@ public class KnowledgeBuilderImpl implements KnowledgeBuilder,
         InternalKnowledgePackage pkg;
         if (this.kBase == null || (pkg = this.kBase.getPackage(packageDescr.getName())) == null) {
             // there is no rulebase or it does not define this package so define it
-            pkg = new KnowledgePackageImpl(packageDescr.getName());
+            pkg = configuration.getKieComponentFactory().createKnowledgePackage((packageDescr.getName()));
             pkg.setClassFieldAccessorCache(new ClassFieldAccessorCache(this.rootClassLoader));
 
             // if there is a rulebase then add the package.

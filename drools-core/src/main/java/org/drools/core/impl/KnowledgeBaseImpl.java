@@ -853,7 +853,7 @@ public class KnowledgeBaseImpl
 
             InternalKnowledgePackage pkg = this.pkgs.get( newPkg.getName() );
             if ( pkg == null ) {
-                pkg = new KnowledgePackageImpl( newPkg.getName() );
+                pkg = kieComponentFactory.createKnowledgePackage(newPkg.getName());
 
                 // @TODO we really should have a single root cache
                 pkg.setClassFieldAccessorCache( this.classFieldAccessorCache );
