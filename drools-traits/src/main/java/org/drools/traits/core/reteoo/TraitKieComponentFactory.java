@@ -20,12 +20,13 @@ import org.drools.core.base.TraitHelper;
 import org.drools.core.common.InternalWorkingMemoryActions;
 import org.drools.core.common.InternalWorkingMemoryEntryPoint;
 import org.drools.core.common.NamedEntryPointFactory;
+import org.drools.core.definitions.InternalKnowledgePackage;
 import org.drools.core.factmodel.ClassBuilderFactory;
 import org.drools.core.impl.InternalKnowledgeBase;
-import org.drools.core.impl.KnowledgeBaseImpl;
 import org.drools.core.spi.FactHandleFactory;
 import org.drools.traits.core.base.TraitHelperImpl;
 import org.drools.traits.core.common.TraitNamedEntryPointFactory;
+import org.drools.traits.core.definitions.impl.TraitKnowledgePackageImpl;
 import org.drools.traits.core.factmodel.TraitClassBuilderFactory;
 import org.drools.core.factmodel.traits.TraitFactory;
 import org.drools.core.factmodel.traits.TraitRegistry;
@@ -104,5 +105,10 @@ public class TraitKieComponentFactory extends DefaultKieComponentFactory {
     @Override
     public TraitHelper createTraitHelper(InternalWorkingMemoryActions workingMemory, InternalWorkingMemoryEntryPoint nep) {
         return new TraitHelperImpl(workingMemory, nep);
+    }
+
+    @Override
+    public InternalKnowledgePackage createKnowledgePackage(String name) {
+        return new TraitKnowledgePackageImpl(name);
     }
 }

@@ -50,7 +50,6 @@ Currently three components are needed
 ```
 org.drools.core.reteoo.KieComponentFactoryFactory=org.drools.traits.core.reteoo.TraitKieComponentFactoryFactory
 org.drools.compiler.builder.impl.TypeDeclarationBuilderFactory=org.drools.traits.compiler.builder.impl.TraitTypeDeclarationBuilderFactory
-org.drools.core.factmodel.traits.TraitCoreService=org.drools.traits.core.factmodel.traits.TraitCoreServiceImpl
 ```
 
 When we'll merge the issue, they'll be probably two, I'm not sure if it's possible to have just one. We'll probably need one injected in `-compiler` and one in `-core` but I'm not sure about this. 
