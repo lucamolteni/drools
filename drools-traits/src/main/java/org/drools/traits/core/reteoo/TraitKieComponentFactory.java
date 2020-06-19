@@ -30,13 +30,13 @@ import org.drools.traits.core.definitions.impl.TraitKnowledgePackageImpl;
 import org.drools.traits.core.factmodel.TraitClassBuilderFactory;
 import org.drools.core.factmodel.traits.TraitFactory;
 import org.drools.core.factmodel.traits.TraitRegistry;
-import org.drools.core.reteoo.DefaultKieComponentFactory;
+import org.drools.core.reteoo.KieComponentFactory;
 import org.drools.core.reteoo.builder.NodeFactory;
 import org.drools.traits.core.factmodel.traits.TraitFactoryImpl;
 import org.drools.traits.core.factmodel.traits.TraitProxyImpl;
 import org.drools.traits.core.factmodel.traits.TraitRegistryImpl;
 
-public class TraitKieComponentFactory extends DefaultKieComponentFactory {
+public class TraitKieComponentFactory extends KieComponentFactory {
 
     private NodeFactory nodeFactory = TraitPhreakNodeFactory.getInstance();
 

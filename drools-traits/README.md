@@ -80,7 +80,7 @@ To inject a different `org.drools.core.reteoo.KieComponentFactory` I created the
 org.drools.core.reteoo.KieComponentFactoryFactory=org.drools.traits.core.reteoo.TraitKieComponentFactoryFactory
 ```
 
-When missing, it defaults to the creation of a `org.drools.core.reteoo.DefaultKieComponentFactory` the rename of the original `org.drools.core.reteoo.KieComponentFactory`
+When missing, it defaults to the creation of a `org.drools.core.reteoo.KieComponentFactory` 
 
 NOTE: I know the whole idea of a `*FactoryFactory` is horripilating, but that's what you get when you put state in a factory, whose job should be only to create object. You get a higher-order factory. 
 I'm open to suggestion for better names, such as `*FactoryBuilder` to avoid being mocked exploiting Java programmers stereotypes.

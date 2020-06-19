@@ -16,75 +16,184 @@
 
 package org.drools.core.reteoo;
 
+import java.io.Serializable;
 import java.util.Optional;
 
 import org.drools.core.base.FieldDataFactory;
+import org.drools.core.base.FieldFactory;
+import org.drools.core.base.TraitDisabledHelper;
 import org.drools.core.base.TraitHelper;
 import org.drools.core.common.AgendaFactory;
 import org.drools.core.common.AgendaGroupFactory;
 import org.drools.core.common.BeliefSystemFactory;
+import org.drools.core.common.DefaultAgendaFactory;
+import org.drools.core.common.DefaultNamedEntryPointFactory;
 import org.drools.core.common.InternalWorkingMemoryActions;
 import org.drools.core.common.InternalWorkingMemoryEntryPoint;
 import org.drools.core.common.NamedEntryPointFactory;
+import org.drools.core.common.PhreakBeliefSystemFactory;
+import org.drools.core.common.PhreakPropagationContextFactory;
+import org.drools.core.common.PhreakWorkingMemoryFactory;
+import org.drools.core.common.PriorityQueueAgendaGroupFactory;
 import org.drools.core.common.PropagationContextFactory;
 import org.drools.core.common.WorkingMemoryFactory;
 import org.drools.core.definitions.InternalKnowledgePackage;
+import org.drools.core.definitions.impl.KnowledgePackageImpl;
 import org.drools.core.factmodel.ClassBuilderFactory;
+import org.drools.core.factmodel.DefaultClassBuilderFactory;
 import org.drools.core.factmodel.traits.TraitFactory;
 import org.drools.core.factmodel.traits.TraitRegistry;
 import org.drools.core.impl.InternalKnowledgeBase;
 import org.drools.core.reteoo.builder.NodeFactory;
+import org.drools.core.reteoo.builder.PhreakNodeFactory;
+import org.drools.core.rule.DefaultLogicTransformerFactory;
 import org.drools.core.rule.LogicTransformerFactory;
 import org.drools.core.spi.FactHandleFactory;
 import org.drools.core.util.TripleFactory;
+import org.drools.core.util.TripleFactoryImpl;
 import org.drools.core.util.TripleStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public interface KieComponentFactory {
+public class KieComponentFactory implements Serializable {
 
-    static KieComponentFactory createKieComponentFactory() {
+    Logger logger = LoggerFactory.getLogger(KieComponentFactory.class);
+
+    public static final KieComponentFactory DEFAULT = new KieComponentFactory();
+
+    public static KieComponentFactory createKieComponentFactory() {
         Optional<KieComponentFactoryFactory> kieComponentFactory = ServiceRegistryUtils.optionalService(KieComponentFactoryFactory.class);
-        return kieComponentFactory.map(KieComponentFactoryFactory::createKieComponentFactory).orElseGet(DefaultKieComponentFactory::new);
+        return kieComponentFactory.map(KieComponentFactoryFactory::createKieComponentFactory).orElseGet(KieComponentFactory::new);
     }
 
-    FactHandleFactory getFactHandleFactoryService();
+    private FactHandleFactory handleFactory = new ReteooFactHandleFactory();
 
-    NamedEntryPointFactory getNamedEntryPointFactory();
+    
+    public FactHandleFactory getFactHandleFactoryService() {
+        return handleFactory;
+    }
 
-    WorkingMemoryFactory getWorkingMemoryFactory();
+    
+    public NamedEntryPointFactory getNamedEntryPointFactory() {
+        return new DefaultNamedEntryPointFactory();
+    }
 
-    NodeFactory getNodeFactoryService();
+    private WorkingMemoryFactory wmFactory = PhreakWorkingMemoryFactory.getInstance();
 
-    void setNodeFactoryProvider(NodeFactory provider);
+    
+    public WorkingMemoryFactory getWorkingMemoryFactory() {
+        return wmFactory;
+    }
 
-    PropagationContextFactory getPropagationContextFactory();
+    private NodeFactory nodeFactory = PhreakNodeFactory.getInstance();
 
-    BeliefSystemFactory getBeliefSystemFactory();
+    
+    public NodeFactory getNodeFactoryService() {
+        return nodeFactory;
+    }
 
-    RuleBuilderFactory getRuleBuilderFactory();
+    
+    public void setNodeFactoryProvider(NodeFactory provider) {
+        nodeFactory = provider;
+    }
 
-    AgendaFactory getAgendaFactory();
+    private PropagationContextFactory propagationFactory = PhreakPropagationContextFactory.getInstance();
 
-    AgendaGroupFactory getAgendaGroupFactory();
+    
+    public PropagationContextFactory getPropagationContextFactory() {
+        return propagationFactory;
+    }
 
-    FieldDataFactory getFieldFactory();
+    private BeliefSystemFactory bsFactory = new PhreakBeliefSystemFactory();
 
-    TripleFactory getTripleFactory();
+    
+    public BeliefSystemFactory getBeliefSystemFactory() {
+        return bsFactory;
+    }
 
-    LogicTransformerFactory getLogicTransformerFactory();
+    private RuleBuilderFactory ruleBuilderFactory = new ReteooRuleBuilderFactory();
 
-    TraitFactory initTraitFactory(InternalKnowledgeBase knowledgeBase);
+    
+    public RuleBuilderFactory getRuleBuilderFactory() {
+        return ruleBuilderFactory;
+    }
 
-    TraitFactory getTraitFactory();
+    private AgendaFactory agendaFactory = DefaultAgendaFactory.getInstance();
 
-    TraitRegistry getTraitRegistry();
+    
+    public AgendaFactory getAgendaFactory() {
+        return agendaFactory;
+    }
 
-    TripleStore getTripleStore();
+    private AgendaGroupFactory agendaGroupFactory = PriorityQueueAgendaGroupFactory.getInstance();
 
-    TraitHelper createTraitHelper(InternalWorkingMemoryActions workingMemory, InternalWorkingMemoryEntryPoint nep);
+    
+    public AgendaGroupFactory getAgendaGroupFactory() {
+        return agendaGroupFactory;
+    }
 
-    ClassBuilderFactory getClassBuilderFactory();
+    private FieldDataFactory fieldFactory = FieldFactory.getInstance();
 
-    Class<?> getBaseTraitProxyClass();
+    
+    public FieldDataFactory getFieldFactory() {
+        return fieldFactory;
+    }
 
-    InternalKnowledgePackage createKnowledgePackage(String name);
+    private TripleFactory tripleFactory = new TripleFactoryImpl();
+
+    
+    public TripleFactory getTripleFactory() {
+        return tripleFactory;
+    }
+
+    private LogicTransformerFactory logicTransformerFactory = new DefaultLogicTransformerFactory();
+
+    
+    public LogicTransformerFactory getLogicTransformerFactory() {
+        return logicTransformerFactory;
+    }
+
+    
+    public TraitFactory initTraitFactory(InternalKnowledgeBase knowledgeBase) {
+        return null;
+    }
+
+    
+    public TraitFactory getTraitFactory() {
+        return null;
+    }
+
+    
+    public TraitRegistry getTraitRegistry() {
+        return null;
+    }
+
+    private TripleStore tripleStore = new TripleStore();
+
+    
+    public TripleStore getTripleStore() {
+        return tripleStore;
+    }
+
+    
+    public TraitHelper createTraitHelper(InternalWorkingMemoryActions workingMemory, InternalWorkingMemoryEntryPoint nep) {
+        return new TraitDisabledHelper();
+    }
+
+    private ClassBuilderFactory classBuilderFactory = new DefaultClassBuilderFactory();
+
+    
+    public ClassBuilderFactory getClassBuilderFactory() {
+        return classBuilderFactory;
+    }
+
+    
+    public Class<?> getBaseTraitProxyClass() {
+        return null;
+    }
+
+    
+    public InternalKnowledgePackage createKnowledgePackage(String name) {
+        return new KnowledgePackageImpl(name);
+    }
 }
