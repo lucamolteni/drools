@@ -34,6 +34,7 @@ import org.drools.core.common.DroolsObjectInputStream;
 import org.drools.core.common.DroolsObjectOutputStream;
 import org.drools.core.common.WorkingMemoryAction;
 import org.drools.core.factmodel.traits.TraitFactory;
+import org.drools.core.impl.InternalKnowledgeBase;
 import org.drools.core.impl.StatefulKnowledgeSessionImpl.WorkingMemoryReteAssertAction;
 import org.drools.core.impl.StatefulKnowledgeSessionImpl.WorkingMemoryReteExpireAction;
 import org.drools.core.marshalling.impl.ProtobufMessages.Header;
@@ -199,9 +200,12 @@ public class PersisterHelper {
         
         writeStrategiesIndex( context, _header );
 
-        TraitFactory traitFactory = context.kBase.getConfiguration().getComponentFactory().getTraitFactory();
-        if(traitFactory != null) {
-            traitFactory.writeRuntimeDefinedClasses(context, _header);
+        InternalKnowledgeBase kBase = context.kBase;
+        if(kBase != null) {
+            TraitFactory traitFactory = kBase.getConfiguration().getComponentFactory().getTraitFactory();
+            if (traitFactory != null) {
+                traitFactory.writeRuntimeDefinedClasses(context, _header);
+            }
         }
 
         byte[] buff = payload.toByteArray();
