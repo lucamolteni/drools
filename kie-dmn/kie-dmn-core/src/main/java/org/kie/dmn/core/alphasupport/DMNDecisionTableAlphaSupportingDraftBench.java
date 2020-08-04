@@ -124,15 +124,14 @@ public class DMNDecisionTableAlphaSupportingDraftBench {
         LOG.debug("{}", dmnResult);
     }
 
-    public static void main(String[] args) throws Exception {
-        DMNDecisionTableAlphaSupportingDraftBench u = new DMNDecisionTableAlphaSupportingDraftBench();
-        u.alphalength = 10;
-        u.init();
+//    public static void main(String[] args) throws Exception {
+//        DMNDecisionTableAlphaSupportingDraftBench u = new DMNDecisionTableAlphaSupportingDraftBench();
+//        u.alphalength = 10;
+//        u.init();
 //        for (int i = 0; i < 1000; i++) {
-        while (true) {
-            u.initIterationValues();
-            u.doTest();
-        }
+//            u.initIterationValues();
+//            u.doTest();
+//        }
 //        System.out.println("done.");
-    }
+//    }
 }
