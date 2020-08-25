@@ -63,6 +63,10 @@ public class DMNDecisionTableAlphaSupportingDraftBench {
 
     @Param({"0", "1", "2", "3", "4", "5", "10", "15", "20", "30", "40", "52"})
     private int alphalength;
+
+    @Param({"true", "false"})
+    private boolean useAlphaNetworkCompiled;
+
     private char[] alphabet;
 
     @Setup()

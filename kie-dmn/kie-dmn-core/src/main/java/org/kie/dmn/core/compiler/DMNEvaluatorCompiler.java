@@ -105,19 +105,23 @@ public class DMNEvaluatorCompiler {
         DMNRuleClassFile dmnRuleClassFile = new DMNRuleClassFile(dmnCompilerConfig.getRootClassLoader());
         if (dmnRuleClassFile.hasCompiledClasses()) {
             logger.debug("Using ExecModelDMNClassLoaderCompiler.");
+            System.out.println("\n\n\n\n\n\n+++ ExecModelDMNClassLoaderCompiler\n\n\n\n");
             return new ExecModelDMNClassLoaderCompiler(dmnCompiler, dmnRuleClassFile);
         } else if (dmnCompilerConfig.isDeferredCompilation()) {
             ExecModelDMNMavenSourceCompiler evaluatorCompiler = new ExecModelDMNMavenSourceCompiler(dmnCompiler);
             for (AfterGeneratingSourcesListener l : dmnCompilerConfig.getAfterGeneratingSourcesListeners()) {
                 evaluatorCompiler.register(l);
             }
+            System.out.println("\n\n\n\n\n\n+++ ExecModelDMNMavenSourceCompiler\n\n\n\n");
             return evaluatorCompiler;
         } else if (dmnCompilerConfig.isUseExecModelCompiler()) {
             logger.debug("Using ExecModelDMNEvaluatorCompiler.");
 //            return new ExecModelDMNEvaluatorCompiler(dmnCompiler);
+            System.out.println("\n\n\n\n\n\n+++ COMPILED\n\n\n\n");
             return new AlphaNetDMNEvaluatorCompiler(dmnCompiler);
         } else {
             logger.debug("default DMNEvaluatorCompiler.");
+            System.out.println("\n\n\n\n\n\n+++ CLASSIC\n\n\n\n");
             return new DMNEvaluatorCompiler(dmnCompiler);
         }
     }
