@@ -34,6 +34,7 @@ import org.kie.dmn.api.core.DMNContext;
 import org.kie.dmn.api.core.DMNModel;
 import org.kie.dmn.api.core.DMNResult;
 import org.kie.dmn.api.core.DMNRuntime;
+import org.kie.dmn.core.compiler.ExecModelCompilerOption;
 import org.kie.dmn.core.util.KieHelper;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -88,6 +89,9 @@ public class DMNDecisionTableAlphaSupportingDraftBench {
         String xml = out.getBuffer().toString();
 
         LOG.debug("{}", xml);
+
+        System.setProperty(ExecModelCompilerOption.PROPERTY_NAME, Boolean.toString(useAlphaNetworkCompiled));
+
 
         final KieServices ks = KieServices.Factory.get();
         final KieContainer kieContainer = KieHelper.getKieContainer(ks.newReleaseId("org.kie", "dmn-test-" + UUID.randomUUID(), "1.0"),
