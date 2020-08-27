@@ -45,13 +45,13 @@ public class AlphaNetDMNExpressionEvaluator implements DMNExpressionEvaluator {
 
     private static Logger logger = LoggerFactory.getLogger( AlphaNetDMNExpressionEvaluator.class );
 
-    private final CompiledAlphaNetwork compiledNetwork;
+    private final DMNCompiledAlphaNetwork compiledNetwork;
 
     private DMNFEELHelper feel;
     private DTableModel dTableModel;
     private DMNBaseNode node;
 
-    public AlphaNetDMNExpressionEvaluator( CompiledAlphaNetwork compiledNetwork ) {
+    public AlphaNetDMNExpressionEvaluator( DMNCompiledAlphaNetwork compiledNetwork ) {
         this.compiledNetwork = compiledNetwork;
     }
 

@@ -59,12 +59,13 @@ import static org.kie.dmn.feel.codegen.feel11.CompiledFEELSemanticMappings.inclu
 import static org.kie.dmn.feel.codegen.feel11.CompiledFEELSemanticMappings.lt;
 import static org.kie.dmn.feel.codegen.feel11.CompiledFEELSemanticMappings.range;
 
-public class CompiledAlphaNetwork {
+public class HardCodedAlphaNetwork implements DMNCompiledAlphaNetwork {
 
     private final ResultCollector resultCollector = new ResultCollector();
 
     private CompiledNetwork compiledNetwork;
 
+    @Override
     public Object evaluate( EvaluationContext evalCtx ) {
         resultCollector.results.clear();
         TableContext ctx = new TableContext( evalCtx, "Existing Customer", "Application Risk Score" );
@@ -118,8 +119,8 @@ public class CompiledAlphaNetwork {
 
     public static final org.kie.dmn.feel.runtime.UnaryTest UT10 = (feelExprCtx, left) -> gt(left, K_110);
 
-    public static CompiledAlphaNetwork generateCompiledNetwork() {
-        CompiledAlphaNetwork network = new CompiledAlphaNetwork();
+    public static HardCodedAlphaNetwork generateHardCodedAlphaNetwork() {
+        HardCodedAlphaNetwork network = new HardCodedAlphaNetwork();
 
         NetworkBuilderContext ctx = new NetworkBuilderContext();
 
@@ -164,7 +165,7 @@ public class CompiledAlphaNetwork {
         return network;
     }
 
-    private static void alphabet(CompiledAlphaNetwork network, NetworkBuilderContext ctx, String sChar) {
+    private static void alphabet(HardCodedAlphaNetwork network, NetworkBuilderContext ctx, String sChar) {
         final org.kie.dmn.feel.runtime.UnaryTest UTx = (feelExprCtx, left) -> gracefulEq(feelExprCtx, sChar, left);
         Index index1 = createIndex(String.class, x -> (String) x.getValue(0), sChar);
         AlphaNode alphac1r1 = createAlphaNode(ctx, ctx.otn, "\"" + sChar + "\"", x -> UTx.apply(x.getEvalCtx(), x.getValue(0)), index1);
@@ -179,7 +180,7 @@ public class CompiledAlphaNetwork {
         addResultSink(ctx, network, alphac2r4, "VERY LOW");
     }
 
-    private static void addResultSink( NetworkBuilderContext ctx, CompiledAlphaNetwork network, ObjectSource source, Object result ) {
+    private static void addResultSink(NetworkBuilderContext ctx, HardCodedAlphaNetwork network, ObjectSource source, Object result ) {
         source.addObjectSink( new ResultCollectorAlphaSink( ctx.buildContext.getNextId(), source, ctx.buildContext, result, network.resultCollector ) );
     }
 
