@@ -341,6 +341,7 @@ public class ExecModelDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
             return source;
         }
 
+        // Generate UT[][]
         public String getUnaryTestsSource( DMNCompilerContext ctx, DMNFEELHelper feel, DTableModel dTableModel, String pkgName, String className ) {
             StringBuilder testArrayBuilder = new StringBuilder();
             StringBuilder testsBuilder = new StringBuilder();
