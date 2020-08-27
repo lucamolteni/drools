@@ -19,7 +19,6 @@ package org.kie.dmn.core.compiler.alphanetbased;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
-import org.kie.dmn.api.core.FEELPropertyAccessible;
 import org.kie.dmn.core.api.DMNExpressionEvaluator;
 import org.kie.dmn.core.ast.DMNBaseNode;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
@@ -28,8 +27,6 @@ import org.kie.dmn.core.compiler.DMNEvaluatorCompiler;
 import org.kie.dmn.core.compiler.execmodelbased.DTableModel;
 import org.kie.dmn.core.impl.DMNModelImpl;
 import org.kie.dmn.model.api.DecisionTable;
-import org.kie.dmn.typesafe.DMNTypeSafePackageName;
-import org.kie.dmn.typesafe.DMNTypeSafeTypeGenerator;
 import org.kie.memorycompiler.KieMemoryCompiler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +54,6 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         ClassLoader thisDMNClassLoader = this.getClass().getClassLoader();
         Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(allTypesSourceCode, thisDMNClassLoader);
         DMNCompiledAlphaNetwork compiledAlphaNetwork = createAlphaNetworkInstance(compiledClasses);
-
 
         return new AlphaNetDMNExpressionEvaluator(compiledAlphaNetwork)
                 .initParameters(ctx.getFeelHelper(), ctx, dTableModel, node);

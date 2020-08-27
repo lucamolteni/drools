@@ -45,6 +45,8 @@ public class DMNAlphaNetworkCompiler {
 
         CompilationUnit template = getMethodTemplate();
 
-        return Collections.singletonMap("org.kie.dmn.core.alphasupport.DMNAlphaNetworkTemplate", template.toString());
+        template.getClassByName("DMNAlphaNetworkTemplate").ifPresent(c -> c.setName("DMNAlphaNetwork"));
+
+        return Collections.singletonMap("org.kie.dmn.core.alphasupport.DMNAlphaNetwork", template.toString());
     }
 }
