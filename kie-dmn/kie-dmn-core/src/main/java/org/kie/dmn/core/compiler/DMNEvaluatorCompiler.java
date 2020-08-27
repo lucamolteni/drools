@@ -45,6 +45,7 @@ import org.kie.dmn.core.ast.EvaluatorResultImpl;
 import org.kie.dmn.core.compiler.alphanetbased.AlphaNetDMNEvaluatorCompiler;
 import org.kie.dmn.core.compiler.execmodelbased.DMNRuleClassFile;
 import org.kie.dmn.core.compiler.execmodelbased.ExecModelDMNClassLoaderCompiler;
+import org.kie.dmn.core.compiler.execmodelbased.ExecModelDMNEvaluatorCompiler;
 import org.kie.dmn.core.compiler.execmodelbased.ExecModelDMNMavenSourceCompiler;
 import org.kie.dmn.core.impl.BaseDMNTypeImpl;
 import org.kie.dmn.core.impl.DMNModelImpl;
@@ -122,7 +123,8 @@ public class DMNEvaluatorCompiler {
         } else {
             logger.debug("default DMNEvaluatorCompiler.");
             System.out.println("\n\n\n\n\n\n+++ CLASSIC\n\n\n\n");
-            return new DMNEvaluatorCompiler(dmnCompiler);
+            return new ExecModelDMNEvaluatorCompiler(dmnCompiler);
+
         }
     }
 
