@@ -34,7 +34,6 @@ import org.kie.memorycompiler.KieMemoryCompiler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.kie.dmn.core.compiler.alphanetbased.HardCodedAlphaNetwork.generateHardCodedAlphaNetwork;
 import static org.kie.dmn.core.compiler.generators.GeneratorsUtil.getDecisionTableName;
 
 public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
@@ -50,7 +49,7 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         String decisionName = getDecisionTableName(dtName, dt);
         DTableModel dTableModel = new DTableModel(ctx.getFeelHelper(), model, dtName, decisionName, dt);
 
-        DMNCompiledAlphaNetwork hardCodedAlphaNetwork = generateHardCodedAlphaNetwork();
+        DMNCompiledAlphaNetwork hardCodedAlphaNetwork = new HardCodedAlphaNetwork();
 
         DMNAlphaNetworkCompiler dmnAlphaNetworkCompiler = new DMNAlphaNetworkCompiler(model);
         Map<String, String> allTypesSourceCode = dmnAlphaNetworkCompiler.generateSourceCode();
