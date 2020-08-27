@@ -1,9 +1,12 @@
 package org.kie.dmn.core.compiler.alphanetbased;
 
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.CompilationUnit;
 import org.kie.dmn.core.compiler.execmodelbased.DTableModel;
 import org.kie.dmn.core.impl.DMNModelImpl;
 
@@ -32,7 +35,16 @@ public class DMNAlphaNetworkCompiler {
 
     }
 
+    private CompilationUnit getMethodTemplate() {
+        InputStream resourceAsStream = this.getClass()
+                .getResourceAsStream("/org/kie/dmn/core/alphasupport/DMNAlphaNetworkTemplate.java");
+        return StaticJavaParser.parse(resourceAsStream);
+    }
+
     public Map<String, String> generateSourceCode() {
-        return Collections.emptyMap();
+
+        CompilationUnit template = getMethodTemplate();
+
+        return Collections.singletonMap("org.kie.dmn.core.alphasupport.DMNAlphaNetworkTemplate", template.toString());
     }
 }
