@@ -4,15 +4,24 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.lang.Override;
 
 import org.kie.dmn.core.compiler.alphanetbased.DMNCompiledAlphaNetwork;
+import org.kie.dmn.core.compiler.alphanetbased.ResultCollector;
 import org.kie.dmn.feel.lang.EvaluationContext;
 
 // All implementations are used only for templating purposes and should never be called
-public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetwork  {
+public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetwork {
 
+    protected final ResultCollector resultCollector = new ResultCollector();
+
+    @Override
     public Object evaluate(EvaluationContext evalCtx) {
         return "LOW";
     }
 
+    @Override
+    public ResultCollector getResultCollector() {
+        return resultCollector;
+    }
 }
