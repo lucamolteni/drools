@@ -16,6 +16,10 @@
 
 package org.kie.dmn.core.compiler.alphanetbased;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
+
+import org.kie.dmn.api.core.FEELPropertyAccessible;
 import org.kie.dmn.core.api.DMNExpressionEvaluator;
 import org.kie.dmn.core.ast.DMNBaseNode;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
@@ -24,10 +28,13 @@ import org.kie.dmn.core.compiler.DMNEvaluatorCompiler;
 import org.kie.dmn.core.compiler.execmodelbased.DTableModel;
 import org.kie.dmn.core.impl.DMNModelImpl;
 import org.kie.dmn.model.api.DecisionTable;
+import org.kie.dmn.typesafe.DMNTypeSafePackageName;
+import org.kie.dmn.typesafe.DMNTypeSafeTypeGenerator;
+import org.kie.memorycompiler.KieMemoryCompiler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.kie.dmn.core.compiler.alphanetbased.CompiledAlphaNetwork.generateCompiledNetwork;
+import static org.kie.dmn.core.compiler.alphanetbased.HardCodedAlphaNetwork.generateHardCodedAlphaNetwork;
 import static org.kie.dmn.core.compiler.generators.GeneratorsUtil.getDecisionTableName;
 
 public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
@@ -43,6 +50,34 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         String decisionName = getDecisionTableName(dtName, dt);
         DTableModel dTableModel = new DTableModel(ctx.getFeelHelper(), model, dtName, decisionName, dt);
 
-        return new AlphaNetDMNExpressionEvaluator(generateCompiledNetwork()).initParameters(ctx.getFeelHelper(), ctx, dTableModel, node);
+        DMNCompiledAlphaNetwork hardCodedAlphaNetwork = generateHardCodedAlphaNetwork();
+
+        DMNAlphaNetworkCompiler dmnAlphaNetworkCompiler = new DMNAlphaNetworkCompiler(model);
+        Map<String, String> allTypesSourceCode = dmnAlphaNetworkCompiler.generateSourceCode();
+
+        ClassLoader thisDMNClassLoader = this.getClass().getClassLoader();
+        Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(allTypesSourceCode, thisDMNClassLoader);
+        DMNCompiledAlphaNetwork compiledAlphaNetwork = createAlphaNetworkInstance(compiledClasses);
+
+
+        return new AlphaNetDMNExpressionEvaluator(compiledAlphaNetwork)
+                .initParameters(ctx.getFeelHelper(), ctx, dTableModel, node);
+    }
+
+    protected DMNCompiledAlphaNetwork createAlphaNetworkInstance(Map<String, Class<?>> compiled) {
+        Class<?> inputSetClass = compiled.values().iterator().next();
+        Object inputSetInstance = null;
+        try {
+            inputSetInstance = inputSetClass.getDeclaredConstructor().newInstance();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        return (DMNCompiledAlphaNetwork) inputSetInstance;
     }
 }

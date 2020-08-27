@@ -1,10 +1,17 @@
 package org.kie.dmn.core.compiler.alphanetbased;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.kie.dmn.core.compiler.execmodelbased.DTableModel;
+import org.kie.dmn.core.impl.DMNModelImpl;
 
 public class DMNAlphaNetworkCompiler {
+
+    public DMNAlphaNetworkCompiler(DMNModelImpl model) {
+
+    }
 
     public String generateUnaryTests(DTableModel dTableModel) {
 
@@ -23,5 +30,9 @@ public class DMNAlphaNetworkCompiler {
 
     private void generateUnaryTest(int rowIndex, int columnIndex, String input) {
 
+    }
+
+    public Map<String, String> generateSourceCode() {
+        return Collections.emptyMap();
     }
 }
