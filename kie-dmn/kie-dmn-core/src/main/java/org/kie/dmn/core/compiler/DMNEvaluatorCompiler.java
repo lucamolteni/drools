@@ -123,7 +123,7 @@ public class DMNEvaluatorCompiler {
         } else {
             logger.debug("default DMNEvaluatorCompiler.");
             System.out.println("\n\n\n\n\n\n+++ CLASSIC\n\n\n\n");
-            return new ExecModelDMNEvaluatorCompiler(dmnCompiler);
+            return new DMNEvaluatorCompiler(dmnCompiler);
 
         }
     }
