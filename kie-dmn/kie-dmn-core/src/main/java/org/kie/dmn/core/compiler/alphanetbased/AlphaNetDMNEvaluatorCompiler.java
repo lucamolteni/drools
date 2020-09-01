@@ -48,7 +48,7 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
 
         DMNCompiledAlphaNetwork hardCodedAlphaNetwork = new HardCodedAlphaNetwork();
 
-        DMNAlphaNetworkCompiler dmnAlphaNetworkCompiler = new DMNAlphaNetworkCompiler(model);
+        DMNAlphaNetworkCompiler dmnAlphaNetworkCompiler = new DMNAlphaNetworkCompiler(ctx, model, ctx.getFeelHelper() );
         Map<String, String> allTypesSourceCode = dmnAlphaNetworkCompiler.generateSourceCode();
 
         ClassLoader thisDMNClassLoader = this.getClass().getClassLoader();
