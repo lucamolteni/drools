@@ -12,7 +12,7 @@ import org.drools.model.Variable;
 
 import static org.drools.model.DSL.declarationOf;
 
-class NetworkBuilderContext {
+public class NetworkBuilderContext {
 
     public InternalKnowledgeBase kBase;
     public BuildContext buildContext;
