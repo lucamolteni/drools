@@ -117,13 +117,12 @@ public class DMNEvaluatorCompiler {
             return evaluatorCompiler;
         } else if (dmnCompilerConfig.isUseExecModelCompiler()) {
             logger.debug("Using AlphaNetDMNEvaluatorCompiler.");
-//            return new ExecModelDMNEvaluatorCompiler(dmnCompiler);
             System.out.println("\n\n\n\n\n\n+++ AlphaNetDMNEvaluatorCompiler\n\n\n\n");
             return new AlphaNetDMNEvaluatorCompiler(dmnCompiler);
         } else {
             logger.debug("default DMNEvaluatorCompiler.");
             System.out.println("\n\n\n\n\n\n+++ CLASSIC\n\n\n\n");
-            return new DMNEvaluatorCompiler(dmnCompiler);
+            return new ExecModelDMNEvaluatorCompiler(dmnCompiler);
 
         }
     }
