@@ -2,10 +2,12 @@ package org.kie.dmn.core.compiler.alphanetbased;
 
 import java.util.Map;
 
+import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.Statement;
 import org.kie.dmn.api.core.DMNType;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
 import org.kie.dmn.core.compiler.DMNFEELHelper;
@@ -51,10 +53,14 @@ public class TableCell {
 
     public void addAlphaNetwork(BlockStmt stmt) {
 
-        Expression targetExpr = null;
-        Expression createAlphaNodeExpr = null;
-        Expression newAlphaNodeExpression = new AssignExpr(targetExpr, createAlphaNodeExpr, AssignExpr.Operator.ASSIGN);
-        stmt.addStatement(newAlphaNodeExpression);
+        Statement expr = StaticJavaParser.parseStatement(
+                String.format("AlphaNode alpha%s = createAlphaNode(ctx, ctx.otn, \"false\", x -> UT1.apply(x.getEvalCtx(), x.getValue(0)), index1);", tableIndex.getStringIndex())
+        );
+
+//        Expression targetExpr = null;
+//        Expression createAlphaNodeExpr = null;
+//        Expression newAlphaNodeExpression = new AssignExpr(targetExpr, createAlphaNodeExpr, AssignExpr.Operator.ASSIGN);
+        stmt.addStatement(expr);
     }
 
     public void addUnaryTestClass(Map<String, String> allClasses) {

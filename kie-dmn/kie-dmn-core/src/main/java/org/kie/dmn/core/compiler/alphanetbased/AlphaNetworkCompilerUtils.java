@@ -18,8 +18,8 @@ import static org.drools.core.reteoo.builder.BuildUtils.attachNode;
 
 public class AlphaNetworkCompilerUtils {
 
-    public static void addResultSink(NetworkBuilderContext ctx, HardCodedAlphaNetwork network, ObjectSource source, Object result) {
-        source.addObjectSink(new ResultCollectorAlphaSink(ctx.buildContext.getNextId(), source, ctx.buildContext, result, network.resultCollector));
+    public static void addResultSink(NetworkBuilderContext ctx, DMNCompiledAlphaNetwork network, ObjectSource source, Object result) {
+        source.addObjectSink(new ResultCollectorAlphaSink(ctx.buildContext.getNextId(), source, ctx.buildContext, result, network.getResultCollector()));
     }
 
     public static AlphaNode createAlphaNode(NetworkBuilderContext ctx, ObjectSource source, String id, Predicate1<TableContext> predicate) {
