@@ -5,10 +5,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Predicate;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.expr.Name;
+import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.SimpleName;
+import com.github.javaparser.ast.stmt.BlockStmt;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
 import org.kie.dmn.core.compiler.DMNFEELHelper;
 import org.kie.dmn.core.compiler.execmodelbased.DTableModel;
@@ -23,7 +29,7 @@ public class DMNAlphaNetworkCompiler {
 
     private static final Logger logger = LoggerFactory.getLogger(DMNAlphaNetworkCompiler.class);
 
-    private DMNCompilerContext ctx;
+    private final DMNCompilerContext ctx;
     private final DMNModelImpl model;
     private final DMNFEELHelper feel;
 
@@ -45,17 +51,33 @@ public class DMNAlphaNetworkCompiler {
         String decisionName = getDecisionTableName(dtName, dt);
         DTableModel dTableModel = new DTableModel(ctx.getFeelHelper(), model, dtName, decisionName, dt);
 
-        List<TableCell> tableCells = generateUnaryTests(dTableModel);
+        List<TableCell> tableCells = parseCells(dTableModel);
 
+        BlockStmt alphaNetworkStatements = new BlockStmt();
         for (TableCell ut : tableCells) {
             ut.addUnaryTestClass(allClasses);
+            ut.addAlphaNetwork(alphaNetworkStatements);
         }
+
+        BlockStmt alphaNetworkBlock = dmnAlphaNetworkClass
+                .findFirst(BlockStmt.class, DMNAlphaNetworkCompiler::blockHasComment)
+                .orElseThrow(RuntimeException::new);
+
+        alphaNetworkBlock.replace(alphaNetworkStatements);
+
+
 
         allClasses.put("org.kie.dmn.core.alphasupport.DMNAlphaNetwork", template.toString());
 
         logGeneratedClasses();
 
         return allClasses;
+    }
+
+
+    private static boolean blockHasComment(BlockStmt block) {
+        return block.getComment().filter(c -> " Alpha network creation statements".equals(c.getContent()))
+                .isPresent();
     }
 
     private void logGeneratedClasses() {
@@ -69,10 +91,14 @@ public class DMNAlphaNetworkCompiler {
         template = getMethodTemplate();
         dmnAlphaNetworkClass = template.getClassByName("DMNAlphaNetworkTemplate")
                 .orElseThrow(() -> new RuntimeException("Cannot find class"));
-        dmnAlphaNetworkClass.setName("DMNAlphaNetwork");
+        dmnAlphaNetworkClass
+                .findAll(SimpleName.class, ne -> ne.toString().equals("DMNAlphaNetworkTemplate"))
+                .forEach(r -> {
+                    r.replace(new SimpleName("DMNAlphaNetwork"));
+                });
     }
 
-    public List<TableCell> generateUnaryTests(DTableModel dTableModel) {
+    public List<TableCell> parseCells(DTableModel dTableModel) {
 
         List<TableCell> unitTests = new ArrayList<>();
         List<DTableModel.DRowModel> rows = dTableModel.getRows();
