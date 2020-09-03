@@ -75,6 +75,7 @@ public class BuildUtils {
     }
 
     /**
+     * Node sharing
      * Attaches a node into the network. If a node already exists that could
      * substitute, it is used instead.
      *

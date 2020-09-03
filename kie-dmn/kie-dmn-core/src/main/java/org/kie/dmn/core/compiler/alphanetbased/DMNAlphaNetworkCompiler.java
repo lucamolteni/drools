@@ -8,6 +8,7 @@ import java.util.Map;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.body.BodyDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
 import org.kie.dmn.core.compiler.DMNFEELHelper;
@@ -49,7 +50,7 @@ public class DMNAlphaNetworkCompiler {
         List<UnitTestField> unitTestFields = generateUnaryTests(dTableModel);
 
         for (UnitTestField ut : unitTestFields) {
-            ut.addClass(allClasses);
+            ut.addUnaryTestClass(allClasses);
         }
 
         allClasses.put("org.kie.dmn.core.alphasupport.DMNAlphaNetwork", template.toString());
@@ -92,9 +93,10 @@ public class DMNAlphaNetworkCompiler {
         int rowIndex;
         int columnIndex;
         String input;
+        String columnName;
         Type type;
 
-        public UnitTestField(int rowIndex, int columnIndex, String input, Type type) {
+        public UnitTestField(int rowIndex, int columnIndex, String columnName, String input, Type type) {
             // DMN DTable are 1Based
             this.rowIndex = rowIndex + 1;
             this.columnIndex = columnIndex + 1;
@@ -102,7 +104,11 @@ public class DMNAlphaNetworkCompiler {
             this.type = type;
         }
 
-        public void addClass(Map<String, String> allClasses) {
+        public void addAlphaNetwork(BodyDeclaration constructorBody) {
+
+        }
+
+        public void addUnaryTestClass(Map<String, String> allClasses) {
             ClassOrInterfaceDeclaration sourceCode = feel.generateUnaryTestsSource(
                     input,
                     ctx,
