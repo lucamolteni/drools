@@ -8,13 +8,11 @@ import java.util.Map;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.body.BodyDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
 import org.kie.dmn.core.compiler.DMNFEELHelper;
 import org.kie.dmn.core.compiler.execmodelbased.DTableModel;
 import org.kie.dmn.core.impl.DMNModelImpl;
-import org.kie.dmn.feel.lang.Type;
 import org.kie.dmn.model.api.DecisionTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,9 +45,9 @@ public class DMNAlphaNetworkCompiler {
         String decisionName = getDecisionTableName(dtName, dt);
         DTableModel dTableModel = new DTableModel(ctx.getFeelHelper(), model, dtName, decisionName, dt);
 
-        List<UnitTestField> unitTestFields = generateUnaryTests(dTableModel);
+        List<TableCell> tableCells = generateUnaryTests(dTableModel);
 
-        for (UnitTestField ut : unitTestFields) {
+        for (TableCell ut : tableCells) {
             ut.addUnaryTestClass(allClasses);
         }
 
@@ -74,51 +72,26 @@ public class DMNAlphaNetworkCompiler {
         dmnAlphaNetworkClass.setName("DMNAlphaNetwork");
     }
 
-    public List<UnitTestField> generateUnaryTests(DTableModel dTableModel) {
+    public List<TableCell> generateUnaryTests(DTableModel dTableModel) {
 
-        List<UnitTestField> unitTests = new ArrayList<>();
+        List<TableCell> unitTests = new ArrayList<>();
         List<DTableModel.DRowModel> rows = dTableModel.getRows();
+        List<DTableModel.DColumnModel> columns = dTableModel.getColumns();
+
+        TableCell.TableCellFactory factory = new TableCell.TableCellFactory(feel, ctx);
+
         for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
             DTableModel.DRowModel row = rows.get(rowIndex);
             for (int columnIndex = 0; columnIndex < row.getInputs().size(); columnIndex++) {
                 String input = row.getInputs().get(columnIndex);
-                unitTests.add(new UnitTestField(rowIndex, columnIndex, input, dTableModel.getColumns().get(columnIndex).getType()));
+                TableIndex tableIndex = new TableIndex(rowIndex, columnIndex);
+                DTableModel.DColumnModel column = tableIndex.getColumn(columns);
+                unitTests.add(factory.createUnitTestField(tableIndex,
+                                                          column,
+                                                          input));
             }
         }
         return unitTests;
-    }
-
-    class UnitTestField {
-
-        int rowIndex;
-        int columnIndex;
-        String input;
-        String columnName;
-        Type type;
-
-        public UnitTestField(int rowIndex, int columnIndex, String columnName, String input, Type type) {
-            // DMN DTable are 1Based
-            this.rowIndex = rowIndex + 1;
-            this.columnIndex = columnIndex + 1;
-            this.input = input;
-            this.type = type;
-        }
-
-        public void addAlphaNetwork(BodyDeclaration constructorBody) {
-
-        }
-
-        public void addUnaryTestClass(Map<String, String> allClasses) {
-            ClassOrInterfaceDeclaration sourceCode = feel.generateUnaryTestsSource(
-                    input,
-                    ctx,
-                    type,
-                    false);
-
-            String className = String.format("UnaryTestr%sc%s", rowIndex, columnIndex);
-            sourceCode.setName(className);
-            allClasses.put(String.format("%s", className), sourceCode.toString());
-        }
     }
 
     private CompilationUnit getMethodTemplate() {
