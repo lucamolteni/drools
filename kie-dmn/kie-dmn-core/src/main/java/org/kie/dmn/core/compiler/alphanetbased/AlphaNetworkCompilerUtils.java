@@ -33,6 +33,8 @@ public class AlphaNetworkCompilerUtils {
 
     /**
      * IMPORTANT: remember to use the FEEL expression as an Identifier for the same constraint
+     *
+     * Prefix: column name + value
      */
     public static AlphaNode createAlphaNode(NetworkBuilderContext ctx, ObjectSource source, String id, Predicate1<TableContext> predicate, Index index) {
         SingleConstraint1 constraint = new SingleConstraint1(id, ctx.variable, predicate);
