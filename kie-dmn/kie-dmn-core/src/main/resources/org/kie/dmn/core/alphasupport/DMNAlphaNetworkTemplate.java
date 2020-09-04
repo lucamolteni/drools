@@ -8,6 +8,7 @@ import java.util.Map;
 import java.lang.Override;
 
 import org.drools.compiler.builder.impl.KnowledgeBuilderImpl;
+import org.drools.core.common.DefaultFactHandle;
 import org.drools.core.reteoo.AlphaNode;
 import org.drools.core.reteoo.compiled.CompiledNetwork;
 import org.drools.model.Index;
@@ -23,6 +24,7 @@ import static org.drools.compiler.reteoo.compiled.ObjectTypeNodeCompiler.compile
 import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.addResultSink;
 import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.createAlphaNode;
 import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.createIndex;
+import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.applyHitPolicy;
 import static org.kie.dmn.feel.codegen.feel11.CompiledFEELSemanticMappings.gracefulEq;
 
 // All implementations are used only for templating purposes and should never be called
@@ -51,8 +53,11 @@ public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetwork {
     }
 
     @Override
-    public Object evaluate(EvaluationContext evalCtx) {
-        System.out.println(" ++++ PASSO DI QUI?");
+    public Object evaluate( EvaluationContext evalCtx ) {
+        resultCollector.results.clear();
+        TableContext ctx = new TableContext( evalCtx, "Existing Customer", "Application Risk Score" );
+        compiledNetwork.assertObject(new DefaultFactHandle(ctx ), null, null );
+//        return applyHitPolicy( resultCollector.results );
         return "LOW";
     }
 

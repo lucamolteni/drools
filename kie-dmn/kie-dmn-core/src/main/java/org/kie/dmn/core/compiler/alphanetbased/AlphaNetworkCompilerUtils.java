@@ -1,5 +1,6 @@
 package org.kie.dmn.core.compiler.alphanetbased;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.drools.core.reteoo.AlphaNode;
@@ -46,5 +47,9 @@ public class AlphaNetworkCompilerUtils {
 
     public static <I> AlphaIndexImpl<TableContext, I> createIndex(Class<I> indexedClass, Function1<TableContext, I> leftExtractor, I rightValue) {
         return new AlphaIndexImpl<TableContext, I>(indexedClass, Index.ConstraintType.EQUAL, 1, leftExtractor, rightValue);
+    }
+
+    public static Object applyHitPolicy( List<Object> results ) {
+        return results.get(0);
     }
 }

@@ -5,5 +5,5 @@ import java.util.List;
 
 public class ResultCollector {
 
-    final List<Object> results = new ArrayList<>();
+    public final List<Object> results = new ArrayList<>();
 }
