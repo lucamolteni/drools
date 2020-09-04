@@ -16,6 +16,8 @@ import org.kie.dmn.core.compiler.alphanetbased.NetworkBuilderContext;
 import org.kie.dmn.core.compiler.alphanetbased.ResultCollector;
 import org.kie.dmn.feel.lang.EvaluationContext;
 import org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils;
+import org.drools.core.reteoo.AlphaNode;
+import org.kie.dmn.core.compiler.alphanetbased.TableContext;
 
 import static org.drools.compiler.reteoo.compiled.ObjectTypeNodeCompiler.compile;
 import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.addResultSink;
@@ -31,11 +33,9 @@ public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetwork {
 
     public static final org.kie.dmn.feel.runtime.UnaryTest UT1 = (feelExprCtx, left) -> gracefulEq(feelExprCtx, "false", left);
 
+    protected final NetworkBuilderContext ctx = new NetworkBuilderContext();
+
     public DMNAlphaNetworkTemplate() {
-
-        NetworkBuilderContext ctx = new NetworkBuilderContext();
-
-        Index index1 = createIndex(String.class, x -> (String)x.getValue(0), "false");
 
         // Alpha network creation statements
         {

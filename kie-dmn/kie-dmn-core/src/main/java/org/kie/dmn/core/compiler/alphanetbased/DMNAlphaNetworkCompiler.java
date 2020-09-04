@@ -49,13 +49,12 @@ public class DMNAlphaNetworkCompiler {
         String decisionName = getDecisionTableName(dtName, dt);
         DTableModel dTableModel = new DTableModel(ctx.getFeelHelper(), model, dtName, decisionName, dt);
 
-        List<TableCell> tableCells = parseCells(dTableModel);
+        TableCells tableCells = parseCells(dTableModel);
 
         BlockStmt alphaNetworkStatements = new BlockStmt();
-        for (TableCell ut : tableCells) {
-            ut.addUnaryTestClass(allClasses);
-            ut.addAlphaNetworkNode(alphaNetworkStatements);
-        }
+
+        tableCells.addUnaryTestClass(allClasses);
+        tableCells.addAlphaNetworkNode(alphaNetworkStatements, dmnAlphaNetworkClass);
 
         BlockStmt alphaNetworkBlock = dmnAlphaNetworkClass
                 .findFirst(BlockStmt.class, DMNAlphaNetworkCompiler::blockHasComment)
@@ -90,11 +89,11 @@ public class DMNAlphaNetworkCompiler {
         replaceClassNameWith(dmnAlphaNetworkClass, "DMNAlphaNetworkTemplate", "DMNAlphaNetwork");
     }
 
-    public List<TableCell> parseCells(DTableModel dTableModel) {
+    public TableCells parseCells(DTableModel dTableModel) {
 
-        List<TableCell> unitTests = new ArrayList<>();
         List<DTableModel.DRowModel> rows = dTableModel.getRows();
         List<DTableModel.DColumnModel> columns = dTableModel.getColumns();
+        TableCells tableCells = new TableCells(rows.size(), columns.size());
 
         for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
             DTableModel.DRowModel row = rows.get(rowIndex);
@@ -102,12 +101,12 @@ public class DMNAlphaNetworkCompiler {
                 String input = row.getInputs().get(columnIndex);
                 TableIndex tableIndex = new TableIndex(rowIndex, columnIndex);
                 DTableModel.DColumnModel column = tableIndex.getColumn(columns);
-                unitTests.add(tableCellFactory.createUnitTestField(tableIndex,
+                tableCells.add(tableCellFactory.createUnitTestField(tableIndex,
                                                           column,
                                                           input));
             }
         }
-        return unitTests;
+        return tableCells;
     }
 
     private CompilationUnit getMethodTemplate() {
