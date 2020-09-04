@@ -18,6 +18,9 @@ package org.kie.dmn.feel.codegen.feel11;
 
 import javax.lang.model.SourceVersion;
 
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.expr.SimpleName;
+
 public class CodegenStringUtil {
 
     /**
@@ -45,4 +48,13 @@ public class CodegenStringUtil {
         }
         return result.toString();
     }
+
+    public static void replaceClassNameWith(ClassOrInterfaceDeclaration classTemplate, String templateName, String newName) {
+        classTemplate
+                .findAll(SimpleName.class, ne -> ne.toString().equals(templateName))
+                .forEach(r -> {
+                    r.replace(new SimpleName(newName));
+                });
+    }
+
 }
