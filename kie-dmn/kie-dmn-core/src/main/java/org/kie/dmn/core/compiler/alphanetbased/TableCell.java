@@ -3,6 +3,7 @@ package org.kie.dmn.core.compiler.alphanetbased;
 import java.util.Map;
 
 import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.expr.AssignExpr;
@@ -22,8 +23,18 @@ import static com.github.javaparser.StaticJavaParser.parseExpression;
 import static org.kie.dmn.feel.codegen.feel11.CodegenStringUtil.replaceClassNameWith;
 
 public class TableCell {
+    private final String input;
+    private final DMNFEELHelper feel;
+    private final DMNCompilerContext ctx;
+    private final TableIndex tableIndex;
+    private final String columnName;
+    private final Type type;
+
+    private final String unaryTestClassName;
+    private final String unaryTestClassNameWithPackage;
 
     private static final String CREATE_ALPHA_NODE_METHOD = "org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.createAlphaNode";
+    private static final String PACKAGE = "org.kie.dmn.core.alphasupport";
 
     public static class TableCellFactory {
 
@@ -40,12 +51,6 @@ public class TableCell {
         }
     }
 
-    private final String input;
-    private final DMNFEELHelper feel;
-    private final DMNCompilerContext ctx;
-    private final TableIndex tableIndex;
-    private final String columnName;
-    private final Type type;
 
     private TableCell(DMNFEELHelper feel,
                       DMNCompilerContext ctx,
@@ -58,6 +63,8 @@ public class TableCell {
         this.columnName = columnModel.getName();
         this.input = input;
         this.type = columnModel.getType();
+        this.unaryTestClassName = tableIndex.appendTableIndexSuffix("UnaryTest");
+        this.unaryTestClassNameWithPackage = PACKAGE + "." + unaryTestClassName;
     }
 
     public void addAlphaNetworkNode(BlockStmt stmt) {
@@ -78,7 +85,9 @@ public class TableCell {
                 new NameExpr("ctx"),
                 objectSource,
                 new StringLiteralExpr(constraintIdentifier),
-                parseExpression("x -> UT1.apply(x.getEvalCtx(), x.getValue(0))"),
+                parseExpression(String.format("x -> %s.getTestInstance().apply(x.getEvalCtx(), x.getValue(%s))",
+                                              unaryTestClassNameWithPackage,
+                                              tableIndex.columnIndex())),
                 new NameExpr("index1")
 
         ));
@@ -93,11 +102,15 @@ public class TableCell {
                 type,
                 false);
 
-        String unaryTestClassName = tableIndex.appendTableIndexSuffix("UnaryTest");
         replaceClassNameWith(sourceCode, "TemplateCompiledFEELUnaryTests", unaryTestClassName);
 
         sourceCode.setName(unaryTestClassName);
-        allClasses.put(unaryTestClassName, sourceCode.toString());
+
+        CompilationUnit cu = new CompilationUnit(PACKAGE);
+        ClassOrInterfaceDeclaration classOrInterfaceDeclaration = cu.addClass(unaryTestClassName);
+        classOrInterfaceDeclaration.replace(sourceCode);
+
+        allClasses.put(unaryTestClassNameWithPackage, cu.toString());
     }
 }
 

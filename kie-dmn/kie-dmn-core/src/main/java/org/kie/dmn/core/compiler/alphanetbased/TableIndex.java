@@ -30,4 +30,8 @@ public class TableIndex {
     public boolean isFirstColumn() {
         return column == 0;
     }
+
+    public int columnIndex() {
+        return column;
+    }
 }

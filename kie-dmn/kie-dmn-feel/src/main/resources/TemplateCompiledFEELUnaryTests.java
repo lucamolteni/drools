@@ -24,6 +24,10 @@ public class TemplateCompiledFEELUnaryTests implements org.kie.dmn.feel.codegen.
         return INSTANCE;
     }
 
+    public static org.kie.dmn.feel.runtime.UnaryTest getTestInstance() {
+        return getInstance().getUnaryTests().iterator().next();
+    }
+
     @Override
     public java.util.List<org.kie.dmn.feel.runtime.UnaryTest> getUnaryTests() {
         return null;
