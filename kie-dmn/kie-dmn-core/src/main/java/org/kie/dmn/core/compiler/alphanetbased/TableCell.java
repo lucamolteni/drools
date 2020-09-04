@@ -41,7 +41,7 @@ public class TableCell {
 
     private static final String CREATE_ALPHA_NODE_METHOD = "createAlphaNode";
     private static final String CREATE_INDEX_NODE_METHOD = "createIndex";
-    private static final String PACKAGE = "org.kie.dmn.core.alphasupport";
+    public static final String PACKAGE = "org.kie.dmn.core.alphasupport";
 
     public static class TableCellFactory {
 

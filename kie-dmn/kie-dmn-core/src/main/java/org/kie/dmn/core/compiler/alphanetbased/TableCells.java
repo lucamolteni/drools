@@ -1,15 +1,25 @@
 package org.kie.dmn.core.compiler.alphanetbased;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.ConstructorDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
+
+import static com.github.javaparser.StaticJavaParser.parseType;
+import static org.kie.dmn.feel.codegen.feel11.CodegenStringUtil.replaceClassNameWith;
 
 public class TableCells {
 
@@ -37,56 +47,40 @@ public class TableCells {
         }
     }
 
-    public void addAlphaNetworkNode(BlockStmt alphaNetworkStatements, ClassOrInterfaceDeclaration dmnAlphaNetworkClass) {
-        BlockStmt allStatements = new BlockStmt();
+    private CompilationUnit getAlphaClassTemplate() {
+        InputStream resourceAsStream = this.getClass()
+                .getResourceAsStream("/org/kie/dmn/core/alphasupport/AlphaNodeCreationTemplate.java");
+        return StaticJavaParser.parse(resourceAsStream);
+    }
 
+    public void addAlphaNetworkNode(BlockStmt alphaNetworkStatements, ClassOrInterfaceDeclaration dmnAlphaNetworkClass, Map<String, String> allClasses) {
         // I'm pretty sure we can abstract this iteration to avoid copying it
         for (int rowIndex = 0; rowIndex < numRows; rowIndex++) {
 
-            String methodName = String.format("alphaNodeCreation%s", rowIndex);
+            CompilationUnit alphaNetworkCreationCU = getAlphaClassTemplate();
+            String methodName = String.format("AlphaNodeCreation%s", rowIndex);
 
-            BlockStmt creationStatements = new BlockStmt();
-            MethodDeclaration methodDeclaration = newMethod(dmnAlphaNetworkClass, allStatements, methodName);
-            methodDeclaration.setBody(creationStatements);
+            ClassOrInterfaceDeclaration clazz = alphaNetworkCreationCU.findFirst(ClassOrInterfaceDeclaration.class).orElseThrow(() -> new RuntimeException());
+            replaceClassNameWith(clazz, "AlphaNodeCreationTemplate", methodName);
+
+            ConstructorDeclaration constructorDeclaration = clazz.addConstructor(Modifier.Keyword.PUBLIC);
+            constructorDeclaration.addParameter(new Parameter(parseType("org.kie.dmn.core.compiler.alphanetbased.NetworkBuilderContext"), "ctx"));
 
             for (int columnIndex = 0; columnIndex < numColumns; columnIndex++) {
-                cells[rowIndex][columnIndex].addNodeCreation(creationStatements, dmnAlphaNetworkClass);
+                TableCell tableCell = cells[rowIndex][columnIndex];
+                tableCell.addNodeCreation(constructorDeclaration.getBody(), clazz);
             }
 
+            String methodNameWithPackage = TableCell.PACKAGE + "." + methodName;
+            allClasses.put(methodNameWithPackage, alphaNetworkCreationCU.toString());
+
+            String newAlphaNetworkClass = String.format(
+                    "new %s(ctx)", methodNameWithPackage
+            );
+
+
+            alphaNetworkStatements.addStatement(StaticJavaParser.parseExpression(newAlphaNetworkClass));
+
         }
-
-        partitionStatementsAndAddToMethod(allStatements, dmnAlphaNetworkClass, alphaNetworkStatements);
-    }
-
-    private MethodDeclaration newMethod(ClassOrInterfaceDeclaration dmnAlphaNetworkClass, BlockStmt allStatements, String methodName) {
-        MethodDeclaration methodDeclaration = dmnAlphaNetworkClass.addMethod(methodName);
-        allStatements.addStatement(new MethodCallExpr(null, methodName));
-        return methodDeclaration;
-    }
-
-    private void partitionStatementsAndAddToMethod(BlockStmt allStatements, ClassOrInterfaceDeclaration dmnAlphaNetworkClass,
-                                                   BlockStmt alphaNetworkStatements) {
-        int size = allStatements.getStatements().size();
-
-        NodeList<Statement> statements = allStatements.getStatements();
-
-        List<BlockStmt> allBlocks = new ArrayList<>();
-        BlockStmt partitioned = null;
-        for (int i = 0; i < statements.size(); i++) {
-            if(i % 10 == 0) {
-                partitioned = new BlockStmt();
-                allBlocks.add(partitioned);
-            }
-            partitioned.addStatement(statements.get(i));
-        }
-
-        for (int i = 0; i < allBlocks.size(); i++) {
-            BlockStmt b = allBlocks.get(i);
-            String methodName = "block" + i;
-
-            MethodDeclaration methodDeclaration = newMethod(dmnAlphaNetworkClass, alphaNetworkStatements, methodName);
-            methodDeclaration.setBody(b);
-        }
-
     }
 }
