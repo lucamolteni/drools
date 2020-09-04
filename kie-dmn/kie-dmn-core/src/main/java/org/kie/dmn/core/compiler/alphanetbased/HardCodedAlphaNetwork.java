@@ -30,6 +30,7 @@ import static org.drools.compiler.reteoo.compiled.ObjectTypeNodeCompiler.compile
 import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.addResultSink;
 import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.createAlphaNode;
 import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.createIndex;
+import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.applyHitPolicy;
 import static org.kie.dmn.feel.codegen.feel11.CompiledFEELSemanticMappings.gracefulEq;
 import static org.kie.dmn.feel.codegen.feel11.CompiledFEELSemanticMappings.gt;
 import static org.kie.dmn.feel.codegen.feel11.CompiledFEELSemanticMappings.includes;
@@ -52,10 +53,6 @@ public class HardCodedAlphaNetwork implements DMNCompiledAlphaNetwork {
     @Override
     public ResultCollector getResultCollector() {
         return resultCollector;
-    }
-
-    private Object applyHitPolicy( List<Object> results ) {
-        return results.get(0);
     }
 
     public static final org.kie.dmn.feel.runtime.UnaryTest UT1 = (feelExprCtx, left) -> gracefulEq(feelExprCtx, "false", left);
