@@ -54,7 +54,8 @@ public class DMNAlphaNetworkCompiler {
         BlockStmt alphaNetworkStatements = new BlockStmt();
 
         tableCells.addUnaryTestClass(allClasses);
-        tableCells.addAlphaNetworkNode(alphaNetworkStatements, dmnAlphaNetworkClass);
+        tableCells.addAlphaNetworkNode(alphaNetworkStatements, dmnAlphaNetworkClass, allClasses);
+
 
         BlockStmt alphaNetworkBlock = dmnAlphaNetworkClass
                 .findFirst(BlockStmt.class, DMNAlphaNetworkCompiler::blockHasComment)
