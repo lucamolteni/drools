@@ -45,9 +45,9 @@ public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetwork {
         Index index3 = createIndex(String.class, x -> (String)x.getValue(0), "dummy");
         AlphaNode alphaDummy = createAlphaNode(ctx, ctx.otn, x -> false, index3);
         addResultSink(ctx, this, alphaDummy, "DUMMY");
-//
+
         this.compiledNetwork = compile(new KnowledgeBuilderImpl(ctx.kBase), ctx.otn);
-//        this.compiledNetwork.setObjectTypeNode(ctx.otn);
+        this.compiledNetwork.setObjectTypeNode(ctx.otn);
     }
 
     @Override
