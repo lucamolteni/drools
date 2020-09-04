@@ -12,7 +12,6 @@ import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.expr.SimpleName;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
-import org.kie.dmn.core.compiler.DMNFEELHelper;
 import org.kie.dmn.core.compiler.execmodelbased.DTableModel;
 import org.kie.dmn.core.impl.DMNModelImpl;
 import org.kie.dmn.model.api.DecisionTable;
@@ -27,17 +26,19 @@ public class DMNAlphaNetworkCompiler {
 
     private final DMNCompilerContext ctx;
     private final DMNModelImpl model;
-    private final DMNFEELHelper feel;
+    private final TableCell.TableCellFactory tableCellFactory;
 
     private CompilationUnit template;
     private ClassOrInterfaceDeclaration dmnAlphaNetworkClass;
 
     Map<String, String> allClasses = new HashMap<>();
 
-    public DMNAlphaNetworkCompiler(DMNCompilerContext ctx, DMNModelImpl model, DMNFEELHelper feel) {
+    public DMNAlphaNetworkCompiler(DMNCompilerContext ctx,
+                                   DMNModelImpl model,
+                                   TableCell.TableCellFactory tableCellFactory) {
         this.ctx = ctx;
         this.model = model;
-        this.feel = feel;
+        this.tableCellFactory = tableCellFactory;
     }
 
     public Map<String, String> generateSourceCode(String dtName, DecisionTable dt) {
@@ -98,15 +99,13 @@ public class DMNAlphaNetworkCompiler {
         List<DTableModel.DRowModel> rows = dTableModel.getRows();
         List<DTableModel.DColumnModel> columns = dTableModel.getColumns();
 
-        TableCell.TableCellFactory factory = new TableCell.TableCellFactory(feel, ctx);
-
         for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
             DTableModel.DRowModel row = rows.get(rowIndex);
             for (int columnIndex = 0; columnIndex < row.getInputs().size(); columnIndex++) {
                 String input = row.getInputs().get(columnIndex);
                 TableIndex tableIndex = new TableIndex(rowIndex, columnIndex);
                 DTableModel.DColumnModel column = tableIndex.getColumn(columns);
-                unitTests.add(factory.createUnitTestField(tableIndex,
+                unitTests.add(tableCellFactory.createUnitTestField(tableIndex,
                                                           column,
                                                           input));
             }
