@@ -15,6 +15,15 @@ import org.kie.dmn.feel.runtime.UnaryTest;
 
 public class TemplateCompiledFEELUnaryTests implements org.kie.dmn.feel.codegen.feel11.CompiledFEELUnaryTests {
 
+    private static TemplateCompiledFEELUnaryTests INSTANCE;
+
+    public static TemplateCompiledFEELUnaryTests getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new TemplateCompiledFEELUnaryTests();
+        }
+        return INSTANCE;
+    }
+
     @Override
     public java.util.List<org.kie.dmn.feel.runtime.UnaryTest> getUnaryTests() {
         return null;

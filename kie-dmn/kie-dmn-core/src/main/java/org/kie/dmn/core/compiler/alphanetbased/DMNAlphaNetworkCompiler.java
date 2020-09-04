@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.kie.dmn.core.compiler.generators.GeneratorsUtil.getDecisionTableName;
+import static org.kie.dmn.feel.codegen.feel11.CodegenStringUtil.replaceClassNameWith;
 
 public class DMNAlphaNetworkCompiler {
 
@@ -86,11 +87,7 @@ public class DMNAlphaNetworkCompiler {
         template = getMethodTemplate();
         dmnAlphaNetworkClass = template.getClassByName("DMNAlphaNetworkTemplate")
                 .orElseThrow(() -> new RuntimeException("Cannot find class"));
-        dmnAlphaNetworkClass
-                .findAll(SimpleName.class, ne -> ne.toString().equals("DMNAlphaNetworkTemplate"))
-                .forEach(r -> {
-                    r.replace(new SimpleName("DMNAlphaNetwork"));
-                });
+        replaceClassNameWith(dmnAlphaNetworkClass, "DMNAlphaNetworkTemplate", "DMNAlphaNetwork");
     }
 
     public List<TableCell> parseCells(DTableModel dTableModel) {

@@ -19,6 +19,7 @@ import org.kie.dmn.feel.codegen.feel11.CodegenStringUtil;
 import org.kie.dmn.feel.lang.Type;
 
 import static com.github.javaparser.StaticJavaParser.parseExpression;
+import static org.kie.dmn.feel.codegen.feel11.CodegenStringUtil.replaceClassNameWith;
 
 public class TableCell {
 
@@ -92,9 +93,11 @@ public class TableCell {
                 type,
                 false);
 
-        String className = tableIndex.appendTableIndexSuffix("UnaryTest");
-        sourceCode.setName(className);
-        allClasses.put(String.format("%s", className), sourceCode.toString());
+        String unaryTestClassName = tableIndex.appendTableIndexSuffix("UnaryTest");
+        replaceClassNameWith(sourceCode, "TemplateCompiledFEELUnaryTests", unaryTestClassName);
+
+        sourceCode.setName(unaryTestClassName);
+        allClasses.put(unaryTestClassName, sourceCode.toString());
     }
 }
 
