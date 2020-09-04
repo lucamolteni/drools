@@ -10,6 +10,7 @@ import org.kie.dmn.feel.codegen.feel11.CompiledFEELSupport;
 import org.kie.dmn.feel.lang.EvaluationContext;
 
 import java.util.List;
+import java.util.function.BiFunction;
 
 import org.kie.dmn.feel.runtime.UnaryTest;
 
