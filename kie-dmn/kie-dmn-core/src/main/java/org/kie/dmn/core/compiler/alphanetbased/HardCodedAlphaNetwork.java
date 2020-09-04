@@ -105,14 +105,22 @@ public class HardCodedAlphaNetwork implements DMNCompiledAlphaNetwork {
         NetworkBuilderContext ctx = new NetworkBuilderContext();
 
         Index index1 = createIndex(String.class, x -> (String)x.getValue(0), "false");
-        AlphaNode alphac1r1 = createAlphaNode(ctx, ctx.otn, "\"false\"", x -> UT1.apply(x.getEvalCtx(), x.getValue(0)), index1);
+        AlphaNode alphac1r1 = createAlphaNode(ctx, ctx.otn, "\"false\"", x -> UT1.apply(x.getEvalCtx(),
+                                                                                        x.getValue(0)), // numero colonna
+                                              index1);
 
         AlphaNode alphac2r1 = createAlphaNode(ctx, alphac1r1, "<100", x -> UT2.apply(x.getEvalCtx(), x.getValue(1)));
         addResultSink(ctx, this, alphac2r1, "HIGH");
-        AlphaNode alphac2r2 = createAlphaNode(ctx, alphac1r1, "[100..120)", x -> UT3.apply(x.getEvalCtx(), x.getValue(1)));
+
+        // == alphac1r1 (verifica alpha node sharing)
+        AlphaNode alphac1r2 = createAlphaNode(ctx, ctx.otn, "\"false\"", x -> UT1.apply(x.getEvalCtx(), x.getValue(0)), index1);
+        AlphaNode alphac2r2 = createAlphaNode(ctx, alphac1r2, "[100..120)", x -> UT3.apply(x.getEvalCtx(), x.getValue(1)));
+
         addResultSink(ctx, this, alphac2r2, "MEDIUM");
+
         AlphaNode alphac2r3 = createAlphaNode(ctx, alphac1r1, "[120..130]", x -> UT4.apply(x.getEvalCtx(), x.getValue(1)));
         addResultSink(ctx, this, alphac2r3, "LOW");
+
         AlphaNode alphac2r4 = createAlphaNode(ctx, alphac1r1, ">130", x -> UT5.apply(x.getEvalCtx(), x.getValue(1)));
         addResultSink(ctx, this, alphac2r4, "VERY LOW");
 

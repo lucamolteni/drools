@@ -5,14 +5,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Predicate;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import com.github.javaparser.ast.expr.Name;
-import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.SimpleName;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
@@ -56,7 +52,7 @@ public class DMNAlphaNetworkCompiler {
         BlockStmt alphaNetworkStatements = new BlockStmt();
         for (TableCell ut : tableCells) {
             ut.addUnaryTestClass(allClasses);
-            ut.addAlphaNetwork(alphaNetworkStatements);
+            ut.addAlphaNetworkNode(alphaNetworkStatements);
         }
 
         BlockStmt alphaNetworkBlock = dmnAlphaNetworkClass
@@ -64,8 +60,6 @@ public class DMNAlphaNetworkCompiler {
                 .orElseThrow(RuntimeException::new);
 
         alphaNetworkBlock.replace(alphaNetworkStatements);
-
-
 
         allClasses.put("org.kie.dmn.core.alphasupport.DMNAlphaNetwork", template.toString());
 

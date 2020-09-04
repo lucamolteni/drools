@@ -14,12 +14,20 @@ public class TableIndex {
         this.column = column;
     }
 
-    public String getStringIndex() {
+    public TableIndex previousColumn() {
+        return new TableIndex(row, column - 1);
+    }
+
+    public String appendTableIndexSuffix(String sourceString) {
         // DMN DTable are 1Based
-        return String.format("R%sC%s", row + 1, column + 1);
+        return String.format("%sR%sC%s", sourceString, row + 1, column + 1);
     }
 
     public DTableModel.DColumnModel getColumn(List<DTableModel.DColumnModel> columns) {
         return columns.get(column);
+    }
+
+    public boolean isFirstColumn() {
+        return column == 0;
     }
 }
