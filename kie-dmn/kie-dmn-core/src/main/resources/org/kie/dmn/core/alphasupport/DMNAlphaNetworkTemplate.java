@@ -33,8 +33,6 @@ public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetwork {
     protected final ResultCollector resultCollector = new ResultCollector();
     protected CompiledNetwork compiledNetwork;
 
-    public static final org.kie.dmn.feel.runtime.UnaryTest UT1 = (feelExprCtx, left) -> gracefulEq(feelExprCtx, "false", left);
-
     protected final NetworkBuilderContext ctx = new NetworkBuilderContext();
 
     public DMNAlphaNetworkTemplate() {
