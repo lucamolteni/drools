@@ -1,7 +1,6 @@
 package org.kie.dmn.core.compiler.alphanetbased;
 
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,7 +8,6 @@ import java.util.Map;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import com.github.javaparser.ast.expr.SimpleName;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
 import org.kie.dmn.core.compiler.execmodelbased.DTableModel;
@@ -56,7 +54,6 @@ public class DMNAlphaNetworkCompiler {
         tableCells.addUnaryTestClass(allClasses);
         tableCells.addAlphaNetworkNode(alphaNetworkStatements, dmnAlphaNetworkClass, allClasses);
 
-
         BlockStmt alphaNetworkBlock = dmnAlphaNetworkClass
                 .findFirst(BlockStmt.class, DMNAlphaNetworkCompiler::blockHasComment)
                 .orElseThrow(RuntimeException::new);
@@ -69,7 +66,6 @@ public class DMNAlphaNetworkCompiler {
 
         return allClasses;
     }
-
 
     private static boolean blockHasComment(BlockStmt block) {
         return block.getComment().filter(c -> " Alpha network creation statements".equals(c.getContent()))
@@ -98,14 +94,23 @@ public class DMNAlphaNetworkCompiler {
 
         for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
             DTableModel.DRowModel row = rows.get(rowIndex);
-            for (int columnIndex = 0; columnIndex < row.getInputs().size(); columnIndex++) {
-                String input = row.getInputs().get(columnIndex);
-                TableIndex tableIndex = new TableIndex(rowIndex, columnIndex);
+
+            for (int inputColumnIndex = 0; inputColumnIndex < row.getInputs().size(); inputColumnIndex++) {
+                String input = row.getInputs().get(inputColumnIndex);
+                TableIndex tableIndex = new TableIndex(rowIndex, inputColumnIndex);
                 DTableModel.DColumnModel column = tableIndex.getColumn(columns);
-                tableCells.add(tableCellFactory.createUnitTestField(tableIndex,
-                                                          column,
-                                                          input));
+                TableCell cell = tableCellFactory.createInputCell(tableIndex,
+                                                            column,
+                                                            input);
+
+                if(inputColumnIndex == row.getInputs().size() - 1) { // last column
+                    cell.setOutput(row.getOutputs().get(0)); // assume only one output
+                }
+
+                tableCells.add(cell);
             }
+
+
         }
         return tableCells;
     }

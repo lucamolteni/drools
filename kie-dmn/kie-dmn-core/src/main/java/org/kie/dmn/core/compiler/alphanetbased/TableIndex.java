@@ -38,4 +38,5 @@ public class TableIndex {
     public void addToCells(TableCell[][] cells, TableCell tableCell) {
         cells[row][column] = tableCell;
     }
+
 }

@@ -1,6 +1,5 @@
 package org.kie.dmn.core.compiler.alphanetbased;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.drools.core.reteoo.AlphaNode;
@@ -19,8 +18,8 @@ import static org.drools.core.reteoo.builder.BuildUtils.attachNode;
 
 public class AlphaNetworkCompilerUtils {
 
-    public static void addResultSink(NetworkBuilderContext ctx, DMNCompiledAlphaNetwork network, ObjectSource source, Object result) {
-        source.addObjectSink(new ResultCollectorAlphaSink(ctx.buildContext.getNextId(), source, ctx.buildContext, result, network.getResultCollector()));
+    public static void addResultSink(NetworkBuilderContext ctx, ObjectSource source, Object result) {
+        source.addObjectSink(new ResultCollectorAlphaSink(ctx.buildContext.getNextId(), source, ctx.buildContext, result, ctx.resultCollector));
     }
 
     public static AlphaNode createAlphaNode(NetworkBuilderContext ctx, ObjectSource source, String id, Predicate1<TableContext> predicate) {
@@ -49,7 +48,4 @@ public class AlphaNetworkCompilerUtils {
         return new AlphaIndexImpl<TableContext, I>(indexedClass, Index.ConstraintType.EQUAL, 1, leftExtractor, rightValue);
     }
 
-    public static Object applyHitPolicy( List<Object> results ) {
-        return results.get(0);
-    }
 }

@@ -1,6 +1,9 @@
 package org.kie.dmn.core.compiler.alphanetbased;
 
 import java.util.Map;
+import java.util.Optional;
+
+import javax.swing.text.html.Option;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
@@ -17,6 +20,7 @@ import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.ThisExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
 import org.kie.dmn.core.compiler.DMNFEELHelper;
@@ -29,6 +33,7 @@ import static com.github.javaparser.StaticJavaParser.parseType;
 import static org.kie.dmn.feel.codegen.feel11.CodegenStringUtil.replaceClassNameWith;
 
 public class TableCell {
+
     private final String input;
     private final DMNFEELHelper feel;
     private final DMNCompilerContext ctx;
@@ -43,6 +48,12 @@ public class TableCell {
     private static final String CREATE_INDEX_NODE_METHOD = "createIndex";
     public static final String PACKAGE = "org.kie.dmn.core.alphasupport";
 
+    private Optional<String> output = Optional.empty();
+
+    public void setOutput(String s) {
+        output = Optional.of(s);
+    }
+
     public static class TableCellFactory {
 
         final DMNFEELHelper feel;
@@ -53,11 +64,10 @@ public class TableCell {
             this.ctx = ctx;
         }
 
-        public TableCell createUnitTestField(TableIndex tableIndex, DTableModel.DColumnModel columnModel, String input) {
+        public TableCell createInputCell(TableIndex tableIndex, DTableModel.DColumnModel columnModel, String input) {
             return new TableCell(feel, ctx, tableIndex, columnModel, input);
         }
     }
-
 
     private TableCell(DMNFEELHelper feel,
                       DMNCompilerContext ctx,
@@ -95,7 +105,8 @@ public class TableCell {
 
     public void addNodeCreation(BlockStmt stmt, ClassOrInterfaceDeclaration alphaNetworkClass) {
         com.github.javaparser.ast.type.Type alphaNodeType = StaticJavaParser.parseType("AlphaNode");
-        VariableDeclarationExpr variable = new VariableDeclarationExpr(alphaNodeType, tableIndex.appendTableIndexSuffix("alphaNode"));
+        String alphaNodeName = tableIndex.appendTableIndexSuffix("alphaNode");
+        VariableDeclarationExpr variable = new VariableDeclarationExpr(alphaNodeType, alphaNodeName);
 
         // This is used for Alpha Sharing. It needs to have the column name to avoid collisions with same test in other cells
         String constraintIdentifier = CodegenStringUtil.escapeIdentifier(columnName + input);
@@ -113,7 +124,7 @@ public class TableCell {
         unaryTestMethod.setBody(new BlockStmt(NodeList.nodeList(new ReturnStmt(testExpression))));
 
         Expression alphaNodeCreation;
-        if(tableIndex.isFirstColumn()) {
+        if (tableIndex.isFirstColumn()) {
             String indexName = addIndex(stmt);
             alphaNodeCreation = new MethodCallExpr(null, CREATE_ALPHA_NODE_METHOD, NodeList.nodeList(
                     new NameExpr("ctx"),
@@ -122,7 +133,6 @@ public class TableCell {
                     methodReference,
                     new NameExpr(indexName)
             ));
-
         } else {
             alphaNodeCreation = new MethodCallExpr(null, CREATE_ALPHA_NODE_METHOD, NodeList.nodeList(
                     new NameExpr("ctx"),
@@ -130,11 +140,21 @@ public class TableCell {
                     new StringLiteralExpr(constraintIdentifier),
                     methodReference
             ));
-
         }
 
         final Expression expr = new AssignExpr(variable, alphaNodeCreation, AssignExpr.Operator.ASSIGN);
         stmt.addStatement(expr);
+
+        output.ifPresent(o -> {
+            //         addResultSink(ctx, this, alphac2r1, "HIGH");
+            Expression resultSinkMethodCallExpr = new MethodCallExpr(null,
+                                                                     "addResultSink",
+                                                                     NodeList.nodeList(
+                                                                             new NameExpr("ctx"),
+                                                                             new NameExpr(alphaNodeName),
+                                                                             new NameExpr(o))); // why is this already quoted?
+            stmt.addStatement(resultSinkMethodCallExpr);
+        });
     }
 
     public void addUnaryTestClass(Map<String, String> allClasses) {
@@ -158,7 +178,6 @@ public class TableCell {
     public void addToCells(TableCell[][] cells) {
         tableIndex.addToCells(cells, this);
     }
-
 }
 
 
