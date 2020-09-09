@@ -5,5 +5,17 @@ import java.util.List;
 
 public class ResultCollector {
 
-    public final List<Object> results = new ArrayList<>();
+    private final List<Object> results = new ArrayList<>();
+
+    public void addResult(Object o) {
+        results.add(o);
+    }
+
+    public void clearResults() {
+        results.clear();
+    }
+
+    public Object getWithHitPolicy() {
+        return results.get(0);
+    }
 }

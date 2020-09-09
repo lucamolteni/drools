@@ -21,7 +21,7 @@ public class ResultCollectorAlphaSink extends LeftInputAdapterNode {
 
     @Override
     public void assertObject(InternalFactHandle factHandle, PropagationContext propagationContext, InternalWorkingMemory workingMemory) {
-        resultCollector.results.add(result);
+        resultCollector.addResult(result);
     }
 
     @Override

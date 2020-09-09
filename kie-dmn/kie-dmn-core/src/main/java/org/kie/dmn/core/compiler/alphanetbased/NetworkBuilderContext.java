@@ -20,7 +20,9 @@ public class NetworkBuilderContext {
     public Declaration declaration;
     public ObjectTypeNode otn;
 
-    public NetworkBuilderContext() {
+    public ResultCollector resultCollector;
+
+    public NetworkBuilderContext(ResultCollector resultCollector) {
         kBase = (InternalKnowledgeBase) KnowledgeBaseFactory.newKnowledgeBase();
         buildContext = new BuildContext(kBase);
         EntryPointNode entryPoint = buildContext.getKnowledgeBase().getRete().getEntryPointNodes().values().iterator().next();
@@ -32,5 +34,7 @@ public class NetworkBuilderContext {
 
         otn = new ObjectTypeNode(buildContext.getNextId(), entryPoint, objectType, buildContext);
         buildContext.setObjectSource(otn);
+
+        this.resultCollector = resultCollector;
     }
 }
