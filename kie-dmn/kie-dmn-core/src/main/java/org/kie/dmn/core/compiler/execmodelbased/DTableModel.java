@@ -284,6 +284,11 @@ public class DTableModel {
             return inputs;
         }
 
+        // LUCA TODO: avoid exposing outputs
+        public List<String> getOutputs() {
+            return outputs;
+        }
+
         public Object evaluate(EvaluationContext ctx, int pos) {
             return compiledOutputs.get( pos ).apply( ctx );
         }
