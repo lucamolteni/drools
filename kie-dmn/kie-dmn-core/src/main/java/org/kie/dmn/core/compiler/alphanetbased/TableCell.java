@@ -90,11 +90,18 @@ public class TableCell {
 
         VariableDeclarationExpr variable = new VariableDeclarationExpr(indexType, indexName);
 
+        // TODO LUCA this is wrong
+        Expression indexValueExpr;
+        if(input.contains("\"")) {
+            indexValueExpr = new NameExpr(input);
+        } else {
+            indexValueExpr = new StringLiteralExpr(input);
+        }
         Expression alphaNodeCreation = new MethodCallExpr(null, CREATE_INDEX_NODE_METHOD, NodeList.nodeList(
                 parseExpression("String.class"),
                 parseExpression(String.format("x -> (String)x.getValue(%s)",
                                               tableIndex.columnIndex())),
-                new NameExpr(input)
+                indexValueExpr
 
         ));
         final Expression expr = new AssignExpr(variable, alphaNodeCreation, AssignExpr.Operator.ASSIGN);
