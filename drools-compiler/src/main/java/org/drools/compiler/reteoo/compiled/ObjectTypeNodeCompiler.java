@@ -15,8 +15,12 @@
 
 package org.drools.compiler.reteoo.compiled;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.UUID;
@@ -251,6 +255,21 @@ public class ObjectTypeNodeCompiler {
         SourceGenerated source = compiler.generateSource();
 
         logger.debug("Generated alpha node compiled network source:\n" + source.source);
+
+        // create a temporary file
+        Path tempFile = null;
+        try {
+            tempFile = Files.createTempFile(null, ".java");
+
+            // Writes a string to the above temporary file
+
+            System.out.println("+++++ ACN " + tempFile.toString());
+            Files.write(tempFile, source.source.getBytes(StandardCharsets.UTF_8));
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
 
         MemoryFileSystem mfs = new MemoryFileSystem();
         mfs.write(compiler.getSourceName(), source.source.getBytes(IoUtils.UTF8_CHARSET));
