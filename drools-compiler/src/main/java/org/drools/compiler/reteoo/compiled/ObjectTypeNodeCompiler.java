@@ -42,7 +42,7 @@ import org.drools.core.reteoo.compiled.DelegateMethodsHandler;
 import org.drools.core.reteoo.compiled.HashedAlphasDeclaration;
 import org.drools.core.reteoo.compiled.ModifyHandler;
 import org.drools.core.reteoo.compiled.ObjectTypeNodeParser;
-import org.drools.core.reteoo.compiled.SetNodeReferenceHandler;
+import org.drools.core.reteoo.compiled.SetNodePartitionedReferenceHandler;
 import org.drools.core.rule.IndexableConstraint;
 import org.drools.core.spi.InternalReadAccessor;
 import org.drools.core.util.IoUtils;
@@ -115,8 +115,10 @@ public class ObjectTypeNodeCompiler {
         createConstructor(hashedAlphaDeclarations);
 
         // create set node method
-        SetNodeReferenceHandler setNode = new SetNodeReferenceHandler(builder);
+        SetNodePartitionedReferenceHandler setNode = new SetNodePartitionedReferenceHandler(builder);
         parser.accept(setNode);
+
+        setNode.emitCode();
 
         // create assert method
         AssertHandler assertHandler = new AssertHandler(builder, className, hashedAlphaDeclarations.size() > 0);
