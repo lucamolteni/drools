@@ -27,40 +27,40 @@ import org.drools.core.rule.ContextEntry;
  * refernces to different {@link org.kie.common.NetworkNode}s and variable names for {@link ClassFieldReader}s.
  */
 abstract class AbstractCompilerHandler extends NetworkHandlerAdaptor {
-    protected static final String NEWLINE = "\n";
+    public static final String NEWLINE = "\n";
 
-    private static final String MAP_VARIABLE_NAME_SUFFIX = "ToNodeId";
+    public static final String MAP_VARIABLE_NAME_SUFFIX = "ToNodeId";
 
-    protected static Class<?> getVariableType(AlphaNode alphaNode) {
+    public static Class<?> getVariableType(AlphaNode alphaNode) {
 
         // for alphas, we use the constraint of the alpha for the declaration
         return alphaNode.getConstraint().getClass();
     }
 
-    protected Class<?> getVariableType(Sink sink) {
+    public static Class<?> getVariableType(Sink sink) {
 
         return sink.getClass();
     }
 
-    protected static String getVariableName(AlphaNode alphaNode) {
+    public static String getVariableName(AlphaNode alphaNode) {
         Class<?> variableType = getVariableType(alphaNode);
 
         return getVariableName(variableType, alphaNode.getId());
     }
 
-    protected String getContextVariableName(AlphaNode alphaNode) {
-        Class<?> variableType = ContextEntry.class;
-
-        return getVariableName(variableType, alphaNode.getId());
-    }
-
-    protected String getVariableName(Sink sink) {
+    public static String getVariableName(Sink sink) {
         Class<?> variableType = getVariableType(sink);
 
         return getVariableName(variableType, sink.getId());
     }
 
-    protected String getVariableName() {
+    public static String getContextVariableName(AlphaNode alphaNode) {
+        Class<?> variableType = ContextEntry.class;
+
+        return getVariableName(variableType, alphaNode.getId());
+    }
+
+    public static String getVariableName() {
         return MAP_VARIABLE_NAME_SUFFIX;
     }
 

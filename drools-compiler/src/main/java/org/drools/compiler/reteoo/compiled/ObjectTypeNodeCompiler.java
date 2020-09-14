@@ -41,8 +41,9 @@ import org.drools.core.reteoo.compiled.DeclarationsHandler;
 import org.drools.core.reteoo.compiled.DelegateMethodsHandler;
 import org.drools.core.reteoo.compiled.HashedAlphasDeclaration;
 import org.drools.core.reteoo.compiled.ModifyHandler;
+import org.drools.core.reteoo.compiled.NodeCollectorHandler;
 import org.drools.core.reteoo.compiled.ObjectTypeNodeParser;
-import org.drools.core.reteoo.compiled.SetNodePartitionedReferenceHandler;
+import org.drools.core.reteoo.compiled.PartitionedSwitch;
 import org.drools.core.rule.IndexableConstraint;
 import org.drools.core.spi.InternalReadAccessor;
 import org.drools.core.util.IoUtils;
@@ -115,10 +116,12 @@ public class ObjectTypeNodeCompiler {
         createConstructor(hashedAlphaDeclarations);
 
         // create set node method
-        SetNodePartitionedReferenceHandler setNode = new SetNodePartitionedReferenceHandler(builder);
-        parser.accept(setNode);
+        NodeCollectorHandler nodeCollectors = new NodeCollectorHandler();
+        parser.accept(nodeCollectors);
 
-        setNode.emitCode();
+        PartitionedSwitch partitionedSwitch = new PartitionedSwitch(nodeCollectors.getNodes());
+
+        partitionedSwitch.emitCode(builder);
 
         // create assert method
         AssertHandler assertHandler = new AssertHandler(builder, className, hashedAlphaDeclarations.size() > 0);
