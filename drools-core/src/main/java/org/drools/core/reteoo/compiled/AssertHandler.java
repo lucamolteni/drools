@@ -16,6 +16,9 @@
 
 package org.drools.core.reteoo.compiled;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.drools.core.reteoo.AlphaNode;
 import org.drools.core.reteoo.BetaNode;
 import org.drools.core.reteoo.LeftInputAdapterNode;
@@ -23,9 +26,6 @@ import org.drools.core.reteoo.ObjectTypeNode;
 import org.drools.core.reteoo.WindowNode;
 import org.drools.core.rule.IndexableConstraint;
 
-/**
- * todo: document
- */
 public class AssertHandler extends SwitchCompilerHandler {
 
     /**
@@ -39,14 +39,26 @@ public class AssertHandler extends SwitchCompilerHandler {
 
     private final String factClassName;
 
+    private int switchCaseCounter = 0;
+
     AssertHandler(StringBuilder builder, String factClassName) {
         this(builder, factClassName, false);
     }
+
+    private List<String> assertObjectMethods = new ArrayList<>();
+
+    private StringBuilder currentAssertObjectMethod;
 
     public AssertHandler(StringBuilder builder, String factClassName, boolean alphaNetContainsHashedField) {
         super(builder);
         this.factClassName = factClassName;
         this.alphaNetContainsHashedField = alphaNetContainsHashedField;
+    }
+
+    public void addAssertObjectMethod() {
+        for(String assertObjectMethod : assertObjectMethods) {
+            builder.append(assertObjectMethod);
+        }
     }
 
     @Override
@@ -83,24 +95,41 @@ public class AssertHandler extends SwitchCompilerHandler {
 
     @Override
     public void startLeftInputAdapterNode(LeftInputAdapterNode leftInputAdapterNode) {
-        builder.append(getVariableName(leftInputAdapterNode)).append(".assertObject(").
-                append(FACT_HANDLE_PARAM_NAME).append(",").
-                append(PROP_CONTEXT_PARAM_NAME).append(",").
-                append(WORKING_MEMORY_PARAM_NAME).append(");").append(NEWLINE);
+        assertObject(leftInputAdapterNode, currentAssertObjectMethod);
     }
 
     @Override
     public void startNonHashedAlphaNode(AlphaNode alphaNode) {
-        builder.append("if ( ").append(getVariableName(alphaNode)).
-                append(".isAllowed(").append(FACT_HANDLE_PARAM_NAME).append(",").
-                append(WORKING_MEMORY_PARAM_NAME).
-                append(") ) {").append(NEWLINE);
-
+        if(currentAssertObjectMethod != null) {
+            ifIsAllowed(alphaNode, currentAssertObjectMethod);
+        }
     }
 
     @Override
     public void endNonHashedAlphaNode(AlphaNode alphaNode) {
-        // close if statement
+        if(currentAssertObjectMethod != null) {
+            currentAssertObjectMethod.append("}").append(NEWLINE);
+        }
+    }
+
+    private void assertObject(LeftInputAdapterNode leftInputAdapterNode, StringBuilder builder) {
+        if(currentAssertObjectMethod != null) {
+            builder.append(getVariableName(leftInputAdapterNode)).append(".assertObject(").
+                    append(FACT_HANDLE_PARAM_NAME).append(",").
+                    append(PROP_CONTEXT_PARAM_NAME).append(",").
+                    append(WORKING_MEMORY_PARAM_NAME).append(");").append(NEWLINE);
+        }
+    }
+
+
+    private void ifIsAllowed(AlphaNode alphaNode, StringBuilder builder) {
+        builder.append("if ( ").append(getVariableName(alphaNode)).
+                append(".isAllowed(").append(FACT_HANDLE_PARAM_NAME).append(",").
+                append(WORKING_MEMORY_PARAM_NAME).
+                append(") ) {").append(NEWLINE);
+    }
+
+    private void closeStatement(StringBuilder builder) {
         builder.append("}").append(NEWLINE);
     }
 
@@ -112,25 +141,38 @@ public class AssertHandler extends SwitchCompilerHandler {
     @Override
     public void startHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
         generateSwitchCase(hashedAlpha, hashedValue);
+        currentAssertObjectMethod = new StringBuilder();
+        currentAssertObjectMethod.append(
+                String.format("private void assertObject%s(org.drools.core.common.InternalFactHandle handle, " +
+                                      "org.drools.core.spi.PropagationContext context, " +
+                                      "org.drools.core.common.InternalWorkingMemory wm) {", switchCaseCounter)
+        );
+
+        builder.append(String.format("assertObject%s(handle, context, wm);", switchCaseCounter));
     }
 
     @Override
     public void endHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
         builder.append("break;").append(NEWLINE);
+
+        closeStatement(currentAssertObjectMethod);
+        assertObjectMethods.add(currentAssertObjectMethod.toString());
+        currentAssertObjectMethod = null;
+        switchCaseCounter++;
     }
 
     @Override
     public void endHashedAlphaNodes(IndexableConstraint indexableConstraint) {
         // close switch statement
-        builder.append("}").append(NEWLINE);
+        closeStatement(builder);
         // and if statement for ensuring non-null
-        builder.append("}").append(NEWLINE);
+        closeStatement(builder);
     }
 
     @Override
     public void endObjectTypeNode(ObjectTypeNode objectTypeNode) {
         // close the assertObject method
-        builder.append("}").append(NEWLINE);
+        closeStatement(builder);
     }
 
     @Override

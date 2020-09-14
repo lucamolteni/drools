@@ -126,6 +126,7 @@ public class ObjectTypeNodeCompiler {
         // create assert method
         AssertHandler assertHandler = new AssertHandler(builder, className, hashedAlphaDeclarations.size() > 0);
         parser.accept(assertHandler);
+        assertHandler.addAssertObjectMethod();
 
         ModifyHandler modifyHandler = new ModifyHandler(builder, className, hashedAlphaDeclarations.size() > 0);
         parser.accept(modifyHandler);
