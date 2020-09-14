@@ -37,33 +37,30 @@ import com.github.javaparser.ast.type.PrimitiveType;
 import com.github.javaparser.ast.type.VoidType;
 import org.drools.core.common.NetworkNode;
 import org.drools.core.reteoo.AlphaNode;
-import org.drools.core.reteoo.BetaNode;
-import org.drools.core.reteoo.LeftInputAdapterNode;
-import org.drools.core.reteoo.ObjectTypeNode;
 import org.drools.core.reteoo.Sink;
-import org.drools.core.reteoo.WindowNode;
 import org.drools.core.util.ListUtils;
 
 import static com.github.javaparser.StaticJavaParser.parseExpression;
 import static com.github.javaparser.StaticJavaParser.parseStatement;
 import static com.github.javaparser.StaticJavaParser.parseType;
+import static org.drools.core.reteoo.compiled.AbstractCompilerHandler.getVariableName;
+import static org.drools.core.reteoo.compiled.AbstractCompilerHandler.getVariableType;
 import static org.drools.core.reteoo.compiled.SetNodeReferenceHandler.getVariableAssignmentStatementAlphaNode;
 
-public class SetNodePartitionedReferenceHandler extends AbstractCompilerHandler {
+public class PartitionedSwitch {
 
     private static final String PARAM_TYPE = NetworkNode.class.getName();
 
     private static final String METHOD_NAME = "setNetworkNodeReference";
 
-    private ObjectTypeNode objectTypeNode;
-    private List<NetworkNode> nodes = new ArrayList<>();
-    private StringBuilder builder;
+    private final List<NetworkNode> nodes;
 
-    public SetNodePartitionedReferenceHandler(StringBuilder builder) {
-        this.builder = builder;
+    public PartitionedSwitch(List<NetworkNode> nodes) {
+        this.nodes = nodes;
     }
 
-    public void emitCode() {
+    public void emitCode(StringBuilder builder) {
+
         List<MethodDeclaration> allMethods = new ArrayList<>();
 
         MethodDeclaration methodDeclaration = new MethodDeclaration(
@@ -156,12 +153,6 @@ public class SetNodePartitionedReferenceHandler extends AbstractCompilerHandler 
         switchBodyStatements.addStatement(new ReturnStmt(new BooleanLiteralExpr(false)));
     }
 
-    private void caseStmt(int id, String variableAssignmentStatement) {
-        builder.append("case ").append(id).append(": ").append(NEWLINE);
-        builder.append(variableAssignmentStatement).append(NEWLINE);
-        builder.append("return true;").append(NEWLINE);
-    }
-
     private String getVariableAssignmentStatement(NetworkNode sink, String nodeVariableName) {
         Class<?> variableType = getVariableType((Sink) sink);
         String assignmentStatement;
@@ -170,34 +161,5 @@ public class SetNodePartitionedReferenceHandler extends AbstractCompilerHandler 
         assignmentStatement = getVariableName((Sink) sink) + " = (" + variableType.getCanonicalName() + ")" + nodeVariableName + ";";
 
         return assignmentStatement;
-    }
-
-    @Override
-    public void startObjectTypeNode(ObjectTypeNode objectTypeNode) {
-        this.objectTypeNode = objectTypeNode;
-    }
-
-    @Override
-    public void endObjectTypeNode(ObjectTypeNode objectTypeNode) {
-    }
-
-    @Override
-    public void startNonHashedAlphaNode(AlphaNode alphaNode) {
-        nodes.add(alphaNode);
-    }
-
-    @Override
-    public void startBetaNode(BetaNode betaNode) {
-        nodes.add(betaNode);
-    }
-
-    @Override
-    public void startWindowNode(WindowNode windowNode) {
-        nodes.add(windowNode);
-    }
-
-    @Override
-    public void startLeftInputAdapterNode(LeftInputAdapterNode leftInputAdapterNode) {
-        nodes.add(leftInputAdapterNode);
     }
 }
