@@ -45,7 +45,7 @@ public class AssertHandler extends SwitchCompilerHandler {
         this(builder, factClassName, false);
     }
 
-    private List<String> assertObjectMethods = new ArrayList<>();
+    private final List<String> assertObjectMethods = new ArrayList<>();
 
     private StringBuilder currentAssertObjectMethod;
 
@@ -55,7 +55,7 @@ public class AssertHandler extends SwitchCompilerHandler {
         this.alphaNetContainsHashedField = alphaNetContainsHashedField;
     }
 
-    public void addAssertObjectMethod() {
+    public void addAssertObjectMethods() {
         for(String assertObjectMethod : assertObjectMethods) {
             builder.append(assertObjectMethod);
         }
@@ -127,10 +127,6 @@ public class AssertHandler extends SwitchCompilerHandler {
                 append(".isAllowed(").append(FACT_HANDLE_PARAM_NAME).append(",").
                 append(WORKING_MEMORY_PARAM_NAME).
                 append(") ) {").append(NEWLINE);
-    }
-
-    private void closeStatement(StringBuilder builder) {
-        builder.append("}").append(NEWLINE);
     }
 
     @Override

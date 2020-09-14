@@ -126,10 +126,11 @@ public class ObjectTypeNodeCompiler {
         // create assert method
         AssertHandler assertHandler = new AssertHandler(builder, className, hashedAlphaDeclarations.size() > 0);
         parser.accept(assertHandler);
-        assertHandler.addAssertObjectMethod();
+        assertHandler.addAssertObjectMethods();
 
         ModifyHandler modifyHandler = new ModifyHandler(builder, className, hashedAlphaDeclarations.size() > 0);
         parser.accept(modifyHandler);
+        modifyHandler.addModifyMethods();
 
         DelegateMethodsHandler delegateMethodsHandler = new DelegateMethodsHandler(builder);
         parser.accept(delegateMethodsHandler);

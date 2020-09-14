@@ -16,6 +16,9 @@
 
 package org.drools.core.reteoo.compiled;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.drools.core.reteoo.AlphaNode;
 import org.drools.core.reteoo.BetaNode;
 import org.drools.core.reteoo.LeftInputAdapterNode;
@@ -23,9 +26,6 @@ import org.drools.core.reteoo.ObjectTypeNode;
 import org.drools.core.reteoo.WindowNode;
 import org.drools.core.rule.IndexableConstraint;
 
-/**
- * todo: document
- */
 public class ModifyHandler extends SwitchCompilerHandler {
 
     private static final String ASSERT_METHOD_SIGNATURE = "public final void modifyObject("
@@ -45,8 +45,13 @@ public class ModifyHandler extends SwitchCompilerHandler {
 
     private final String factClassName;
 
-    ModifyHandler(StringBuilder builder, String factClassName) {
-        this(builder, factClassName, false);
+    private int switchCaseCounter = 0;
+
+    private final List<String> modifyObjectMethods = new ArrayList<>();
+    private StringBuilder currentModifyMethod;
+
+    public List<String> getModifyObjectMethods() {
+        return modifyObjectMethods;
     }
 
     public ModifyHandler(StringBuilder builder, String factClassName, boolean alphaNetContainsHashedField) {
@@ -72,7 +77,7 @@ public class ModifyHandler extends SwitchCompilerHandler {
 
     @Override
     public void startBetaNode(BetaNode betaNode) {
-        builder.append(getVariableName(betaNode)).append(".modifyObject(").
+        currentModifyMethod.append(getVariableName(betaNode)).append(".modifyObject(").
                 append(FACT_HANDLE_PARAM_NAME).append(",").
                 append(MODIFY_PREVIOUS_TUPLE_PARAM_NAME).append(",").
                 append(PROP_CONTEXT_PARAM_NAME).append(",").
@@ -81,7 +86,7 @@ public class ModifyHandler extends SwitchCompilerHandler {
 
     @Override
     public void startWindowNode(WindowNode windowNode) {
-        builder.append(getVariableName(windowNode)).append(".modifyObject(").
+        currentModifyMethod.append(getVariableName(windowNode)).append(".modifyObject(").
                 append(FACT_HANDLE_PARAM_NAME).append(",").
                 append(MODIFY_PREVIOUS_TUPLE_PARAM_NAME).append(",").
                 append(PROP_CONTEXT_PARAM_NAME).append(",").
@@ -95,26 +100,35 @@ public class ModifyHandler extends SwitchCompilerHandler {
 
     @Override
     public void startLeftInputAdapterNode(LeftInputAdapterNode leftInputAdapterNode) {
-        builder.append(getVariableName(leftInputAdapterNode)).append(".modifyObject(").
-                append(FACT_HANDLE_PARAM_NAME).append(",").
-                append(MODIFY_PREVIOUS_TUPLE_PARAM_NAME).append(",").
-                append(PROP_CONTEXT_PARAM_NAME).append(",").
-                append(WORKING_MEMORY_PARAM_NAME).append(");").append(NEWLINE);
+        if(currentModifyMethod != null) {
+            currentModifyMethod.append(getVariableName(leftInputAdapterNode)).append(".modifyObject(").
+                    append(FACT_HANDLE_PARAM_NAME).append(",").
+                    append(MODIFY_PREVIOUS_TUPLE_PARAM_NAME).append(",").
+                    append(PROP_CONTEXT_PARAM_NAME).append(",").
+                    append(WORKING_MEMORY_PARAM_NAME).append(");").append(NEWLINE);
+        }
     }
 
     @Override
     public void startNonHashedAlphaNode(AlphaNode alphaNode) {
-        builder.append("if ( ").append(getVariableName(alphaNode)).
+        if(currentModifyMethod != null) {
+            ifIsAllowed(alphaNode);
+        }
+    }
+
+    private void ifIsAllowed(AlphaNode alphaNode) {
+        currentModifyMethod.append("if ( ").append(getVariableName(alphaNode)).
                 append(".isAllowed(").append(FACT_HANDLE_PARAM_NAME).append(",").
                 append(WORKING_MEMORY_PARAM_NAME).
                 append(") ) {").append(NEWLINE);
-
     }
 
     @Override
     public void endNonHashedAlphaNode(AlphaNode alphaNode) {
         // close if statement
-        builder.append("}").append(NEWLINE);
+        if(currentModifyMethod != null) {
+            currentModifyMethod.append("}").append(NEWLINE);
+        }
     }
 
     @Override
@@ -125,29 +139,52 @@ public class ModifyHandler extends SwitchCompilerHandler {
     @Override
     public void startHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
         generateSwitchCase(hashedAlpha, hashedValue);
+
+        currentModifyMethod = new StringBuilder();
+        currentModifyMethod.append(
+                String.format("private void modifyObject%s(org.drools.core.common.InternalFactHandle handle, " +
+                                      "org.drools.core.reteoo.ModifyPreviousTuples modifyPreviousTuples, " +
+                                      "org.drools.core.spi.PropagationContext context, " +
+                                      "org.drools.core.common.InternalWorkingMemory wm) {", switchCaseCounter)
+        );
+
+        builder.append(String.format("modifyObject%s(handle, modifyPreviousTuples, context, wm);", switchCaseCounter));
+
     }
 
     @Override
     public void endHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
         builder.append("break;").append(NEWLINE);
+
+        closeStatement(currentModifyMethod);
+        modifyObjectMethods.add(currentModifyMethod.toString());
+        currentModifyMethod = null;
+        switchCaseCounter++;
     }
 
     @Override
     public void endHashedAlphaNodes(IndexableConstraint hashedFieldReader) {
         // close switch statement
-        builder.append("}").append(NEWLINE);
+        closeStatement(builder);
         // and if statement for ensuring non-null
-        builder.append("}").append(NEWLINE);
+        closeStatement(builder);
     }
 
     @Override
     public void endObjectTypeNode(ObjectTypeNode objectTypeNode) {
         // close the assertObject method
-        builder.append("}").append(NEWLINE);
+        closeStatement(builder);
     }
 
     @Override
     public void nullCaseAlphaNodeStart(AlphaNode hashedAlpha) {
         super.nullCaseAlphaNodeStart(hashedAlpha);
     }
+
+    public void addModifyMethods() {
+        for(String m : modifyObjectMethods) {
+            builder.append(m);
+        }
+    }
+
 }
