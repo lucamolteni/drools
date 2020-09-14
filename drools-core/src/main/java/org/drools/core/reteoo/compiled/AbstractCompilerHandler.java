@@ -31,7 +31,7 @@ abstract class AbstractCompilerHandler extends NetworkHandlerAdaptor {
 
     private static final String MAP_VARIABLE_NAME_SUFFIX = "ToNodeId";
 
-    protected Class<?> getVariableType(AlphaNode alphaNode) {
+    protected static Class<?> getVariableType(AlphaNode alphaNode) {
 
         // for alphas, we use the constraint of the alpha for the declaration
         return alphaNode.getConstraint().getClass();
@@ -42,7 +42,7 @@ abstract class AbstractCompilerHandler extends NetworkHandlerAdaptor {
         return sink.getClass();
     }
 
-    protected String getVariableName(AlphaNode alphaNode) {
+    protected static String getVariableName(AlphaNode alphaNode) {
         Class<?> variableType = getVariableType(alphaNode);
 
         return getVariableName(variableType, alphaNode.getId());
@@ -73,7 +73,7 @@ abstract class AbstractCompilerHandler extends NetworkHandlerAdaptor {
      * @return variable name
      * @see Class#getSimpleName()
      */
-    private String getVariableName(Class clazz, int nodeId) {
+    private static String getVariableName(Class clazz, int nodeId) {
         String type = clazz.getSimpleName();
         return Character.toLowerCase(type.charAt(0)) + type.substring(1) + nodeId;
     }

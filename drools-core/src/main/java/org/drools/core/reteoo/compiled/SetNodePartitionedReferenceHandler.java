@@ -16,35 +16,24 @@
 
 package org.drools.core.reteoo.compiled;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.Modifier;
-import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
-import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.BooleanLiteralExpr;
-import com.github.javaparser.ast.expr.CastExpr;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.SimpleName;
-import com.github.javaparser.ast.expr.VariableDeclarationExpr;
-import com.github.javaparser.ast.nodeTypes.NodeWithStatements;
 import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.SwitchEntry;
 import com.github.javaparser.ast.stmt.SwitchStmt;
 import com.github.javaparser.ast.type.PrimitiveType;
-import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.type.VoidType;
 import org.drools.core.common.NetworkNode;
 import org.drools.core.reteoo.AlphaNode;
@@ -55,9 +44,10 @@ import org.drools.core.reteoo.Sink;
 import org.drools.core.reteoo.WindowNode;
 import org.drools.core.util.ListUtils;
 
-import static com.github.javaparser.StaticJavaParser.parse;
 import static com.github.javaparser.StaticJavaParser.parseExpression;
+import static com.github.javaparser.StaticJavaParser.parseStatement;
 import static com.github.javaparser.StaticJavaParser.parseType;
+import static org.drools.core.reteoo.compiled.SetNodeReferenceHandler.getVariableAssignmentStatementAlphaNode;
 
 public class SetNodePartitionedReferenceHandler extends AbstractCompilerHandler {
 
@@ -86,7 +76,7 @@ public class SetNodePartitionedReferenceHandler extends AbstractCompilerHandler 
         allMethods.add(methodDeclaration);
         BlockStmt setNetworkNodeReference = methodDeclaration.getBody().orElseThrow(() -> new RuntimeException("No block statement"));
 
-        List<List<NetworkNode>> partitionedNodes = ListUtils.partition(nodes, 4);
+        List<List<NetworkNode>> partitionedNodes = ListUtils.partition(nodes, 20);
 
         for (int i = 0; i < partitionedNodes.size(); i++) {
             List<NetworkNode> subNodes = partitionedNodes.get(i);
@@ -94,7 +84,7 @@ public class SetNodePartitionedReferenceHandler extends AbstractCompilerHandler 
             allMethods.add(m);
         }
 
-        for(MethodDeclaration md : allMethods) {
+        for (MethodDeclaration md : allMethods) {
             builder.append(md.toString());
             builder.append("\n");
         }
@@ -137,6 +127,8 @@ public class SetNodePartitionedReferenceHandler extends AbstractCompilerHandler 
         return switchMethod;
     }
 
+    private static final String PARAM_NAME = "node";
+
     private void generateSwitchBody(BlockStmt switchBodyStatements, List<NetworkNode> subNodes) {
         SwitchStmt switchStmt = new SwitchStmt();
         switchStmt.setSelector(parseExpression("node.getId()"));
@@ -144,12 +136,13 @@ public class SetNodePartitionedReferenceHandler extends AbstractCompilerHandler 
         NodeList<SwitchEntry> entries = new NodeList<>();
         for (NetworkNode n : subNodes) {
 
-            Type nodeType = parseType(n.getClass().getCanonicalName());
-            Expression assignExpr = new AssignExpr(new NameExpr(getVariableAssignmentStatement(n, "node")),
-                                                   new CastExpr(nodeType, new NameExpr("node")),
-                                                   AssignExpr.Operator.ASSIGN);
-
-            Statement assignStmt = new ExpressionStmt(assignExpr);
+            String assignStatementString;
+            if (n instanceof AlphaNode) {
+                assignStatementString = getVariableAssignmentStatementAlphaNode((AlphaNode) n, PARAM_NAME);
+            } else {
+                assignStatementString = getVariableAssignmentStatement(n, PARAM_NAME);
+            }
+            Statement assignStmt = parseStatement(assignStatementString);
 
             SwitchEntry se = new SwitchEntry(NodeList.nodeList(
                     new IntegerLiteralExpr(n.getId())),
@@ -160,6 +153,7 @@ public class SetNodePartitionedReferenceHandler extends AbstractCompilerHandler 
 
         switchStmt.setEntries(entries);
         switchBodyStatements.addStatement(switchStmt);
+        switchBodyStatements.addStatement(new ReturnStmt(new BooleanLiteralExpr(false)));
     }
 
     private void caseStmt(int id, String variableAssignmentStatement) {

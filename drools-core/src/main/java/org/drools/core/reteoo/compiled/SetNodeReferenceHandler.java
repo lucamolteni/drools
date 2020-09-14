@@ -51,7 +51,7 @@ public class SetNodeReferenceHandler extends AbstractCompilerHandler {
         return assignmentStatement;
     }
 
-    private String getVariableAssignmentStatement(AlphaNode alphaNode, String nodeVariableName) {
+    public static String getVariableAssignmentStatementAlphaNode(AlphaNode alphaNode, String nodeVariableName) {
         Class<?> variableType = getVariableType(alphaNode);
         String assignmentStatement;
 
@@ -86,7 +86,7 @@ public class SetNodeReferenceHandler extends AbstractCompilerHandler {
         //      break;
 
         builder.append("case ").append(alphaNode.getId()).append(": ").append(NEWLINE);
-        builder.append(getVariableAssignmentStatement(alphaNode, PARAM_NAME)).append(NEWLINE);
+        builder.append(getVariableAssignmentStatementAlphaNode(alphaNode, PARAM_NAME)).append(NEWLINE);
         builder.append("break;").append(NEWLINE);
     }
 
