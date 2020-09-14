@@ -16,6 +16,6 @@ public class ResultCollector {
     }
 
     public Object getWithHitPolicy() {
-        return results.get(0);
+        return results.isEmpty() ? null : results.get(0);
     }
 }
