@@ -53,7 +53,7 @@ public class SetNodeReferenceHandler extends AbstractCompilerHandler {
         return assignmentStatement;
     }
 
-    private String getVariableAssignmentStatement(AlphaNode alphaNode, String nodeVariableName) {
+    private static String getVariableAssignmentStatement(AlphaNode alphaNode, String nodeVariableName) {
         Class<?> variableType = getVariableType(alphaNode);
         String assignmentStatement;
 

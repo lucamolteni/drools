@@ -42,12 +42,12 @@ abstract class AbstractCompilerHandler extends NetworkHandlerAdaptor {
         return alphaNode.getConstraint().getClass();
     }
 
-    protected Class<?> getVariableType(Sink sink) {
+    protected static Class<?> getVariableType(Sink sink) {
 
         return sink.getClass();
     }
 
-    protected String getVariableName(AlphaNode alphaNode) {
+    protected static String getVariableName(AlphaNode alphaNode) {
         Class<?> variableType = getVariableType(alphaNode);
 
         return getVariableName(variableType, alphaNode.getId());
@@ -59,7 +59,7 @@ abstract class AbstractCompilerHandler extends NetworkHandlerAdaptor {
         return getVariableName(variableType, alphaNode.getId());
     }
 
-    protected String getVariableName(Sink sink) {
+    protected static String getVariableName(Sink sink) {
         Class<?> variableType = getVariableType(sink);
 
         return getVariableName(variableType, sink.getId());
@@ -78,7 +78,7 @@ abstract class AbstractCompilerHandler extends NetworkHandlerAdaptor {
      * @return variable name
      * @see Class#getSimpleName()
      */
-    protected String getVariableName(Class<?> clazz, int nodeId) {
+    protected static String getVariableName(Class<?> clazz, int nodeId) {
         String type = clazz.getSimpleName();
         return Character.toLowerCase(type.charAt(0)) + type.substring(1) + nodeId;
     }

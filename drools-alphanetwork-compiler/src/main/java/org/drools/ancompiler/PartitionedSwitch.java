@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.drools.core.reteoo.compiled;
+package org.drools.ancompiler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,9 +43,8 @@ import org.drools.core.util.ListUtils;
 import static com.github.javaparser.StaticJavaParser.parseExpression;
 import static com.github.javaparser.StaticJavaParser.parseStatement;
 import static com.github.javaparser.StaticJavaParser.parseType;
-import static org.drools.core.reteoo.compiled.AbstractCompilerHandler.getVariableName;
-import static org.drools.core.reteoo.compiled.AbstractCompilerHandler.getVariableType;
-import static org.drools.core.reteoo.compiled.SetNodeReferenceHandler.getVariableAssignmentStatementAlphaNode;
+import static org.drools.ancompiler.AbstractCompilerHandler.getVariableName;
+import static org.drools.ancompiler.AbstractCompilerHandler.getVariableType;
 
 public class PartitionedSwitch {
 
@@ -135,7 +134,7 @@ public class PartitionedSwitch {
 
             String assignStatementString;
             if (n instanceof AlphaNode) {
-                assignStatementString = getVariableAssignmentStatementAlphaNode((AlphaNode) n, PARAM_NAME);
+                assignStatementString = getVariableAssignmentStatement((AlphaNode) n, PARAM_NAME);
             } else {
                 assignStatementString = getVariableAssignmentStatement(n, PARAM_NAME);
             }
