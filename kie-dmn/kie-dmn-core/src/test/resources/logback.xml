@@ -24,7 +24,7 @@
   </appender>
 
   <logger name="org.kie" level="debug"/>
-  <logger name="org.drools.compiler.reteoo.compiled" level="debug"/>
+  <logger name="org.drools.ancompiler" level="debug"/>
   <logger name="org.kie.dmn.core.compiler.execmodelbased" level="debug"/> <!-- useful default when moving generic org.kie to <info -->
   <logger name="org.kie.dmn.feel.codegen" level="info"/> <!-- useful default when moving generic org.kie to <info -->
 

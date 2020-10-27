@@ -13,7 +13,7 @@ import org.kie.dmn.core.compiler.alphanetbased.ResultCollector;
 import org.kie.dmn.feel.lang.EvaluationContext;
 import org.kie.dmn.core.compiler.alphanetbased.TableContext;
 
-import static org.drools.compiler.reteoo.compiled.ObjectTypeNodeCompiler.compile;
+import static org.drools.ancompiler.ObjectTypeNodeCompiler.compile;
 import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.addResultSink;
 import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.createAlphaNode;
 import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.createIndex;
