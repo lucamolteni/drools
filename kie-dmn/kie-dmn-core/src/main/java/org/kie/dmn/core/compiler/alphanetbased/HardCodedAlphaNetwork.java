@@ -17,15 +17,19 @@
 package org.kie.dmn.core.compiler.alphanetbased;
 
 import java.util.Arrays;
+import java.util.Map;
 
+import org.drools.ancompiler.CompiledNetwork;
+import org.drools.ancompiler.CompiledNetworkSource;
+import org.drools.ancompiler.ObjectTypeNodeCompiler;
 import org.drools.compiler.builder.impl.KnowledgeBuilderImpl;
 import org.drools.core.common.DefaultFactHandle;
 import org.drools.core.reteoo.AlphaNode;
-import org.drools.core.reteoo.compiled.CompiledNetwork;
 import org.drools.model.Index;
 import org.kie.dmn.feel.lang.EvaluationContext;
+import org.kie.memorycompiler.KieMemoryCompiler;
 
-import static org.drools.compiler.reteoo.compiled.ObjectTypeNodeCompiler.compile;
+import static org.drools.core.util.MapUtils.mapValues;
 import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.addResultSink;
 import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.createAlphaNode;
 import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.createIndex;
@@ -44,7 +48,7 @@ public class HardCodedAlphaNetwork implements DMNCompiledAlphaNetwork {
     public Object evaluate( EvaluationContext evalCtx ) {
         resultCollector.clearResults();
         TableContext ctx = new TableContext( evalCtx, "Existing Customer", "Application Risk Score" );
-        compiledNetwork.assertObject( new DefaultFactHandle( ctx ), null, null );
+        compiledNetwork.propagateAssertObject( new DefaultFactHandle( ctx ), null, null );
         return resultCollector.getWithHitPolicy();
     }
 
@@ -143,8 +147,14 @@ public class HardCodedAlphaNetwork implements DMNCompiledAlphaNetwork {
         AlphaNode alphaDummy = createAlphaNode(ctx, ctx.otn, x -> false, index3);
         addResultSink(ctx, alphaDummy, "DUMMY");
 
-        this.compiledNetwork = compile(new KnowledgeBuilderImpl(ctx.kBase), ctx.otn);
-        this.compiledNetwork.setObjectTypeNode(ctx.otn);
+        Map<String, CompiledNetworkSource> compiledNetworkSourcesMap = ObjectTypeNodeCompiler.compiledNetworkSourceMap(ctx.kBase.getRete());
+
+        Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(mapValues(compiledNetworkSourcesMap, CompiledNetworkSource::getSource),
+                                                                          this.getClass().getClassLoader());
+        compiledNetworkSourcesMap.values().forEach(c -> {
+            Class<?> aClass = compiledClasses.get(c.getName());
+            c.setCompiledNetwork(aClass);
+        });
     }
 
     private static void alphabet(HardCodedAlphaNetwork network, NetworkBuilderContext ctx, String sChar) {
