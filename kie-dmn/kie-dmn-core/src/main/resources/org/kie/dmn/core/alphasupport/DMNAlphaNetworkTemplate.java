@@ -1,19 +1,25 @@
 package org.kie.dmn.core.alphasupport;
 
 import java.lang.Override;
+import java.util.Map;
 
+import org.drools.ancompiler.CompiledNetworkSource;
+import org.drools.ancompiler.ObjectTypeNodeCompiler;
 import org.drools.compiler.builder.impl.KnowledgeBuilderImpl;
 import org.drools.core.common.DefaultFactHandle;
 import org.drools.core.reteoo.AlphaNode;
-import org.drools.core.reteoo.compiled.CompiledNetwork;
+import org.drools.ancompiler.CompiledNetwork;
+import org.drools.core.reteoo.Rete;
+import org.drools.core.reteoo.ReteDumper;
 import org.drools.model.Index;
 import org.kie.dmn.core.compiler.alphanetbased.DMNCompiledAlphaNetwork;
 import org.kie.dmn.core.compiler.alphanetbased.NetworkBuilderContext;
 import org.kie.dmn.core.compiler.alphanetbased.ResultCollector;
 import org.kie.dmn.feel.lang.EvaluationContext;
 import org.kie.dmn.core.compiler.alphanetbased.TableContext;
+import org.kie.memorycompiler.KieMemoryCompiler;
 
-import static org.drools.ancompiler.ObjectTypeNodeCompiler.compile;
+import static org.drools.core.util.MapUtils.mapValues;
 import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.addResultSink;
 import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.createAlphaNode;
 import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.createIndex;
@@ -37,15 +43,25 @@ public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetwork {
         AlphaNode alphaDummy = createAlphaNode(ctx, ctx.otn, x -> false, index3);
         addResultSink(ctx, alphaDummy, "DUMMY");
 
-        this.compiledNetwork = compile(new KnowledgeBuilderImpl(ctx.kBase), ctx.otn);
-        this.compiledNetwork.setObjectTypeNode(ctx.otn);
+        Rete rete = ctx.kBase.getRete();
+
+        ReteDumper.dumpRete(rete);
+
+//        Map<String, CompiledNetworkSource> compiledNetworkSourcesMap = ObjectTypeNodeCompiler.compiledNetworkSourceMap(rete);
+//
+//        Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(mapValues(compiledNetworkSourcesMap, CompiledNetworkSource::getSource),
+//                                                                          this.getClass().getClassLoader());
+//        compiledNetworkSourcesMap.values().forEach(c -> {
+//            Class<?> aClass = compiledClasses.get(c.getName());
+//            c.setCompiledNetwork(aClass);
+//        });
     }
 
     @Override
     public Object evaluate( EvaluationContext evalCtx ) {
         resultCollector.clearResults();
         TableContext ctx = new TableContext( evalCtx, "Existing Customer", "Application Risk Score" );
-        compiledNetwork.assertObject(new DefaultFactHandle(ctx ), null, null );
+        compiledNetwork.propagateAssertObject(new DefaultFactHandle(ctx ), null, null );
         return resultCollector.getWithHitPolicy();
     }
 
