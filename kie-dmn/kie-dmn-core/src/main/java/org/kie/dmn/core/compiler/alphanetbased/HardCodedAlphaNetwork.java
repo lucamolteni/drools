@@ -22,7 +22,6 @@ import java.util.Map;
 import org.drools.ancompiler.CompiledNetwork;
 import org.drools.ancompiler.CompiledNetworkSource;
 import org.drools.ancompiler.ObjectTypeNodeCompiler;
-import org.drools.compiler.builder.impl.KnowledgeBuilderImpl;
 import org.drools.core.common.DefaultFactHandle;
 import org.drools.core.reteoo.AlphaNode;
 import org.drools.model.Index;

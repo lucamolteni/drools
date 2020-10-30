@@ -9,7 +9,7 @@ import java.lang.Override;
 
 import org.drools.compiler.builder.impl.KnowledgeBuilderImpl;
 import org.drools.core.reteoo.AlphaNode;
-import org.drools.core.reteoo.compiled.CompiledNetwork;
+import org.drools.ancompiler.CompiledNetwork;
 import org.drools.model.Index;
 import org.kie.dmn.core.compiler.alphanetbased.DMNCompiledAlphaNetwork;
 import org.kie.dmn.core.compiler.alphanetbased.NetworkBuilderContext;
@@ -19,7 +19,6 @@ import org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils;
 import org.drools.core.reteoo.AlphaNode;
 import org.kie.dmn.core.compiler.alphanetbased.TableContext;
 
-import static org.drools.ancompiler.ObjectTypeNodeCompiler.compile;
 import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.addResultSink;
 import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.createAlphaNode;
 import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.createIndex;

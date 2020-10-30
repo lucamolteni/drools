@@ -35,14 +35,14 @@ import static org.kie.dmn.core.compiler.generators.GeneratorsUtil.getDecisionTab
 
 public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
 
-    static final Logger logger = LoggerFactory.getLogger( AlphaNetDMNEvaluatorCompiler.class);
+    static final Logger logger = LoggerFactory.getLogger(AlphaNetDMNEvaluatorCompiler.class);
 
-    public AlphaNetDMNEvaluatorCompiler( DMNCompilerImpl compiler) {
+    public AlphaNetDMNEvaluatorCompiler(DMNCompilerImpl compiler) {
         super(compiler);
     }
 
     @Override
-    protected DMNExpressionEvaluator compileDecisionTable( DMNCompilerContext ctx, DMNModelImpl model, DMNBaseNode node, String dtName, DecisionTable dt ) {
+    protected DMNExpressionEvaluator compileDecisionTable(DMNCompilerContext ctx, DMNModelImpl model, DMNBaseNode node, String dtName, DecisionTable dt) {
         String decisionName = getDecisionTableName(dtName, dt);
         DTableModel dTableModel = new DTableModel(ctx.getFeelHelper(), model, dtName, decisionName, dt);
 
@@ -60,19 +60,14 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
                 .initParameters(ctx.getFeelHelper(), ctx, dTableModel, node);
     }
 
+    // TODO LUCA fix this
     protected DMNCompiledAlphaNetwork createAlphaNetworkInstance(Map<String, Class<?>> compiled) {
         Class<?> inputSetClass = compiled.get("org.kie.dmn.core.alphasupport.DMNAlphaNetwork");
         Object inputSetInstance = null;
         try {
             inputSetInstance = inputSetClass.getDeclaredConstructor().newInstance();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
         return (DMNCompiledAlphaNetwork) inputSetInstance;
     }
