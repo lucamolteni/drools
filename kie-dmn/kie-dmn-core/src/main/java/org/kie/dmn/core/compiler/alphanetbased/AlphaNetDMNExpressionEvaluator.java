@@ -58,29 +58,28 @@ public class AlphaNetDMNExpressionEvaluator implements DMNExpressionEvaluator {
     @Override
     public EvaluatorResult evaluate( DMNRuntimeEventManager eventManager, DMNResult dmnResult ) {
         List<FEELEvent> events = new ArrayList<>();
-        DMNRuntimeEventManagerUtils.fireBeforeEvaluateDecisionTable( eventManager, node.getName(), dTableModel.getDtName(), dmnResult );
+        DMNRuntimeEventManagerUtils.fireBeforeEvaluateDecisionTable(eventManager, node.getName(), dTableModel.getDtName(), dmnResult);
 
-        EvaluationContext evalCtx = createEvaluationContext( events, eventManager, dmnResult );
+        EvaluationContext evalCtx = createEvaluationContext(events, eventManager, dmnResult);
         evalCtx.enterFrame();
 
         DMNDTExpressionEvaluator.EventResults eventResults = null;
         try {
-            Object result = compiledNetwork.evaluate( evalCtx );
+            Object result = compiledNetwork.evaluate(evalCtx);
 
-            eventResults = processEvents(events, eventManager, ( DMNResultImpl ) dmnResult, node);
+            eventResults = processEvents(events, eventManager, (DMNResultImpl) dmnResult, node);
 
             return new EvaluatorResultImpl(result,
-                    eventResults.hasErrors?
-                            EvaluatorResult.ResultType.FAILURE :
-                            EvaluatorResult.ResultType.SUCCESS );
-
+                                           eventResults.hasErrors ?
+                                                   EvaluatorResult.ResultType.FAILURE :
+                                                   EvaluatorResult.ResultType.SUCCESS);
         } catch (RuntimeException e) {
-            logger.error( e.toString(), e );
+            logger.error(e.toString(), e);
             throw e;
         } finally {
             evalCtx.exitFrame();
-            DMNRuntimeEventManagerUtils.fireAfterEvaluateDecisionTable( eventManager, node.getName(), dTableModel.getDtName(), dmnResult,
-                    (eventResults != null ? eventResults.matchedRules : null), (eventResults != null ? eventResults.fired : null) );
+            DMNRuntimeEventManagerUtils.fireAfterEvaluateDecisionTable(eventManager, node.getName(), dTableModel.getDtName(), dmnResult,
+                                                                       (eventResults != null ? eventResults.matchedRules : null), (eventResults != null ? eventResults.fired : null));
         }
     }
 

@@ -16,9 +16,13 @@
 
 package org.kie.dmn.core.compiler.alphanetbased;
 
-import java.lang.reflect.InvocationTargetException;
+import java.util.Collections;
 import java.util.Map;
 
+import org.drools.ancompiler.CompiledNetwork;
+import org.drools.ancompiler.CompiledNetworkSource;
+import org.drools.ancompiler.ObjectTypeNodeCompiler;
+import org.drools.core.reteoo.ObjectTypeNode;
 import org.kie.dmn.core.api.DMNExpressionEvaluator;
 import org.kie.dmn.core.ast.DMNBaseNode;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
@@ -54,10 +58,27 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
 
         ClassLoader thisDMNClassLoader = this.getClass().getClassLoader();
         Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(allTypesSourceCode, thisDMNClassLoader);
-        DMNCompiledAlphaNetwork compiledAlphaNetwork = createAlphaNetworkInstance(compiledClasses);
+        DMNCompiledAlphaNetwork dmnCompiledAlphaNetwork = createAlphaNetworkInstance(compiledClasses);
 
-        return new AlphaNetDMNExpressionEvaluator(compiledAlphaNetwork)
+        dmnCompiledAlphaNetwork.initRete();
+        CompiledNetwork compiledAlphaNetwork = dmnCompiledAlphaNetwork.createCompiledAlphaNetwork(this);
+        dmnCompiledAlphaNetwork.setCompiledAlphaNetwork(compiledAlphaNetwork);
+
+        return new AlphaNetDMNExpressionEvaluator(dmnCompiledAlphaNetwork)
                 .initParameters(ctx.getFeelHelper(), ctx, dTableModel, node);
+    }
+
+    public CompiledNetwork createCompiledAlphaNetwork(ObjectTypeNode otn) {
+        // Move this outside so that we can debug it
+
+        ObjectTypeNodeCompiler objectTypeNodeCompiler = new ObjectTypeNodeCompiler(otn);
+        CompiledNetworkSource compiledNetworkSource = objectTypeNodeCompiler.generateSource();
+
+        Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(Collections.singletonMap(
+                        compiledNetworkSource.getName(), compiledNetworkSource.getSource()), this.getRootClassLoader());
+
+        Class<?> aClass = compiledClasses.get(compiledNetworkSource.getName());
+        return compiledNetworkSource.createInstanceAndSet(aClass);
     }
 
     // TODO LUCA fix this
