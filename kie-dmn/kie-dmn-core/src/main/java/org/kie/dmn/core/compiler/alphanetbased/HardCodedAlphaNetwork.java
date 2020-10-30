@@ -42,9 +42,67 @@ public class HardCodedAlphaNetwork implements DMNCompiledAlphaNetwork {
 
     protected final ResultCollector resultCollector = new ResultCollector();
     protected CompiledNetwork compiledNetwork;
+    private final NetworkBuilderContext ctx;
 
     @Override
-    public Object evaluate( EvaluationContext evalCtx ) {
+    public void initRete() {
+        Index index1 = createIndex(String.class, x -> (String)x.getValue(0), "false");
+        AlphaNode alphac1r1 = createAlphaNode(ctx, ctx.otn, "\"false\"", x -> UT1.apply(x.getEvalCtx(),
+                                                                                        x.getValue(0)), // numero colonna
+                                              index1);
+
+        AlphaNode alphac2r1 = createAlphaNode(ctx, alphac1r1, "<100", x -> UT2.apply(x.getEvalCtx(), x.getValue(1)));
+        addResultSink(ctx, alphac2r1, "HIGH");
+
+        // == alphac1r1 (verifica alpha node sharing)
+        AlphaNode alphac1r2 = createAlphaNode(ctx, ctx.otn, "\"false\"", x -> UT1.apply(x.getEvalCtx(), x.getValue(0)), index1);
+        AlphaNode alphac2r2 = createAlphaNode(ctx, alphac1r2, "[100..120)", x -> UT3.apply(x.getEvalCtx(), x.getValue(1)));
+
+        addResultSink(ctx, alphac2r2, "MEDIUM");
+
+        AlphaNode alphac2r3 = createAlphaNode(ctx, alphac1r1, "[120..130]", x -> UT4.apply(x.getEvalCtx(), x.getValue(1)));
+        addResultSink(ctx, alphac2r3, "LOW");
+
+        AlphaNode alphac2r4 = createAlphaNode(ctx, alphac1r1, ">130", x -> UT5.apply(x.getEvalCtx(), x.getValue(1)));
+        addResultSink(ctx, alphac2r4, "VERY LOW");
+
+        Index index2 = createIndex(String.class, x -> (String)x.getValue(0), "true");
+        AlphaNode alphac1r5 = createAlphaNode(ctx, ctx.otn, "\"true\"", x -> UT6.apply(x.getEvalCtx(), x.getValue(0)), index2);
+
+        AlphaNode alphac2r5 = createAlphaNode(ctx, alphac1r5, "<80", x -> UT7.apply(x.getEvalCtx(), x.getValue(1)));
+        addResultSink(ctx, alphac2r5, "DECLINE");
+        AlphaNode alphac2r6 = createAlphaNode(ctx, alphac1r5, "[80..90)", x -> UT8.apply(x.getEvalCtx(), x.getValue(1)));
+        addResultSink(ctx, alphac2r6, "HIGH");
+        AlphaNode alphac2r7 = createAlphaNode(ctx, alphac1r5, "[90..110]", x -> UT9.apply(x.getEvalCtx(), x.getValue(1)));
+        addResultSink(ctx, alphac2r7, "MEDIUM");
+        AlphaNode alphac2r8 = createAlphaNode(ctx, alphac1r5, ">110", x -> UT10.apply(x.getEvalCtx(), x.getValue(1)));
+        addResultSink(ctx, alphac2r8, "LOW");
+
+        char[] alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
+        System.out.println(System.getProperty("alphalength"));
+        int alphalength = Integer.valueOf(System.getProperty("alphalength", "52"));
+        alphabet = Arrays.copyOf(alphabet, alphalength);
+        for (char c : alphabet) {
+            alphabet(this, ctx, String.valueOf(c));
+        }
+
+        Index index3 = createIndex(String.class, x -> (String)x.getValue(0), "dummy");
+        AlphaNode alphaDummy = createAlphaNode(ctx, ctx.otn, x -> false, index3);
+        addResultSink(ctx, alphaDummy, "DUMMY");
+    }
+
+    @Override
+    public CompiledNetwork createCompiledAlphaNetwork(AlphaNetDMNEvaluatorCompiler compiler) {
+        return compiler.createCompiledAlphaNetwork(ctx.otn);
+    }
+
+    @Override
+    public void setCompiledAlphaNetwork(CompiledNetwork compiledAlphaNetwork) {
+        this.compiledNetwork = compiledAlphaNetwork;
+    }
+
+    @Override
+    public Object evaluate( EvaluationContext evalCtx) {
         resultCollector.clearResults();
         TableContext ctx = new TableContext( evalCtx, "Existing Customer", "Application Risk Score" );
         compiledNetwork.propagateAssertObject( new DefaultFactHandle( ctx ), null, null );
@@ -99,61 +157,7 @@ public class HardCodedAlphaNetwork implements DMNCompiledAlphaNetwork {
     public static final org.kie.dmn.feel.runtime.UnaryTest UT10 = (feelExprCtx, left) -> gt(left, K_110);
 
     public HardCodedAlphaNetwork() {
-
-        NetworkBuilderContext ctx = new NetworkBuilderContext(resultCollector);
-
-        Index index1 = createIndex(String.class, x -> (String)x.getValue(0), "false");
-        AlphaNode alphac1r1 = createAlphaNode(ctx, ctx.otn, "\"false\"", x -> UT1.apply(x.getEvalCtx(),
-                                                                                        x.getValue(0)), // numero colonna
-                                              index1);
-
-        AlphaNode alphac2r1 = createAlphaNode(ctx, alphac1r1, "<100", x -> UT2.apply(x.getEvalCtx(), x.getValue(1)));
-        addResultSink(ctx, alphac2r1, "HIGH");
-
-        // == alphac1r1 (verifica alpha node sharing)
-        AlphaNode alphac1r2 = createAlphaNode(ctx, ctx.otn, "\"false\"", x -> UT1.apply(x.getEvalCtx(), x.getValue(0)), index1);
-        AlphaNode alphac2r2 = createAlphaNode(ctx, alphac1r2, "[100..120)", x -> UT3.apply(x.getEvalCtx(), x.getValue(1)));
-
-        addResultSink(ctx, alphac2r2, "MEDIUM");
-
-        AlphaNode alphac2r3 = createAlphaNode(ctx, alphac1r1, "[120..130]", x -> UT4.apply(x.getEvalCtx(), x.getValue(1)));
-        addResultSink(ctx, alphac2r3, "LOW");
-
-        AlphaNode alphac2r4 = createAlphaNode(ctx, alphac1r1, ">130", x -> UT5.apply(x.getEvalCtx(), x.getValue(1)));
-        addResultSink(ctx, alphac2r4, "VERY LOW");
-
-        Index index2 = createIndex(String.class, x -> (String)x.getValue(0), "true");
-        AlphaNode alphac1r5 = createAlphaNode(ctx, ctx.otn, "\"true\"", x -> UT6.apply(x.getEvalCtx(), x.getValue(0)), index2);
-
-        AlphaNode alphac2r5 = createAlphaNode(ctx, alphac1r5, "<80", x -> UT7.apply(x.getEvalCtx(), x.getValue(1)));
-        addResultSink(ctx, alphac2r5, "DECLINE");
-        AlphaNode alphac2r6 = createAlphaNode(ctx, alphac1r5, "[80..90)", x -> UT8.apply(x.getEvalCtx(), x.getValue(1)));
-        addResultSink(ctx, alphac2r6, "HIGH");
-        AlphaNode alphac2r7 = createAlphaNode(ctx, alphac1r5, "[90..110]", x -> UT9.apply(x.getEvalCtx(), x.getValue(1)));
-        addResultSink(ctx, alphac2r7, "MEDIUM");
-        AlphaNode alphac2r8 = createAlphaNode(ctx, alphac1r5, ">110", x -> UT10.apply(x.getEvalCtx(), x.getValue(1)));
-        addResultSink(ctx, alphac2r8, "LOW");
-
-        char[] alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
-        System.out.println(System.getProperty("alphalength"));
-        int alphalength = Integer.valueOf(System.getProperty("alphalength", "52"));
-        alphabet = Arrays.copyOf(alphabet, alphalength);
-        for (char c : alphabet) {
-            alphabet(this, ctx, String.valueOf(c));
-        }
-
-        Index index3 = createIndex(String.class, x -> (String)x.getValue(0), "dummy");
-        AlphaNode alphaDummy = createAlphaNode(ctx, ctx.otn, x -> false, index3);
-        addResultSink(ctx, alphaDummy, "DUMMY");
-
-        Map<String, CompiledNetworkSource> compiledNetworkSourcesMap = ObjectTypeNodeCompiler.compiledNetworkSourceMap(ctx.kBase.getRete());
-
-        Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(mapValues(compiledNetworkSourcesMap, CompiledNetworkSource::getSource),
-                                                                          this.getClass().getClassLoader());
-        compiledNetworkSourcesMap.values().forEach(c -> {
-            Class<?> aClass = compiledClasses.get(c.getName());
-            c.setCompiledNetwork(aClass);
-        });
+        ctx = new NetworkBuilderContext(resultCollector);
     }
 
     private static void alphabet(HardCodedAlphaNetwork network, NetworkBuilderContext ctx, String sChar) {
