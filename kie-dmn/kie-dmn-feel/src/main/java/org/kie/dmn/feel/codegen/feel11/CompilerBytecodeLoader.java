@@ -149,9 +149,7 @@ public class CompilerBytecodeLoader {
 
         MethodDeclaration lookupMethod = cu
                 .findFirst(MethodDeclaration.class, m -> m.getName().toString().equals(methodName))
-                .orElseThrow(() -> {
-                    return new RuntimeException("Something unexpected changed in the template.");
-                });
+                .orElseThrow(() -> new RuntimeException("Something unexpected changed in the template."));
 
         lookupMethod.setComment(new JavadocComment("   FEEL: " + feelExpression + "   "));
 

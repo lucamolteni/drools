@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import org.drools.compiler.commons.jci.compilers.CompilationResult;
 import org.drools.compiler.compiler.io.memory.MemoryFileSystem;
 import org.drools.reflective.classloader.ProjectClassLoader;
 import org.drools.ruleunit.DataSource;
@@ -46,6 +48,7 @@ import static java.util.stream.Collectors.joining;
 
 import static org.drools.modelcompiler.builder.JavaParserCompiler.getCompiler;
 import static org.kie.dmn.core.compiler.generators.GeneratorsUtil.getDecisionTableName;
+import static org.kie.dmn.feel.codegen.feel11.CodegenStringUtil.replaceClassNameWith;
 
 public class ExecModelDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
 
@@ -361,11 +364,13 @@ public class ExecModelDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
                         testClassesByInput.put(input, testClass);
                         instancesBuilder.append( "    private static final CompiledDTTest " + testClass + "_INSTANCE = new CompiledDTTest( new " + testClass + "() );\n" );
 
-                        String sourceCode = feel.generateUnaryTestsSource(
+                        ClassOrInterfaceDeclaration classOrInterfaceDeclaration = feel.generateUnaryTestsSource(
                                 input,
                                 ctx,
-                                dTableModel.getColumns().get(j).getType())
-                                .setName(testClass).toString();
+                                dTableModel.getColumns().get(j).getType());
+
+                        replaceClassNameWith(classOrInterfaceDeclaration, "TemplateCompiledFEELUnaryTests", testClass);
+                        String sourceCode = classOrInterfaceDeclaration.setName(testClass).toString();
 
                         testsBuilder.append( "\n" );
                         testsBuilder.append( sourceCode );
