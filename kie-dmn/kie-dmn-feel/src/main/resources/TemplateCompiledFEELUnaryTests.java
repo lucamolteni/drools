@@ -16,6 +16,12 @@ import org.kie.dmn.feel.runtime.UnaryTest;
 
 public class TemplateCompiledFEELUnaryTests implements org.kie.dmn.feel.codegen.feel11.CompiledFEELUnaryTests {
 
+
+    @Override
+    public java.util.List<org.kie.dmn.feel.runtime.UnaryTest> getUnaryTests() {
+        return null;
+    }
+
     private static TemplateCompiledFEELUnaryTests INSTANCE;
 
     public static TemplateCompiledFEELUnaryTests getInstance() {
@@ -28,10 +34,4 @@ public class TemplateCompiledFEELUnaryTests implements org.kie.dmn.feel.codegen.
     public static org.kie.dmn.feel.runtime.UnaryTest getTestInstance() {
         return getInstance().getUnaryTests().iterator().next();
     }
-
-    @Override
-    public java.util.List<org.kie.dmn.feel.runtime.UnaryTest> getUnaryTests() {
-        return null;
-    }
-
 }

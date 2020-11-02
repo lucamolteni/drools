@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.xml.namespace.QName;
+
 import org.kie.api.io.Resource;
 import org.kie.dmn.api.core.AfterGeneratingSourcesListener;
 import org.kie.dmn.api.core.DMNMessage;
@@ -114,13 +115,14 @@ public class DMNEvaluatorCompiler {
             }
             return evaluatorCompiler;
         } else if (dmnCompilerConfig.isUseExecModelCompiler()) {
+            logger.debug("Using ExecModelDMNEvaluatorCompiler.");
+            return new ExecModelDMNEvaluatorCompiler(dmnCompiler);
+        } else if (dmnCompilerConfig.isUseAlphaNetwork()) {
             logger.debug("Using AlphaNetDMNEvaluatorCompiler.");
-            System.out.println("\n\n\n\n\n\n+++ AlphaNetDMNEvaluatorCompiler\n\n\n\n");
             return new AlphaNetDMNEvaluatorCompiler(dmnCompiler);
         } else {
             logger.debug("default DMNEvaluatorCompiler.");
             return new DMNEvaluatorCompiler(dmnCompiler);
-
         }
     }
 
