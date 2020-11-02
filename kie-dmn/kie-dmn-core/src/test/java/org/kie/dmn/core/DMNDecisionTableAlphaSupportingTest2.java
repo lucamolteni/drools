@@ -53,6 +53,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+// TODO LUCA this was the original test that mimics the benchmark remove BuildtimeUtil.createKieContainerFromResources
 public class DMNDecisionTableAlphaSupportingTest2 extends BaseInterpretedVsCompiledTest {
 
     private static final Logger LOG = org.slf4j.LoggerFactory.getLogger(DMNDecisionTableAlphaSupportingTest2.class);
