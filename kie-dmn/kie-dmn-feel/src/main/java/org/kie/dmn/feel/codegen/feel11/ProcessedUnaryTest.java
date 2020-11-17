@@ -56,7 +56,7 @@ public class ProcessedUnaryTest extends ProcessedFEELUnit {
                 TEMPLATE_CLASS,
                 expression,
                 compilerResult.getExpression(),
-                compilerResult.getFieldDeclarations(), "getUnaryTests");
+                compilerResult.getFieldDeclarations());
     }
 
     public UnaryTestInterpretedExecutableExpression getInterpreted() {
