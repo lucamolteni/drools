@@ -102,7 +102,7 @@ public class CompilerBytecodeLoader {
     }
 
     public <T> T internal_makefromJP(Class<T> clazz, String templateResourcePath, String cuPackage, String cuClass, String feelExpression, Expression theExpression, Set<FieldDeclaration> fieldDeclarations) {
-        CompilationUnit cu = getCompilationUnit(clazz, templateResourcePath, cuPackage, cuClass, feelExpression, theExpression, fieldDeclarations, "getUnaryTests");
+        CompilationUnit cu = getCompilationUnit(clazz, templateResourcePath, cuPackage, cuClass, feelExpression, theExpression, fieldDeclarations);
         return compileUnit(cuPackage, cuClass, cu);
     }
 
@@ -134,13 +134,13 @@ public class CompilerBytecodeLoader {
     }
 
     public String getSourceForUnaryTest(String packageName, String className, String feelExpression, Expression theExpression, Set<FieldDeclaration> fieldDeclarations) {
-        CompilationUnit cu = getCompilationUnit(CompiledFEELUnaryTests.class, "/TemplateCompiledFEELUnaryTests.java", packageName, className, feelExpression, theExpression, fieldDeclarations, "getUnaryTests");
+        CompilationUnit cu = getCompilationUnit(CompiledFEELUnaryTests.class, "/TemplateCompiledFEELUnaryTests.java", packageName, className, feelExpression, theExpression, fieldDeclarations);
         ClassOrInterfaceDeclaration classSource = cu.getClassByName( className ).orElseThrow(() -> new IllegalArgumentException("Cannot find class by name " + className));
         classSource.setStatic( true );
         return classSource.toString();
     }
 
-    public <T> CompilationUnit getCompilationUnit(Class<T> clazz, String templateResourcePath, String cuPackage, String cuClass, String feelExpression, Expression theExpression, Set<FieldDeclaration> fieldDeclarations, String methodName) {
+    public <T> CompilationUnit getCompilationUnit(Class<T> clazz, String templateResourcePath, String cuPackage, String cuClass, String feelExpression, Expression theExpression, Set<FieldDeclaration> fieldDeclarations) {
         CompilationUnit cu = parse(CompilerBytecodeLoader.class.getResourceAsStream(templateResourcePath));
         cu.setPackageDeclaration(cuPackage);
         final String className = templateResourcePath.substring( 1, templateResourcePath.length() - 5);
@@ -148,7 +148,7 @@ public class CompilerBytecodeLoader {
         classSource.setName( cuClass );
 
         MethodDeclaration lookupMethod = cu
-                .findFirst(MethodDeclaration.class, m -> m.getName().toString().equals(methodName))
+                .findFirst(MethodDeclaration.class)
                 .orElseThrow(() -> new RuntimeException("Something unexpected changed in the template."));
 
         lookupMethod.setComment(new JavadocComment("   FEEL: " + feelExpression + "   "));
