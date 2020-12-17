@@ -137,14 +137,6 @@
       <scope>test</scope>
     </dependency>
 
-
-    <!-- used by alpha network compiler, to be removed -->
-    <dependency>
-      <groupId>com.github.javaparser</groupId>
-      <artifactId>javaparser-core</artifactId>
-    </dependency>
-
-
   </dependencies>
 
   <profiles>
