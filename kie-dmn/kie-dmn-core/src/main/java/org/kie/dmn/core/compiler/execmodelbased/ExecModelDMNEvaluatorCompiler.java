@@ -24,7 +24,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import org.drools.compiler.commons.jci.compilers.CompilationResult;
 import org.drools.compiler.compiler.io.memory.MemoryFileSystem;
 import org.drools.reflective.classloader.ProjectClassLoader;
 import org.drools.ruleunit.DataSource;
