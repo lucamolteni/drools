@@ -59,6 +59,7 @@ public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetwork {
     @Override
     public Object evaluate(EvaluationContext evalCtx) {
         resultCollector.clearResults();
+        // TODO Luca remove hardcoded name
         TableContext ctx = new TableContext(evalCtx, "Existing Customer", "Application Risk Score");
         compiledNetwork.propagateAssertObject(new DefaultFactHandle(ctx), null, null);
         return resultCollector.getWithHitPolicy();
