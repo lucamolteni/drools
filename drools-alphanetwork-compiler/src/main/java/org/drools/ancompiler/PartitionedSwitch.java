@@ -90,7 +90,7 @@ public class PartitionedSwitch {
         return NodeList.nodeList(new Parameter(parseType(PARAM_TYPE), "node"));
     }
 
-    private final static String switchStatementCall = "        " +
+    private static final String switchStatementCall = "        " +
             " {" +
             "   boolean setNetworkResultN = setNetworkNodeN(node);\n" +
             "        if(setNetworkResultN) {\n" +
@@ -134,9 +134,9 @@ public class PartitionedSwitch {
 
             String assignStatementString;
             if (n instanceof AlphaNode) {
-                assignStatementString = getVariableAssignmentStatement((AlphaNode) n, PARAM_NAME);
+                assignStatementString = getVariableAssignmentStatementAlphaNode((AlphaNode) n);
             } else {
-                assignStatementString = getVariableAssignmentStatement(n, PARAM_NAME);
+                assignStatementString = getVariableAssignmentStatement(n);
             }
             Statement assignStmt = parseStatement(assignStatementString);
 
@@ -152,12 +152,23 @@ public class PartitionedSwitch {
         switchBodyStatements.addStatement(new ReturnStmt(new BooleanLiteralExpr(false)));
     }
 
-    private String getVariableAssignmentStatement(NetworkNode sink, String nodeVariableName) {
+    private static String getVariableAssignmentStatement(NetworkNode sink) {
         Class<?> variableType = getVariableType((Sink) sink);
         String assignmentStatement;
 
         // for non alphas, we just need to cast to the right variable type
-        assignmentStatement = getVariableName((Sink) sink) + " = (" + variableType.getCanonicalName() + ")" + nodeVariableName + ";";
+        assignmentStatement = getVariableName((Sink) sink) + " = (" + variableType.getCanonicalName() + ")" + PartitionedSwitch.PARAM_NAME + ";";
+
+        return assignmentStatement;
+    }
+
+    private static String getVariableAssignmentStatementAlphaNode(AlphaNode alphaNode) {
+        Class<?> variableType = getVariableType(alphaNode);
+        String assignmentStatement;
+
+        // we need the constraint for an alpha node assignment, so generate a cast, plus the method call to get
+        // the constraint
+        assignmentStatement = getVariableName(alphaNode) + " = (" + variableType.getName() + ") ((" + AlphaNode.class.getName() + ")" + PartitionedSwitch.PARAM_NAME + ").getConstraint();";
 
         return assignmentStatement;
     }

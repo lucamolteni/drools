@@ -86,8 +86,12 @@ public class ObjectTypeNodeCompiler {
         createConstructor(hashedAlphaDeclarations, rangeIndexDeclarationMap);
 
         // create set node method
-        SetNodeReferenceHandler setNode = new SetNodeReferenceHandler(builder);
-        parser.accept(setNode);
+        NodeCollectorHandler nodeCollectors = new NodeCollectorHandler();
+        parser.accept(nodeCollectors);
+
+        PartitionedSwitch partitionedSwitch = new PartitionedSwitch(nodeCollectors.getNodes());
+
+        partitionedSwitch.emitCode(builder);
 
         // create assert method
         AssertHandler assertHandler = new AssertHandler(builder, className, !hashedAlphaDeclarations.isEmpty());
