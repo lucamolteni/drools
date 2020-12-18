@@ -35,7 +35,6 @@ import org.kie.dmn.api.core.DMNContext;
 import org.kie.dmn.api.core.DMNModel;
 import org.kie.dmn.api.core.DMNResult;
 import org.kie.dmn.api.core.DMNRuntime;
-import org.kie.dmn.core.alphasupport.DMNProvider;
 import org.kie.dmn.core.compiler.AlphaNetworkOption;
 
 import static org.junit.Assert.assertFalse;
@@ -58,14 +57,14 @@ public class AlphaNetworkSupportInLargeDecisionTableTest {
 
     @Test
     public void evaluateDecisionTable() {
-        final DMNProvider dmnProvider = new DecisionTableDMNProvider();
+        final DecisionTableDMNProvider dmnProvider = new DecisionTableDMNProvider();
 
         System.setProperty(AlphaNetworkOption.PROPERTY_NAME, Boolean.toString(useAlphaNetwork));
         KieServices kieServices = KieServices.get();
 
         final KieServices ks = KieServices.Factory.get();
 
-        final ReleaseId kjarReleaseId = ks.newReleaseId("org.kie.dmn.core.alphanetwork", "alphaNetworkSupportInLargeDecisionTable", UUID.randomUUID().toString());
+        final ReleaseId releaseId = ks.newReleaseId("org.kie.dmn.core.alphanetwork", "alphaNetworkSupportInLargeDecisionTable", UUID.randomUUID().toString());
 
         final KieFileSystem kfs = ks.newKieFileSystem();
         int numberOfDecisionTableRules = 625; // TODO Luca should work with 1000
@@ -75,12 +74,12 @@ public class AlphaNetworkSupportInLargeDecisionTableTest {
                 .setSourcePath("dmnFile.dmn");
 
         kfs.write(dmnResource);
-        kfs.writePomXML(getPom(kjarReleaseId));
+        kfs.writePomXML(getPom(releaseId));
 
         final KieBuilder kieBuilder = ks.newKieBuilder(kfs).buildAll();
         assertTrue(kieBuilder.getResults().getMessages().toString(), kieBuilder.getResults().getMessages().isEmpty());
 
-        final KieContainer container = ks.newKieContainer(kjarReleaseId);
+        final KieContainer container = ks.newKieContainer(releaseId);
         DMNRuntime dmnRuntime = KieRuntimeFactory.of(container.getKieBase()).get(DMNRuntime.class);
 
         DMNModel dmnModel = dmnRuntime.getModel("https://github.com/kiegroup/kie-dmn", "decision-table-name");
