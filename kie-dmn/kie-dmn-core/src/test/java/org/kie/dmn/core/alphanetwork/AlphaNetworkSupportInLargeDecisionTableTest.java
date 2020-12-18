@@ -67,7 +67,7 @@ public class AlphaNetworkSupportInLargeDecisionTableTest {
         final ReleaseId releaseId = ks.newReleaseId("org.kie.dmn.core.alphanetwork", "alphaNetworkSupportInLargeDecisionTable", UUID.randomUUID().toString());
 
         final KieFileSystem kfs = ks.newKieFileSystem();
-        int numberOfDecisionTableRules = 625; // TODO Luca should work with 1000
+        int numberOfDecisionTableRules = 100; // TODO Luca should work with 1000
         Resource dmnResource = kieServices.getResources()
                 .newReaderResource(new StringReader(dmnProvider.getDMN(numberOfDecisionTableRules)))
                 .setResourceType(ResourceType.DMN)

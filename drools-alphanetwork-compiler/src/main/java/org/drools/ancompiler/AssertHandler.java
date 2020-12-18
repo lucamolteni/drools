@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates.
+ * Copyright 2010 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package org.drools.ancompiler;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.drools.core.reteoo.AlphaNode;
 import org.drools.core.reteoo.BetaNode;
 import org.drools.core.reteoo.LeftInputAdapterNode;
@@ -28,8 +31,8 @@ public class AssertHandler extends SwitchCompilerHandler {
 
     /**
      * This flag is used to instruct the AssertHandler to tell it to generate a local varible
-     * in the {@link org.kie.reteoo.compiled.CompiledNetwork#propagateAssertObject} for holding the value returned
-     * from the {@link org.kie.common.InternalFactHandle#getFactHandle()}.
+     * in the {@link org.drools.ancompiler.CompiledNetwork#propagateAssertObject} for holding the value returned
+     * from the {@link org.drools.core.common.InternalFactHandle#getFactHandle()}.
      *
      * This is only needed if there is at least 1 set of hashed alpha nodes in the network
      */
@@ -37,6 +40,12 @@ public class AssertHandler extends SwitchCompilerHandler {
 
     private final String factClassName;
     private static final String ASSERT_OBJECT_CALL = ".assertObject(";
+
+    private final List<String> assertObjectMethods = new ArrayList<>();
+
+    private StringBuilder currentAssertObjectMethod;
+
+    private int switchCaseCounter = 0;
 
     AssertHandler(StringBuilder builder, String factClassName) {
         this(builder, factClassName, false);
@@ -86,25 +95,38 @@ public class AssertHandler extends SwitchCompilerHandler {
 
     @Override
     public void startLeftInputAdapterNode(LeftInputAdapterNode leftInputAdapterNode) {
-        builder.append(getVariableName(leftInputAdapterNode)).append(ASSERT_OBJECT_CALL).
-                append(FACT_HANDLE_PARAM_NAME).append(",").
-                append(PROP_CONTEXT_PARAM_NAME).append(",").
-                append(WORKING_MEMORY_PARAM_NAME).append(");").append(NEWLINE);
+        assertObject(leftInputAdapterNode, currentAssertObjectMethod);
     }
 
     @Override
     public void startNonHashedAlphaNode(AlphaNode alphaNode) {
-        builder.append("if ( ").append(getVariableName(alphaNode)).
-                append(".isAllowed(").append(FACT_HANDLE_PARAM_NAME).append(",").
-                append(WORKING_MEMORY_PARAM_NAME).
-                append(") ) {").append(NEWLINE);
-
+        if(currentAssertObjectMethod != null) {
+            ifIsAllowed(alphaNode, currentAssertObjectMethod);
+        }
     }
 
     @Override
     public void endNonHashedAlphaNode(AlphaNode alphaNode) {
-        // close if statement
-        builder.append("}").append(NEWLINE);
+        if(currentAssertObjectMethod != null) {
+            currentAssertObjectMethod.append("}").append(NEWLINE);
+        }
+    }
+
+    private void assertObject(LeftInputAdapterNode leftInputAdapterNode, StringBuilder builder) {
+        if(currentAssertObjectMethod != null) {
+            builder.append(getVariableName(leftInputAdapterNode)).append(".assertObject(").
+                    append(FACT_HANDLE_PARAM_NAME).append(",").
+                    append(PROP_CONTEXT_PARAM_NAME).append(",").
+                    append(WORKING_MEMORY_PARAM_NAME).append(");").append(NEWLINE);
+        }
+    }
+
+
+    private void ifIsAllowed(AlphaNode alphaNode, StringBuilder builder) {
+        builder.append("if ( ").append(getVariableName(alphaNode)).
+                append(".isAllowed(").append(FACT_HANDLE_PARAM_NAME).append(",").
+                append(WORKING_MEMORY_PARAM_NAME).
+                append(") ) {").append(NEWLINE);
     }
 
     @Override
@@ -115,25 +137,38 @@ public class AssertHandler extends SwitchCompilerHandler {
     @Override
     public void startHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
         generateSwitchCase(hashedAlpha, hashedValue);
+        currentAssertObjectMethod = new StringBuilder();
+        currentAssertObjectMethod.append(
+                String.format("private void assertObject%s(org.drools.core.common.InternalFactHandle handle, " +
+                                      "org.drools.core.spi.PropagationContext context, " +
+                                      "org.drools.core.common.InternalWorkingMemory wm) {", switchCaseCounter)
+        );
+
+        builder.append(String.format("assertObject%s(handle, context, wm);", switchCaseCounter));
     }
 
     @Override
     public void endHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
         builder.append("break;").append(NEWLINE);
+
+        closeStatement(currentAssertObjectMethod);
+        assertObjectMethods.add(currentAssertObjectMethod.toString());
+        currentAssertObjectMethod = null;
+        switchCaseCounter++;
     }
 
     @Override
     public void endHashedAlphaNodes(IndexableConstraint indexableConstraint) {
         // close switch statement
-        builder.append("}").append(NEWLINE);
+        closeStatement(builder);
         // and if statement for ensuring non-null
-        builder.append("}").append(NEWLINE);
+        closeStatement(builder);
     }
 
     @Override
     public void endObjectTypeNode(ObjectTypeNode objectTypeNode) {
         // close the assertObject method
-        builder.append("}").append(NEWLINE);
+        closeStatement(builder);
     }
 
     @Override
@@ -160,5 +195,16 @@ public class AssertHandler extends SwitchCompilerHandler {
     public void endRangeIndex(AlphaRangeIndex alphaRangeIndex) {
         builder.append("}").append(NEWLINE);
         builder.append("}").append(NEWLINE);
+    }
+
+    @Override
+    public void nullCaseAlphaNodeStart(AlphaNode hashedAlpha) {
+        super.nullCaseAlphaNodeStart(hashedAlpha);
+    }
+
+    public void addAssertObjectMethods() {
+        for(String assertObjectMethod : assertObjectMethods) {
+            builder.append(assertObjectMethod);
+        }
     }
 }

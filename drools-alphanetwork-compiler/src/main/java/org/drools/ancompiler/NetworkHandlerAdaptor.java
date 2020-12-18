@@ -24,6 +24,8 @@ import org.drools.core.reteoo.WindowNode;
 import org.drools.core.rule.IndexableConstraint;
 import org.drools.core.util.index.AlphaRangeIndex;
 
+import static org.drools.ancompiler.AbstractCompilerHandler.NEWLINE;
+
 /**
  * An abstract adapter class for receiving network node events from the {@link org.kie.reteoo.compiled.ObjectTypeNodeParser}.
  * The methods in this class are empty. This class exists as convenience for creating handler objects.
@@ -119,5 +121,9 @@ public class NetworkHandlerAdaptor implements NetworkHandler {
     @Override
     public void endRangeIndexedAlphaNode(AlphaNode alphaNode) {
         // do nothing
+    }
+
+    protected void closeStatement(StringBuilder builder) {
+        builder.append("}").append(NEWLINE);
     }
 }
