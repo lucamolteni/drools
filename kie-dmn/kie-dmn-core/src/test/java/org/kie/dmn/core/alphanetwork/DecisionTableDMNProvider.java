@@ -16,16 +16,12 @@
 
 package org.kie.dmn.core.alphanetwork;
 
-import org.kie.dmn.core.alphasupport.DMNProvider;
+public class DecisionTableDMNProvider {
 
-public class DecisionTableDMNProvider implements DMNProvider {
-
-    @Override
     public String getDMN() {
         return getDMN(1);
     }
 
-    @Override
     public String getDMN(int numberOfTableRules) {
         final StringBuilder dmnBuilder = new StringBuilder();
 
