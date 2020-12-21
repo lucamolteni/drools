@@ -74,6 +74,11 @@ public class ObjectTypeNodeCompiler {
 
         ObjectTypeNodeParser parser = new ObjectTypeNodeParser(objectTypeNode);
 
+        // debug rete
+        logger.debug("Compiling Alpha Network: ");
+        DebugHandler debugHandler = new DebugHandler();
+        parser.accept(debugHandler);
+
         // create declarations
         DeclarationsHandler declarations = new DeclarationsHandler(builder);
         parser.accept(declarations);
