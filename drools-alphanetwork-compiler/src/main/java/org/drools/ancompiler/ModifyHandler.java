@@ -78,7 +78,7 @@ public class ModifyHandler extends SwitchCompilerHandler {
 
     @Override
     public void startBetaNode(BetaNode betaNode) {
-        builder.append(getVariableName(betaNode)).append(".modifyObject(").
+        currentModifyMethod.append(getVariableName(betaNode)).append(".modifyObject(").
                 append(FACT_HANDLE_PARAM_NAME).append(",").
                 append(MODIFY_PREVIOUS_TUPLE_PARAM_NAME).append(",").
                 append(PROP_CONTEXT_PARAM_NAME).append(",").
@@ -87,7 +87,7 @@ public class ModifyHandler extends SwitchCompilerHandler {
 
     @Override
     public void startWindowNode(WindowNode windowNode) {
-        builder.append(getVariableName(windowNode)).append(".modifyObject(").
+        currentModifyMethod.append(getVariableName(windowNode)).append(".modifyObject(").
                 append(FACT_HANDLE_PARAM_NAME).append(",").
                 append(MODIFY_PREVIOUS_TUPLE_PARAM_NAME).append(",").
                 append(PROP_CONTEXT_PARAM_NAME).append(",").
@@ -102,34 +102,33 @@ public class ModifyHandler extends SwitchCompilerHandler {
     @Override
     public void startLeftInputAdapterNode(LeftInputAdapterNode leftInputAdapterNode) {
         if(currentModifyMethod != null) {
-            modifyMethodBody(leftInputAdapterNode, currentModifyMethod);
-        } else {
-            modifyMethodBody(leftInputAdapterNode, builder);
+            currentModifyMethod.append(getVariableName(leftInputAdapterNode)).append(".modifyObject(").
+                    append(FACT_HANDLE_PARAM_NAME).append(",").
+                    append(MODIFY_PREVIOUS_TUPLE_PARAM_NAME).append(",").
+                    append(PROP_CONTEXT_PARAM_NAME).append(",").
+                    append(WORKING_MEMORY_PARAM_NAME).append(");").append(NEWLINE);
         }
-    }
-
-    private void modifyMethodBody(LeftInputAdapterNode leftInputAdapterNode, StringBuilder builder) {
-        builder.append(getVariableName(leftInputAdapterNode)).append(".modifyObject(").
-                append(FACT_HANDLE_PARAM_NAME).append(",").
-                append(MODIFY_PREVIOUS_TUPLE_PARAM_NAME).append(",").
-                append(PROP_CONTEXT_PARAM_NAME).append(",").
-                append(WORKING_MEMORY_PARAM_NAME).append(");").append(NEWLINE);
     }
 
     @Override
     public void startNonHashedAlphaNode(AlphaNode alphaNode) {
-        if(!this.usesHashedAlphaNode) {
-            builder.append("if ( ").append(getVariableName(alphaNode)).
-                    append(".isAllowed(").append(FACT_HANDLE_PARAM_NAME).append(",").
-                    append(WORKING_MEMORY_PARAM_NAME).
-                    append(") ) {").append(NEWLINE);
+        if(currentModifyMethod != null) {
+            ifIsAllowed(alphaNode);
         }
+    }
+
+    private void ifIsAllowed(AlphaNode alphaNode) {
+        currentModifyMethod.append("if ( ").append(getVariableName(alphaNode)).
+                append(".isAllowed(").append(FACT_HANDLE_PARAM_NAME).append(",").
+                append(WORKING_MEMORY_PARAM_NAME).
+                append(") ) {").append(NEWLINE);
     }
 
     @Override
     public void endNonHashedAlphaNode(AlphaNode alphaNode) {
-        if(!this.usesHashedAlphaNode) {
-            builder.append("}").append(NEWLINE);
+        // close if statement
+        if(currentModifyMethod != null) {
+            currentModifyMethod.append("}").append(NEWLINE);
         }
     }
 
@@ -140,7 +139,6 @@ public class ModifyHandler extends SwitchCompilerHandler {
 
     @Override
     public void startHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
-        this.usesHashedAlphaNode = true;
         generateSwitchCase(hashedAlpha, hashedValue);
 
         currentModifyMethod = new StringBuilder();
