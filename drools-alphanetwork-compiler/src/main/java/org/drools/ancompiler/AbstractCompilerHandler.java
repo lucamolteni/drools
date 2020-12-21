@@ -36,6 +36,8 @@ abstract class AbstractCompilerHandler extends NetworkHandlerAdaptor {
 
     protected static final String RANGE_INDEX_VARIABLE_NAME_PREFIX = "rangeIndex";
 
+    protected boolean usesHashedAlphaNode = false;
+
     protected static Class<?> getVariableType(AlphaNode alphaNode) {
 
         // for alphas, we use the constraint of the alpha for the declaration

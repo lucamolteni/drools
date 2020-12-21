@@ -100,37 +100,39 @@ public class AssertHandler extends SwitchCompilerHandler {
 
     @Override
     public void startNonHashedAlphaNode(AlphaNode alphaNode) {
-        if(currentAssertObjectMethod != null) {
-            ifIsAllowed(alphaNode, currentAssertObjectMethod);
+        if(!usesHashedAlphaNode) {
+            builder.append("if ( ").append(getVariableName(alphaNode)).
+                    append(".isAllowed(").append(FACT_HANDLE_PARAM_NAME).append(",").
+                    append(WORKING_MEMORY_PARAM_NAME).
+                    append(") ) {").append(NEWLINE);
         }
     }
 
     @Override
     public void endNonHashedAlphaNode(AlphaNode alphaNode) {
-        if(currentAssertObjectMethod != null) {
-            currentAssertObjectMethod.append("}").append(NEWLINE);
+        if(!usesHashedAlphaNode) {
+            builder.append("}").append(NEWLINE);
         }
     }
 
     private void assertObject(LeftInputAdapterNode leftInputAdapterNode, StringBuilder builder) {
         if(currentAssertObjectMethod != null) {
-            builder.append(getVariableName(leftInputAdapterNode)).append(".assertObject(").
-                    append(FACT_HANDLE_PARAM_NAME).append(",").
-                    append(PROP_CONTEXT_PARAM_NAME).append(",").
-                    append(WORKING_MEMORY_PARAM_NAME).append(");").append(NEWLINE);
+            assertObjectBody(leftInputAdapterNode, builder);
+        } else {
+            assertObjectBody(leftInputAdapterNode, this.builder);
         }
     }
 
-
-    private void ifIsAllowed(AlphaNode alphaNode, StringBuilder builder) {
-        builder.append("if ( ").append(getVariableName(alphaNode)).
-                append(".isAllowed(").append(FACT_HANDLE_PARAM_NAME).append(",").
-                append(WORKING_MEMORY_PARAM_NAME).
-                append(") ) {").append(NEWLINE);
+    private void assertObjectBody(LeftInputAdapterNode leftInputAdapterNode, StringBuilder builder) {
+        builder.append(getVariableName(leftInputAdapterNode)).append(".assertObject(").
+                append(FACT_HANDLE_PARAM_NAME).append(",").
+                append(PROP_CONTEXT_PARAM_NAME).append(",").
+                append(WORKING_MEMORY_PARAM_NAME).append(");").append(NEWLINE);
     }
 
     @Override
     public void startHashedAlphaNodes(IndexableConstraint indexableConstraint) {
+        this.usesHashedAlphaNode = true;
         generateSwitch(indexableConstraint);
     }
 
