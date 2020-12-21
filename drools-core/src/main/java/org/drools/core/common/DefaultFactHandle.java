@@ -66,7 +66,7 @@ public class DefaultFactHandle extends AbstractBaseLinkedListNode<DefaultFactHan
 
     private boolean                   disconnected;
 
-    protected TraitTypeEnum           traitType;
+    protected TraitTypeEnum           traitType = TraitTypeEnum.NON_TRAIT;
 
     private boolean                   valid = true;
 
@@ -85,6 +85,7 @@ public class DefaultFactHandle extends AbstractBaseLinkedListNode<DefaultFactHan
     // ----------------------------------------------------------------------
 
     public DefaultFactHandle() {
+        System.out.println("here?");
     }
 
     public DefaultFactHandle(final Object object) {

@@ -50,7 +50,6 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         String decisionName = getDecisionTableName(dtName, dt);
         DTableModel dTableModel = new DTableModel(ctx.getFeelHelper(), model, dtName, decisionName, dt);
 
-//        DMNCompiledAlphaNetwork hardCodedAlphaNetwork = new HardCodedAlphaNetwork();
 
         TableCell.TableCellFactory tableCellFactory = new TableCell.TableCellFactory(ctx.getFeelHelper(), ctx);
         DMNAlphaNetworkCompiler dmnAlphaNetworkCompiler = new DMNAlphaNetworkCompiler(ctx, model, tableCellFactory);
@@ -58,6 +57,8 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
 
         ClassLoader thisDMNClassLoader = this.getClass().getClassLoader();
         Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(allTypesSourceCode, thisDMNClassLoader);
+
+//        DMNCompiledAlphaNetwork dmnCompiledAlphaNetwork = new HardCodedAlphaNetwork();
         DMNCompiledAlphaNetwork dmnCompiledAlphaNetwork = createAlphaNetworkInstance(compiledClasses);
 
         dmnCompiledAlphaNetwork.initRete();

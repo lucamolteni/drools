@@ -19,7 +19,6 @@ package org.kie.dmn.core.alphanetwork;
 import java.math.BigDecimal;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.kie.dmn.api.core.DMNContext;
 import org.kie.dmn.api.core.DMNModel;
@@ -50,16 +49,12 @@ public class DMNDecisionTableAlphaSupportingTest extends BaseInterpretedVsAlphaN
         assertThat(dmnModel, notNullValue());
     }
 
-    public DMNResult doTest() {
+    @Test
+    public void testSimpleDecision() {
         final DMNContext context = runtime.newContext();
         context.set("Existing Customer", "s");
         context.set("Application Risk Score", new BigDecimal("123"));
-        return runtime.evaluateAll(dmnModel, context);
-    }
-
-    @Test
-    public void testSimpleDecision() {
-        final DMNResult dmnResult = doTest();
+        final DMNResult dmnResult = runtime.evaluateAll(dmnModel, context);
         LOG.debug("{}", dmnResult);
         assertThat(dmnResult.getContext().get("Pre-bureau risk category table"), is("LOW"));
     }
