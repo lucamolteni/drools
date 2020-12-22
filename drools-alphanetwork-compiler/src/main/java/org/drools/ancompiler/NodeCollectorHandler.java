@@ -58,7 +58,7 @@ public class NodeCollectorHandler extends AbstractCompilerHandler {
     }
 
     @Override
-    public void startLeftInputAdapterNode(LeftInputAdapterNode leftInputAdapterNode) {
+    public void startLeftInputAdapterNode(Object parent, LeftInputAdapterNode leftInputAdapterNode) {
         nodes.add(leftInputAdapterNode);
     }
 

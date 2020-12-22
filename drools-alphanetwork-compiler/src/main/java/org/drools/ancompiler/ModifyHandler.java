@@ -100,7 +100,7 @@ public class ModifyHandler extends SwitchCompilerHandler {
     }
 
     @Override
-    public void startLeftInputAdapterNode(LeftInputAdapterNode leftInputAdapterNode) {
+    public void startLeftInputAdapterNode(Object parent, LeftInputAdapterNode leftInputAdapterNode) {
         if(currentModifyMethod != null) {
             currentModifyMethod.append(getVariableName(leftInputAdapterNode)).append(".modifyObject(").
                     append(FACT_HANDLE_PARAM_NAME).append(",").

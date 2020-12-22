@@ -66,7 +66,7 @@ public class NetworkHandlerAdaptor implements NetworkHandler {
         // do nothing
     }
 
-    public void startLeftInputAdapterNode(LeftInputAdapterNode leftInputAdapterNode) {
+    public void startLeftInputAdapterNode(Object parent, LeftInputAdapterNode leftInputAdapterNode) {
         // do nothing
     }
 

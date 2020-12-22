@@ -18,6 +18,7 @@ package org.drools.ancompiler;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import org.drools.core.common.NamedEntryPoint;
@@ -51,6 +52,46 @@ public class AlphaNetworkCompilerTest extends BaseModelTest {
         public String getValue() {
             return value;
         }
+    }
+
+    @Test
+    public void testNonHashedAlphaNode() {
+        String str =
+                "import " + Person.class.getCanonicalName() + ";" +
+                        "global java.util.List resultsM;\n" +
+                        "global java.util.List resultsL;\n" +
+                        "rule M when\n" +
+                        "  $p : Person( name.startsWith(\"M\"))\n" +
+                        "then\n" +
+                        "  resultsM.add($p);\n" +
+                        "end\n" +
+                        "rule L when\n" +
+                        "  $p : Person( name.startsWith(\"L\"))\n" +
+                        "then\n" +
+                        "  resultsL.add($p);\n" +
+                        "end";
+
+        final List<Person> resultsM = new ArrayList<>();
+        final List<Person> resultsL = new ArrayList<>();
+
+        KieSession ksession = getKieSession( str );
+
+        ksession.setGlobal("resultsM", resultsM);
+        ksession.setGlobal("resultsL", resultsL);
+
+        final Person mario = new Person("Mario", 40);
+        final Person luca = new Person("Luca", 33);
+
+        ksession.insert(mario);
+        ksession.insert(luca);
+
+        ksession.fireAllRules();
+
+        assertEquals( 1, resultsM.size() );
+        assertEquals( mario, resultsM.iterator().next() );
+
+        assertEquals( 1, resultsL.size() );
+        assertEquals( luca, resultsL.iterator().next() );
     }
 
     @Test

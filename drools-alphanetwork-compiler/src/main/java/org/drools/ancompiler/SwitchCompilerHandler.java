@@ -18,6 +18,8 @@ package org.drools.ancompiler;
 
 import java.util.stream.Stream;
 
+import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import org.drools.core.common.InternalFactHandle;
 import org.drools.core.common.InternalWorkingMemory;
 import org.drools.core.reteoo.AlphaNode;
@@ -34,17 +36,28 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
     private Class<?> fieldType;
 
     static final String LOCAL_FACT_VAR_NAME = "fact";
-    protected static final String FACT_HANDLE_PARAM_TYPE = InternalFactHandle.class.getName();
+    protected static final String FACT_HANDLE_PARAM_TYPE = InternalFactHandle.class.getCanonicalName();
+
+    public ClassOrInterfaceType factHandleType() {
+        return StaticJavaParser.parseClassOrInterfaceType(FACT_HANDLE_PARAM_TYPE);
+    }
+
     protected static final String PROP_CONTEXT_PARAM_TYPE = PropagationContext.class.getName();
+
+    public ClassOrInterfaceType propagationContextType() {
+        return StaticJavaParser.parseClassOrInterfaceType(PROP_CONTEXT_PARAM_TYPE);
+    }
+
     protected static final String WORKING_MEMORY_PARAM_TYPE = InternalWorkingMemory.class.getName();
+
+    public ClassOrInterfaceType workingMemoryType() {
+        return StaticJavaParser.parseClassOrInterfaceType(WORKING_MEMORY_PARAM_TYPE);
+    }
 
     static final String FACT_HANDLE_PARAM_NAME = "handle";
     static final String PROP_CONTEXT_PARAM_NAME = "context";
     static final String WORKING_MEMORY_PARAM_NAME = "wm";
-    static final String ASSERT_METHOD_SIGNATURE = "public final void propagateAssertObject("
-            + FACT_HANDLE_PARAM_TYPE + " " + FACT_HANDLE_PARAM_NAME + ","
-            + PROP_CONTEXT_PARAM_TYPE + " " + PROP_CONTEXT_PARAM_NAME + ","
-            + WORKING_MEMORY_PARAM_TYPE + " " + WORKING_MEMORY_PARAM_NAME + "){";
+
 
     protected SwitchCompilerHandler(StringBuilder builder) {
         this.builder = builder;

@@ -86,43 +86,43 @@ public class ObjectTypeNodeParser {
         ObjectSinkPropagator propagator = objectTypeNode.getObjectSinkPropagator();
 
         handler.startObjectTypeNode(objectTypeNode);
-        indexableConstraint = traversePropagator(propagator, handler);
+        indexableConstraint = traversePropagator(null, propagator, handler);
         handler.endObjectTypeNode(objectTypeNode);
     }
 
-    private IndexableConstraint traversePropagator(ObjectSinkPropagator propagator, NetworkHandler handler) {
+    private IndexableConstraint traversePropagator(Object parent, ObjectSinkPropagator propagator, NetworkHandler handler) {
         IndexableConstraint foundIndexableConstraint = null;
         if (propagator instanceof SingleObjectSinkAdapter) {
             // we know there is only a single child sink for this propagator
             ObjectSink sink = propagator.getSinks()[0];
 
-            traverseSink(sink, handler);
+            traverseSink(parent, sink, handler);
         } else if (propagator instanceof CompositeObjectSinkAdapter) {
             CompositeObjectSinkAdapter composite = (CompositeObjectSinkAdapter) propagator;
 
-            traverseSinkLisk(composite.getRangeIndexableSinks(), handler);
-            traverseSinkLisk(composite.getHashableSinks(), handler);
-            traverseSinkLisk(composite.getOthers(), handler);
+            traverseSinkList(composite.getRangeIndexableSinks(), handler);
+            traverseSinkList(composite.getHashableSinks(), handler);
+            traverseSinkList(composite.getOthers(), handler);
             traverseRangeIndexedAlphaNodes(composite.getRangeIndexMap(), handler);
             foundIndexableConstraint = traverseHashedAlphaNodes(composite.getHashedSinkMap(), handler);
         } else if (propagator instanceof CompositePartitionAwareObjectSinkAdapter) {
             CompositePartitionAwareObjectSinkAdapter composite = (CompositePartitionAwareObjectSinkAdapter) propagator;
-            traverseSinkLisk(composite.getSinks(), handler);
+            traverseSinkList(composite.getSinks(), handler);
         }
         return foundIndexableConstraint;
     }
-    private void traverseSinkLisk(ObjectSinkNodeList sinks, NetworkHandler handler) {
+    private void traverseSinkList(ObjectSinkNodeList sinks, NetworkHandler handler) {
         if (sinks != null) {
             for (ObjectSinkNode sink = sinks.getFirst(); sink != null; sink = sink.getNextObjectSinkNode()) {
-                traverseSink(sink, handler);
+                traverseSink(sinks, sink, handler);
             }
         }
     }
 
-    private void traverseSinkLisk(ObjectSink[] sinks, NetworkHandler handler) {
+    private void traverseSinkList(ObjectSink[] sinks, NetworkHandler handler) {
         if (sinks != null) {
             for (ObjectSink sink : sinks) {
-                traverseSink(sink, handler);
+                traverseSink(sinks, sink, handler);
             }
         }
     }
@@ -146,7 +146,7 @@ public class ObjectTypeNodeParser {
                 if (objectValue != null) {
                     handler.startHashedAlphaNode(alphaNode, objectValue);
                     // traverse the propagator for each alpha
-                    traversePropagator(alphaNode.getObjectSinkPropagator(), handler);
+                    traversePropagator(alphaNode, alphaNode.getObjectSinkPropagator(), handler);
                     handler.endHashedAlphaNode(alphaNode, hashKey.getObjectValue());
                 } else {
                     optionalNullAlphaNodeCase = alphaNode;
@@ -158,7 +158,7 @@ public class ObjectTypeNodeParser {
 
             if (optionalNullAlphaNodeCase != null) {
                 handler.nullCaseAlphaNodeStart(optionalNullAlphaNodeCase);
-                traversePropagator(optionalNullAlphaNodeCase.getObjectSinkPropagator(), handler);
+                traversePropagator(optionalNullAlphaNodeCase, optionalNullAlphaNodeCase.getObjectSinkPropagator(), handler);
                 handler.nullCaseAlphaNodeEnd(optionalNullAlphaNodeCase);
             }
         }
@@ -177,20 +177,20 @@ public class ObjectTypeNodeParser {
             Collection<AlphaNode> alphaNodes = alphaRangeIndex.getAllValues();
             for (AlphaNode alphaNode : alphaNodes) {
                 handler.startRangeIndexedAlphaNode(alphaNode);
-                traversePropagator(alphaNode.getObjectSinkPropagator(), handler);
+                traversePropagator(alphaNode, alphaNode.getObjectSinkPropagator(), handler);
                 handler.endRangeIndexedAlphaNode(alphaNode);
             }
             handler.endRangeIndex(alphaRangeIndex);
         }
     }
 
-    private void traverseSink(ObjectSink sink, NetworkHandler handler) {
+    private void traverseSink(Object parent, ObjectSink sink, NetworkHandler handler) {
         if (sink.getType() == NodeTypeEnums.AlphaNode) {
             AlphaNode alphaNode = (AlphaNode) sink;
 
             handler.startNonHashedAlphaNode(alphaNode);
 
-            traversePropagator( alphaNode.getObjectSinkPropagator(), handler );
+            traversePropagator(alphaNode, alphaNode.getObjectSinkPropagator(), handler );
 
             handler.endNonHashedAlphaNode(alphaNode);
         } else if (NodeTypeEnums.isBetaNode( sink ) ) {
@@ -201,7 +201,7 @@ public class ObjectTypeNodeParser {
         } else if (sink.getType() == NodeTypeEnums.LeftInputAdapterNode) {
             LeftInputAdapterNode leftInputAdapterNode = (LeftInputAdapterNode) sink;
 
-            handler.startLeftInputAdapterNode(leftInputAdapterNode);
+            handler.startLeftInputAdapterNode(parent, leftInputAdapterNode);
             handler.endWindowNode(leftInputAdapterNode);
         } else if (sink.getType() == NodeTypeEnums.WindowNode) {
             WindowNode windowNode = (WindowNode) sink;

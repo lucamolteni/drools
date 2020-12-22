@@ -26,107 +26,112 @@ import org.drools.core.util.index.AlphaRangeIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 public class DebugHandler extends NetworkHandlerAdaptor {
 
     private final Logger logger = LoggerFactory.getLogger(DebugHandler.class);
 
+    private String formatString(Object node) {
+        return String.format("%s", node);
+    }
+
     @Override
     public void startObjectTypeNode(ObjectTypeNode objectTypeNode) {
-        logger.debug("\t\t\t\tstartObjectTypeNode:\t\t\t\t"+ objectTypeNode);
+        logger.debug(formatString(objectTypeNode));
     }
 
     @Override
     public void startNonHashedAlphaNode(AlphaNode alphaNode) {
-        logger.debug("\t\t\t\tstartNonHashedAlphaNode:\t\t\t\t"+ alphaNode);
+        logger.debug(formatString(alphaNode));
     }
 
     @Override
     public void endNonHashedAlphaNode(AlphaNode alphaNode) {
-        logger.debug("\t\t\t\tendNonHashedAlphaNode:\t\t\t\t"+ alphaNode);
+        logger.debug(formatString(alphaNode));
     }
 
     @Override
     public void startBetaNode(BetaNode betaNode) {
-        logger.debug("\t\t\t\tstartBetaNode:\t\t\t\t"+ betaNode);
+        logger.debug(formatString(betaNode));
     }
 
     @Override
     public void endBetaNode(BetaNode betaNode) {
-        logger.debug("\t\t\t\tendBetaNode:\t\t\t\t"+ betaNode);
+        logger.debug(formatString(betaNode));
     }
 
     @Override
     public void startWindowNode(WindowNode windowNode) {
-        logger.debug("\t\t\t\tstartWindowNode:\t\t\t\t"+ windowNode);
+        logger.debug(formatString(windowNode));
     }
 
     @Override
     public void endWindowNode(WindowNode windowNode) {
-        logger.debug("\t\t\t\tendWindowNode:\t\t\t\t"+ windowNode);
+        logger.debug(formatString(windowNode));
     }
 
     @Override
-    public void startLeftInputAdapterNode(LeftInputAdapterNode leftInputAdapterNode) {
-        logger.debug("\t\t\t\tstartLeftInputAdapterNode:\t\t\t\t"+ leftInputAdapterNode);
+    public void startLeftInputAdapterNode(Object parent, LeftInputAdapterNode leftInputAdapterNode) {
+        logger.debug(formatString(leftInputAdapterNode));
     }
 
     @Override
     public void endWindowNode(LeftInputAdapterNode leftInputAdapterNode) {
-        logger.debug("\t\t\t\tendWindowNode:\t\t\t\t"+ leftInputAdapterNode);
+        logger.debug(formatString(leftInputAdapterNode));
     }
 
     @Override
     public void startHashedAlphaNodes(IndexableConstraint hashedFieldReader) {
-        logger.debug("\t\t\t\tstartHashedAlphaNodes:\t\t\t\t"+ hashedFieldReader);
+        logger.debug(formatString(hashedFieldReader));
     }
 
     @Override
     public void endHashedAlphaNodes(IndexableConstraint hashedFieldReader) {
-        logger.debug("\t\t\t\tendHashedAlphaNodes:\t\t\t\t"+ hashedFieldReader);
+        logger.debug(formatString(hashedFieldReader));
     }
 
     @Override
     public void startHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
-        logger.debug("\t\t\t\tstartHashedAlphaNode:\t\t\t\t"+ hashedValue);
+        logger.debug(formatString(hashedAlpha));
     }
 
     @Override
     public void endHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
-        logger.debug("\t\t\t\tendHashedAlphaNode:\t\t\t\t"+ hashedValue);
+        logger.debug(formatString(hashedAlpha));
     }
 
     @Override
     public void endObjectTypeNode(ObjectTypeNode objectTypeNode) {
-        logger.debug("\t\t\t\tendObjectTypeNode:\t\t\t\t"+ objectTypeNode);
+        logger.debug(formatString(objectTypeNode));
     }
 
     @Override
     public void nullCaseAlphaNodeStart(AlphaNode hashedAlpha) {
-        logger.debug("\t\t\t\tnullCaseAlphaNodeStart:\t\t\t\t"+ hashedAlpha);
+        logger.debug(formatString(hashedAlpha));
     }
 
     @Override
     public void nullCaseAlphaNodeEnd(AlphaNode hashedAlpha) {
-        logger.debug("\t\t\t\tnullCaseAlphaNodeEnd:\t\t\t\t"+ hashedAlpha);
+        logger.debug(formatString(hashedAlpha));
     }
 
     @Override
     public void startRangeIndex(AlphaRangeIndex alphaRangeIndex) {
-        logger.debug("\t\t\t\tstartRangeIndex:\t\t\t\t"+ alphaRangeIndex);
+        logger.debug(formatString(alphaRangeIndex));
     }
 
     @Override
     public void endRangeIndex(AlphaRangeIndex alphaRangeIndex) {
-        logger.debug("\t\t\t\tendRangeIndex:\t\t\t\t"+ alphaRangeIndex);
+        logger.debug(formatString(alphaRangeIndex));
     }
 
     @Override
     public void startRangeIndexedAlphaNode(AlphaNode alphaNode) {
-        logger.debug("\t\t\t\tstartRangeIndexedAlphaNode:\t\t\t\t"+ alphaNode);
+        logger.debug(formatString(alphaNode));
     }
 
     @Override
     public void endRangeIndexedAlphaNode(AlphaNode alphaNode) {
-        logger.debug("\t\t\t\tendRangeIndexedAlphaNode:\t\t\t\t"+ alphaNode);
+        logger.debug(formatString(alphaNode));
     }
 }
