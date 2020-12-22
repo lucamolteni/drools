@@ -19,19 +19,34 @@ package org.drools.ancompiler;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.Modifier;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.body.Parameter;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.BreakStmt;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.ast.stmt.IfStmt;
+import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.stmt.SwitchEntry;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.type.VoidType;
 import org.drools.core.reteoo.AlphaNode;
-import org.drools.core.reteoo.BetaNode;
 import org.drools.core.reteoo.LeftInputAdapterNode;
 import org.drools.core.reteoo.ObjectTypeNode;
-import org.drools.core.reteoo.WindowNode;
 import org.drools.core.rule.IndexableConstraint;
 import org.drools.core.util.index.AlphaRangeIndex;
+
+import static com.github.javaparser.ast.NodeList.nodeList;
 
 public class ModifyHandler extends SwitchCompilerHandler {
 
     private static final String ASSERT_METHOD_SIGNATURE = "public final void propagateModifyObject("
             + FACT_HANDLE_PARAM_TYPE + " " + FACT_HANDLE_PARAM_NAME + ","
-            + MODIFY_PREVIOUS_TUPLE_NAME + " " + MODIFY_PREVIOUS_TUPLE_PARAM_NAME + ","
+            + MODIFY_PREVIOUS_TUPLE_TYPE + " " + MODIFY_PREVIOUS_TUPLE_PARAM_NAME + ","
             + PROP_CONTEXT_PARAM_TYPE + " " + PROP_CONTEXT_PARAM_NAME + ","
             + WORKING_MEMORY_PARAM_TYPE + " " + WORKING_MEMORY_PARAM_NAME + "){";
 
@@ -46,14 +61,11 @@ public class ModifyHandler extends SwitchCompilerHandler {
 
     private final String factClassName;
 
+    private MethodDeclaration currentModifyObjectMethod;
+    private final List<MethodDeclaration> extractedModifyMethods = new ArrayList<>();
+
     private int switchCaseCounter = 0;
-
-    private final List<String> modifyObjectMethods = new ArrayList<>();
-    private StringBuilder currentModifyMethod;
-
-    public List<String> getModifyObjectMethods() {
-        return modifyObjectMethods;
-    }
+    private SwitchEntry switchEntry;
 
     public ModifyHandler(StringBuilder builder, String factClassName, boolean alphaNetContainsHashedField) {
         super(builder);
@@ -63,72 +75,32 @@ public class ModifyHandler extends SwitchCompilerHandler {
 
     @Override
     public void startObjectTypeNode(ObjectTypeNode objectTypeNode) {
-        builder.append(ASSERT_METHOD_SIGNATURE).append(NEWLINE);
-
         // we only need to create a reference to the object, not handle, if there is a hashed alpha in the network
         if (alphaNetContainsHashedField) {
             // example of what this will look like
             // ExampleFact fact = (ExampleFact) handle.getObject();
-            builder.append(factClassName).append(" ").append(LOCAL_FACT_VAR_NAME).
-                    append(" = (").append(factClassName).append(")").
-                    append(FACT_HANDLE_PARAM_NAME).append(".getObject();").
-                    append(NEWLINE);
+
+            ClassOrInterfaceType type = StaticJavaParser.parseClassOrInterfaceType(factClassName);
+            ExpressionStmt factVariable = localVariableWithCastInitializer(type, LOCAL_FACT_VAR_NAME, new MethodCallExpr(new NameExpr(FACT_HANDLE_PARAM_NAME), "getObject"));
+
+            statements.add(factVariable);
         }
-    }
-
-    @Override
-    public void startBetaNode(BetaNode betaNode) {
-        currentModifyMethod.append(getVariableName(betaNode)).append(".modifyObject(").
-                append(FACT_HANDLE_PARAM_NAME).append(",").
-                append(MODIFY_PREVIOUS_TUPLE_PARAM_NAME).append(",").
-                append(PROP_CONTEXT_PARAM_NAME).append(",").
-                append(WORKING_MEMORY_PARAM_NAME).append(");").append(NEWLINE);
-    }
-
-    @Override
-    public void startWindowNode(WindowNode windowNode) {
-        currentModifyMethod.append(getVariableName(windowNode)).append(".modifyObject(").
-                append(FACT_HANDLE_PARAM_NAME).append(",").
-                append(MODIFY_PREVIOUS_TUPLE_PARAM_NAME).append(",").
-                append(PROP_CONTEXT_PARAM_NAME).append(",").
-                append(WORKING_MEMORY_PARAM_NAME).append(");").append(NEWLINE);
-    }
-
-    @Override
-    public void endWindowNode(WindowNode windowNode) {
-
     }
 
     @Override
     public void startLeftInputAdapterNode(Object parent, LeftInputAdapterNode leftInputAdapterNode) {
-        if(currentModifyMethod != null) {
-            currentModifyMethod.append(getVariableName(leftInputAdapterNode)).append(".modifyObject(").
-                    append(FACT_HANDLE_PARAM_NAME).append(",").
-                    append(MODIFY_PREVIOUS_TUPLE_PARAM_NAME).append(",").
-                    append(PROP_CONTEXT_PARAM_NAME).append(",").
-                    append(WORKING_MEMORY_PARAM_NAME).append(");").append(NEWLINE);
-        }
-    }
+        Statement assertStatement = StaticJavaParser.parseStatement("ALPHATERMINALNODE.modifyObject(handle, modifyPreviousTuples, context, wm);");
+        replaceNameExpr(assertStatement, "ALPHATERMINALNODE", getVariableName(leftInputAdapterNode));
 
-    @Override
-    public void startNonHashedAlphaNode(AlphaNode alphaNode) {
-        if(currentModifyMethod != null) {
-            ifIsAllowed(alphaNode);
-        }
-    }
+        if(switchStmt == null) {
+            IfStmt ifStatement = StaticJavaParser.parseStatement("if (CONSTRAINT.isAllowed(handle, wm)) { }").asIfStmt();
 
-    private void ifIsAllowed(AlphaNode alphaNode) {
-        currentModifyMethod.append("if ( ").append(getVariableName(alphaNode)).
-                append(".isAllowed(").append(FACT_HANDLE_PARAM_NAME).append(",").
-                append(WORKING_MEMORY_PARAM_NAME).
-                append(") ) {").append(NEWLINE);
-    }
+            replaceNameExpr(ifStatement, "CONSTRAINT", getVariableName((AlphaNode) parent));
+            ifStatement.setThenStmt(assertStatement);
 
-    @Override
-    public void endNonHashedAlphaNode(AlphaNode alphaNode) {
-        // close if statement
-        if(currentModifyMethod != null) {
-            currentModifyMethod.append("}").append(NEWLINE);
+            statements.add(ifStatement);
+        } else if(currentModifyObjectMethod != null){
+            currentModifyObjectMethod.getBody().ifPresent(b -> b.addStatement(assertStatement));
         }
     }
 
@@ -139,43 +111,74 @@ public class ModifyHandler extends SwitchCompilerHandler {
 
     @Override
     public void startHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
-        generateSwitchCase(hashedAlpha, hashedValue);
+        if(switchStmt == null) {
+            throw new CouldNotCreateAlphaNetworkCompilerException("Cannot generate switch cases without statement");
+        }
+        switchEntry = generateSwitchCase(hashedAlpha, hashedValue);
 
-        currentModifyMethod = new StringBuilder();
-        currentModifyMethod.append(
-                String.format("private void modifyObject%s(org.drools.core.common.InternalFactHandle handle, " +
-                                      "org.drools.core.reteoo.ModifyPreviousTuples modifyPreviousTuples, " +
-                                      "org.drools.core.spi.PropagationContext context, " +
-                                      "org.drools.core.common.InternalWorkingMemory wm) {", switchCaseCounter)
-        );
+        String assertObjectMethodName = "modifyObject" + switchCaseCounter;
+        currentModifyObjectMethod = new MethodDeclaration()
+                .setModifiers(Modifier.Keyword.PRIVATE)
+                .setName(assertObjectMethodName)
+                .setType(new VoidType())
+                .setParameters(modifyObjectParameters())
+                .setBody(new BlockStmt());
 
-        builder.append(String.format("modifyObject%s(handle, modifyPreviousTuples, context, wm);", switchCaseCounter));
+        extractedModifyMethods.add(currentModifyObjectMethod);
 
+        MethodCallExpr methodCallExpr = new MethodCallExpr(null, assertObjectMethodName,
+                                                           nodeList(new NameExpr(FACT_HANDLE_PARAM_NAME),
+                                                                    new NameExpr(MODIFY_PREVIOUS_TUPLE_PARAM_NAME),
+                                                                    new NameExpr(PROP_CONTEXT_PARAM_NAME),
+                                                                    new NameExpr(WORKING_MEMORY_PARAM_NAME)));
+
+        switchEntry.getStatements().add(new ExpressionStmt(methodCallExpr));
     }
 
     @Override
     public void endHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
-        builder.append("break;").append(NEWLINE);
-
-        closeStatement(currentModifyMethod);
-        modifyObjectMethods.add(currentModifyMethod.toString());
-        currentModifyMethod = null;
+        switchEntry.getStatements().add(new BreakStmt().setValue(null));
+        switchEntry = null;
+        currentModifyObjectMethod = null;
         switchCaseCounter++;
     }
 
-    @Override
-    public void endHashedAlphaNodes(IndexableConstraint hashedFieldReader) {
-        // close switch statement
-        closeStatement(builder);
-        // and if statement for ensuring non-null
-        closeStatement(builder);
+    public void emitCode() {
+
+        MethodDeclaration propagateAssertObject =
+                new MethodDeclaration()
+                        .setModifiers(Modifier.Keyword.PUBLIC, Modifier.Keyword.FINAL)
+                        .setType(new VoidType())
+                        .setName("propagateModifyObject")
+                        .setParameters(modifyObjectParameters());
+
+        BlockStmt body = new BlockStmt();
+        propagateAssertObject.setBody(body);
+
+        body.addStatement(StaticJavaParser.parseStatement("if(logger.isDebugEnabled()) {\n" +
+                                                                  "            logger.debug(\"Propagate modify object on compiled alpha network {} {} {}\", handle, context, wm);\n" +
+                                                                  "        }\n"));
+
+        for (Statement s : statements) {
+            body.addStatement(s);
+        }
+
+        String methodBody = propagateAssertObject.toString();
+        builder.append(methodBody);
+
+        builder.append(NEWLINE);
+        for (MethodDeclaration s : extractedModifyMethods) {
+            builder.append(s.toString());
+        }
     }
 
-    @Override
-    public void endObjectTypeNode(ObjectTypeNode objectTypeNode) {
-        // close the assertObject method
-        closeStatement(builder);
+    private NodeList<Parameter> modifyObjectParameters() {
+        return nodeList(new Parameter(factHandleType(), FACT_HANDLE_PARAM_NAME),
+                        new Parameter(modifyPreviousTuplesType(), MODIFY_PREVIOUS_TUPLE_PARAM_NAME),
+                        new Parameter(propagationContextType(), PROP_CONTEXT_PARAM_NAME),
+                        new Parameter(workingMemoryType(), WORKING_MEMORY_PARAM_NAME));
     }
+
 
     @Override
     public void startRangeIndex(AlphaRangeIndex alphaRangeIndex) {
@@ -206,12 +209,6 @@ public class ModifyHandler extends SwitchCompilerHandler {
     @Override
     public void nullCaseAlphaNodeStart(AlphaNode hashedAlpha) {
         super.nullCaseAlphaNodeStart(hashedAlpha);
-    }
-
-    public void addModifyMethods() {
-        for(String m : modifyObjectMethods) {
-            builder.append(m);
-        }
     }
 
 }

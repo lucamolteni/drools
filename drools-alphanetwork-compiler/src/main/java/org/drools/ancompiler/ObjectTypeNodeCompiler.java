@@ -104,7 +104,7 @@ public class ObjectTypeNodeCompiler {
 
         ModifyHandler modifyHandler = new ModifyHandler(builder, className, !hashedAlphaDeclarations.isEmpty());
         parser.accept(modifyHandler);
-        modifyHandler.addModifyMethods();
+        modifyHandler.emitCode();
 
         DelegateMethodsHandler delegateMethodsHandler = new DelegateMethodsHandler(builder);
         parser.accept(delegateMethodsHandler);

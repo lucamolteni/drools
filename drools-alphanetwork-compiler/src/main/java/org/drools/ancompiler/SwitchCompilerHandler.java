@@ -51,8 +51,14 @@ import static com.github.javaparser.ast.NodeList.nodeList;
 
 public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
 
-    protected static final String MODIFY_PREVIOUS_TUPLE_NAME = ModifyPreviousTuples.class.getName();
+    protected static final String MODIFY_PREVIOUS_TUPLE_TYPE = ModifyPreviousTuples.class.getCanonicalName();
+
+    public ClassOrInterfaceType modifyPreviousTuplesType() {
+        return StaticJavaParser.parseClassOrInterfaceType(MODIFY_PREVIOUS_TUPLE_TYPE);
+    }
+
     protected static final String MODIFY_PREVIOUS_TUPLE_PARAM_NAME = "modifyPreviousTuples";
+
     protected final StringBuilder builder;
     private Class<?> fieldType;
 

@@ -21,7 +21,6 @@ import java.util.List;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.Modifier;
-import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
@@ -36,10 +35,8 @@ import com.github.javaparser.ast.stmt.SwitchEntry;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.VoidType;
 import org.drools.core.reteoo.AlphaNode;
-import org.drools.core.reteoo.BetaNode;
 import org.drools.core.reteoo.LeftInputAdapterNode;
 import org.drools.core.reteoo.ObjectTypeNode;
-import org.drools.core.reteoo.WindowNode;
 import org.drools.core.rule.IndexableConstraint;
 import org.drools.core.util.index.AlphaRangeIndex;
 
@@ -83,13 +80,6 @@ public class AssertHandler extends SwitchCompilerHandler {
 
             statements.add(factVariable);
         }
-    }
-
-
-    @Override
-    public void startWindowNode(WindowNode windowNode) {
-        System.out.println("here");
-
     }
 
     @Override
@@ -207,10 +197,6 @@ public class AssertHandler extends SwitchCompilerHandler {
     public void endRangeIndex(AlphaRangeIndex alphaRangeIndex) {
         builder.append("}").append(NEWLINE);
         builder.append("}").append(NEWLINE);
-    }
-
-    private void replaceNameExpr(Node expression, String from, String to) {
-        expression.findAll(NameExpr.class, n -> from.equals(n.toString())).forEach(c -> c.replace(new NameExpr(to)));
     }
 
 }
