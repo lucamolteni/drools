@@ -30,6 +30,7 @@ import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.BreakStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.SwitchEntry;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
@@ -58,7 +59,7 @@ public class AssertHandler extends SwitchCompilerHandler {
     private final String factClassName;
 
     private MethodDeclaration currentAssertObjectMethod;
-    private List<MethodDeclaration> extractedAssertMethod = new ArrayList<>();
+    private final List<MethodDeclaration> extractedAssertMethod = new ArrayList<>();
 
     private int switchCaseCounter = 0;
     private SwitchEntry switchEntry;
@@ -93,18 +94,17 @@ public class AssertHandler extends SwitchCompilerHandler {
 
     @Override
     public void startLeftInputAdapterNode(Object parent, LeftInputAdapterNode leftInputAdapterNode) {
+        Statement assertStatement = StaticJavaParser.parseStatement("ALPHATERMINALNODE.assertObject(handle, context, wm);");
+        replaceNameExpr(assertStatement, "ALPHATERMINALNODE", getVariableName(leftInputAdapterNode));
+
         if(switchStmt == null) {
-            Statement ifStatement = StaticJavaParser.parseStatement("if (CONSTRAINT.isAllowed(handle, wm)) {\n" +
-                                                                            "            ALPHATERMINALNODE.assertObject(handle, context, wm);\n" +
-                                                                            "}");
+            IfStmt ifStatement = StaticJavaParser.parseStatement("if (CONSTRAINT.isAllowed(handle, wm)) { }").asIfStmt();
 
             replaceNameExpr(ifStatement, "CONSTRAINT", getVariableName((AlphaNode) parent));
-            replaceNameExpr(ifStatement, "ALPHATERMINALNODE", getVariableName(leftInputAdapterNode));
+            ifStatement.setThenStmt(assertStatement);
 
             statements.add(ifStatement);
         } else if(currentAssertObjectMethod != null){
-            Statement assertStatement = StaticJavaParser.parseStatement("ALPHATERMINALNODE.assertObject(handle, context, wm);");
-            replaceNameExpr(assertStatement, "ALPHATERMINALNODE", getVariableName(leftInputAdapterNode));
             currentAssertObjectMethod.getBody().ifPresent(b -> b.addStatement(assertStatement));
         }
     }
