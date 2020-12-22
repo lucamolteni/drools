@@ -19,7 +19,25 @@ package org.drools.ancompiler;
 import java.util.stream.Stream;
 
 import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.VariableDeclarator;
+import com.github.javaparser.ast.expr.BinaryExpr;
+import com.github.javaparser.ast.expr.CastExpr;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.IntegerLiteralExpr;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.NullLiteralExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
+import com.github.javaparser.ast.expr.VariableDeclarationExpr;
+import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.ast.stmt.IfStmt;
+import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.stmt.SwitchEntry;
+import com.github.javaparser.ast.stmt.SwitchStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.type.Type;
 import org.drools.core.common.InternalFactHandle;
 import org.drools.core.common.InternalWorkingMemory;
 import org.drools.core.reteoo.AlphaNode;
@@ -27,6 +45,9 @@ import org.drools.core.reteoo.ModifyPreviousTuples;
 import org.drools.core.rule.IndexableConstraint;
 import org.drools.core.spi.InternalReadAccessor;
 import org.drools.core.spi.PropagationContext;
+
+import static com.github.javaparser.StaticJavaParser.parseType;
+import static com.github.javaparser.ast.NodeList.nodeList;
 
 public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
 
@@ -58,6 +79,9 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
     static final String PROP_CONTEXT_PARAM_NAME = "context";
     static final String WORKING_MEMORY_PARAM_NAME = "wm";
 
+    protected  NodeList<Statement> statements = new NodeList<>();
+    SwitchStmt switchStmt = null;
+
 
     protected SwitchCompilerHandler(StringBuilder builder) {
         this.builder = builder;
@@ -68,23 +92,31 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
         fieldType = fieldExtractor.getExtractToClass();
 
         if (canInlineValue()) {
-            String switchVar = "switchVar";
-            builder.append(fieldType.getCanonicalName())
-                    .append(" ")
-                    .append(switchVar);
-            builder.append(" = ")
-                    .append("(" + fieldType.getCanonicalName() + ")")
-                    .append("readAccessor.getValue(")
-                    .append(LOCAL_FACT_VAR_NAME)
-                    .append(");").append(NEWLINE);
 
+            String switchVariableName = "switchVar";
+            ExpressionStmt switchVariable = localVariableWithCastInitializer(parseType(fieldType.getCanonicalName()),
+                                                                             switchVariableName,
+                                                                             new MethodCallExpr(new NameExpr("readAccessor"),
+                                                                                                "getValue",
+                                                                                                nodeList(new NameExpr(LOCAL_FACT_VAR_NAME))));
+
+
+            this.statements.add(switchVariable);
+            SwitchStmt switchStmt = new SwitchStmt().setSelector(new NameExpr(switchVariableName));
+
+            Statement nullCheck;
             if (fieldType.isPrimitive()) {
-                builder.append("if(true) {").append(NEWLINE);
+                nullCheck = new BlockStmt().addStatement(switchStmt);
             } else {
-                builder.append("if(switchVar != null) {").append(NEWLINE);
+                nullCheck = new IfStmt()
+                        .setCondition(new BinaryExpr(new NameExpr(switchVariableName), new NullLiteralExpr(), BinaryExpr.Operator.NOT_EQUALS))
+                        .setThenStmt(switchStmt);
             }
-            builder.append("switch(").append(switchVar).append(")").append("{").append(NEWLINE);
-        } else {
+
+            this.statements.add(nullCheck);
+            this.switchStmt = switchStmt;
+
+        } else { // Hashable but not inlinable
 
             String localVariableName = "NodeId";
 
@@ -103,22 +135,23 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
         }
     }
 
-    protected void generateSwitchCase(AlphaNode hashedAlpha, Object hashedValue) {
-        if (canInlineValue()) {
+    protected SwitchEntry generateSwitchCase(AlphaNode hashedAlpha, Object hashedValue) {
+        SwitchEntry switchEntry = new SwitchEntry();
 
-            final Object quotedHashedValue;
+        if (canInlineValue()) {
+            final Expression quotedHashedValue;
             if (hashedValue instanceof String) {
-                quotedHashedValue = String.format("\"%s\"", hashedValue);
+                quotedHashedValue = new StringLiteralExpr((String) hashedValue);
             } else {
-                quotedHashedValue = hashedValue;
+                quotedHashedValue = new IntegerLiteralExpr((Integer) hashedValue);
             }
 
-            builder.append("case ")
-                    .append(quotedHashedValue)
-                    .append(" : ").append(NEWLINE);
+            switchEntry.setLabels(nodeList(quotedHashedValue));
         } else {
-            builder.append("case ").append(hashedAlpha.getId()).append(" : ").append(NEWLINE);
+            switchEntry.setLabels(nodeList(new IntegerLiteralExpr(hashedAlpha.getId())));
         }
+        switchStmt.getEntries().add(switchEntry);
+        return switchEntry;
     }
 
     protected boolean canInlineValue() {
@@ -137,5 +170,13 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
         if (canInlineValue()) {
             builder.append("}").append(NEWLINE);
         }
+    }
+
+    //  type variableName = (type) sourceObject.methodName();
+    protected ExpressionStmt localVariableWithCastInitializer(Type type, String variableName, MethodCallExpr source) {
+        return new ExpressionStmt(
+                new VariableDeclarationExpr(
+                        new VariableDeclarator(type, variableName,
+                                               new CastExpr(type, source))));
     }
 }

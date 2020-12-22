@@ -25,9 +25,14 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
+import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.BreakStmt;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.stmt.SwitchEntry;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.VoidType;
 import org.drools.core.reteoo.AlphaNode;
 import org.drools.core.reteoo.BetaNode;
@@ -45,19 +50,18 @@ public class AssertHandler extends SwitchCompilerHandler {
      * This flag is used to instruct the AssertHandler to tell it to generate a local varible
      * in the {@link org.drools.ancompiler.CompiledNetwork#propagateAssertObject} for holding the value returned
      * from the {@link org.drools.core.common.InternalFactHandle#getFactHandle()}.
-     *
+     * <p>
      * This is only needed if there is at least 1 set of hashed alpha nodes in the network
      */
     private final boolean alphaNetContainsHashedField;
 
     private final String factClassName;
-    private static final String ASSERT_OBJECT_CALL = ".assertObject(";
 
-    private final List<String> assertObjectMethods = new ArrayList<>();
-
-    private StringBuilder currentAssertObjectMethod;
+    private MethodDeclaration currentAssertObjectMethod;
+    private List<MethodDeclaration> extractedAssertMethod = new ArrayList<>();
 
     private int switchCaseCounter = 0;
+    private SwitchEntry switchEntry;
 
     public AssertHandler(StringBuilder builder, String factClassName, boolean alphaNetContainsHashedField) {
         super(builder);
@@ -72,46 +76,37 @@ public class AssertHandler extends SwitchCompilerHandler {
         if (alphaNetContainsHashedField) {
             // example of what this will look like
             // ExampleFact fact = (ExampleFact) handle.getObject();
-            builder.append(factClassName).append(" ").append(LOCAL_FACT_VAR_NAME).
-                    append(" = (").append(factClassName).append(")").
-                    append(FACT_HANDLE_PARAM_NAME).append(".getObject();").
-                    append(NEWLINE);
-        }
-    }
 
-    @Override
-    public void startBetaNode(BetaNode betaNode) {
-        builder.append(getVariableName(betaNode)).append(ASSERT_OBJECT_CALL).
-                append(FACT_HANDLE_PARAM_NAME).append(",").
-                append(PROP_CONTEXT_PARAM_NAME).append(",").
-                append(WORKING_MEMORY_PARAM_NAME).append(");").append(NEWLINE);
+            ClassOrInterfaceType type = StaticJavaParser.parseClassOrInterfaceType(factClassName);
+            ExpressionStmt factVariable = localVariableWithCastInitializer(type, LOCAL_FACT_VAR_NAME, new MethodCallExpr(new NameExpr(FACT_HANDLE_PARAM_NAME), "getObject"));
+
+            statements.add(factVariable);
+        }
     }
 
 
     @Override
     public void startWindowNode(WindowNode windowNode) {
-        builder.append(getVariableName(windowNode)).append(ASSERT_OBJECT_CALL).
-                append(FACT_HANDLE_PARAM_NAME).append(",").
-                append(PROP_CONTEXT_PARAM_NAME).append(",").
-                append(WORKING_MEMORY_PARAM_NAME).append(");").append(NEWLINE);
-    }
+        System.out.println("here");
 
-    NodeList<Statement> statements = new NodeList<>();
+    }
 
     @Override
     public void startLeftInputAdapterNode(Object parent, LeftInputAdapterNode leftInputAdapterNode) {
-        Statement ifStatement = StaticJavaParser.parseStatement("if (CONSTRAINT.isAllowed(handle, wm)) {\n" +
-                                                                "            ALPHATERMINALNODE.assertObject(handle, context, wm);\n" +
-                                                                "}");
+        if(switchStmt == null) {
+            Statement ifStatement = StaticJavaParser.parseStatement("if (CONSTRAINT.isAllowed(handle, wm)) {\n" +
+                                                                            "            ALPHATERMINALNODE.assertObject(handle, context, wm);\n" +
+                                                                            "}");
 
-        replaceNameExpr(ifStatement, "CONSTRAINT", getVariableName((AlphaNode) parent));
-        replaceNameExpr(ifStatement, "ALPHATERMINALNODE", getVariableName(leftInputAdapterNode));
+            replaceNameExpr(ifStatement, "CONSTRAINT", getVariableName((AlphaNode) parent));
+            replaceNameExpr(ifStatement, "ALPHATERMINALNODE", getVariableName(leftInputAdapterNode));
 
-        statements.add(ifStatement);
-    }
-
-    private void replaceNameExpr(Node expression, String from, String to) {
-        expression.findAll(NameExpr.class, n -> from.equals(n.toString())).forEach(c -> c.replace(new NameExpr(to)));
+            statements.add(ifStatement);
+        } else if(currentAssertObjectMethod != null){
+            Statement assertStatement = StaticJavaParser.parseStatement("ALPHATERMINALNODE.assertObject(handle, context, wm);");
+            replaceNameExpr(assertStatement, "ALPHATERMINALNODE", getVariableName(leftInputAdapterNode));
+            currentAssertObjectMethod.getBody().ifPresent(b -> b.addStatement(assertStatement));
+        }
     }
 
     @Override
@@ -121,34 +116,71 @@ public class AssertHandler extends SwitchCompilerHandler {
 
     @Override
     public void startHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
-        generateSwitchCase(hashedAlpha, hashedValue);
-        currentAssertObjectMethod = new StringBuilder();
-        currentAssertObjectMethod.append(
-                String.format("private void assertObject%s(org.drools.core.common.InternalFactHandle handle, " +
-                                      "org.drools.core.spi.PropagationContext context, " +
-                                      "org.drools.core.common.InternalWorkingMemory wm) {", switchCaseCounter)
-        );
+        if(switchStmt == null) {
+            throw new CouldNotCreateAlphaNetworkCompilerException("Cannot generate switch cases without statement");
+        }
+        switchEntry = generateSwitchCase(hashedAlpha, hashedValue);
 
-        builder.append(String.format("assertObject%s(handle, context, wm);", switchCaseCounter));
+        String assertObjectMethodName = "assertObject" + switchCaseCounter;
+        currentAssertObjectMethod = new MethodDeclaration()
+                .setModifiers(Modifier.Keyword.PRIVATE)
+                .setName(assertObjectMethodName)
+                .setType(new VoidType())
+                .setParameters(assertObjectParameters())
+                .setBody(new BlockStmt());
+
+        extractedAssertMethod.add(currentAssertObjectMethod);
+
+        MethodCallExpr methodCallExpr = new MethodCallExpr(null, assertObjectMethodName,
+                                                           nodeList(new NameExpr(FACT_HANDLE_PARAM_NAME),
+                                                                    new NameExpr(PROP_CONTEXT_PARAM_NAME),
+                                                                    new NameExpr(WORKING_MEMORY_PARAM_NAME)));
+
+        switchEntry.getStatements().add(new ExpressionStmt(methodCallExpr));
+
     }
 
     @Override
     public void endHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
-        builder.append("break;").append(NEWLINE);
-
-        closeStatement(currentAssertObjectMethod);
-        assertObjectMethods.add(currentAssertObjectMethod.toString());
+        switchEntry.getStatements().add(new BreakStmt().setValue(null));
+        switchEntry = null;
         currentAssertObjectMethod = null;
         switchCaseCounter++;
     }
 
+    public void emitCode() {
 
-    @Override
-    public void endHashedAlphaNodes(IndexableConstraint indexableConstraint) {
-        // close switch statement
-        closeStatement(builder);
-        // and if statement for ensuring non-null
-        closeStatement(builder);
+        MethodDeclaration propagateAssertObject =
+                new MethodDeclaration()
+                        .setModifiers(Modifier.Keyword.PUBLIC, Modifier.Keyword.FINAL)
+                        .setType(new VoidType())
+                        .setName("propagateAssertObject")
+                        .setParameters(assertObjectParameters());
+
+        BlockStmt body = new BlockStmt();
+        propagateAssertObject.setBody(body);
+
+        body.addStatement(StaticJavaParser.parseStatement("if(logger.isDebugEnabled()) {\n" +
+                                                          "            logger.debug(\"Propagate assert on compiled alpha network {} {} {}\", handle, context, wm);\n" +
+                                                          "        }\n"));
+
+        for (Statement s : statements) {
+            body.addStatement(s);
+        }
+
+        String methodBody = propagateAssertObject.toString();
+        builder.append(methodBody);
+
+        builder.append(NEWLINE);
+        for (MethodDeclaration s : extractedAssertMethod) {
+            builder.append(s.toString());
+        }
+    }
+
+    private NodeList<Parameter> assertObjectParameters() {
+        return nodeList(new Parameter(factHandleType(), FACT_HANDLE_PARAM_NAME),
+                        new Parameter(propagationContextType(), PROP_CONTEXT_PARAM_NAME),
+                        new Parameter(workingMemoryType(), WORKING_MEMORY_PARAM_NAME));
     }
 
     @Override
@@ -177,33 +209,8 @@ public class AssertHandler extends SwitchCompilerHandler {
         builder.append("}").append(NEWLINE);
     }
 
-
-    public void emitCode() {
-
-        MethodDeclaration propagateAssertObject =
-                new MethodDeclaration()
-                        .setModifiers(Modifier.Keyword.PUBLIC, Modifier.Keyword.FINAL)
-                        .setType(new VoidType())
-                        .setName("propagateAssertObject")
-                        .setParameters(nodeList(new Parameter(factHandleType(), FACT_HANDLE_PARAM_NAME),
-                                                new Parameter(propagationContextType(), PROP_CONTEXT_PARAM_NAME),
-                                                new Parameter(workingMemoryType(), WORKING_MEMORY_PARAM_NAME))
-                        );
-
-        BlockStmt body = new BlockStmt();
-        propagateAssertObject.setBody(body);
-
-
-        body.addStatement(StaticJavaParser.parseStatement("if(logger.isDebugEnabled()) {\n" +
-                               "            logger.debug(\"Propagate assert on compiled alpha network {} {} {}\", handle, context, wm);\n" +
-                               "        }\n"));
-
-
-        for(Statement s : statements) {
-            body.addStatement(s);
-        }
-
-        String methodBody = propagateAssertObject.toString();
-        builder.append(methodBody);
+    private void replaceNameExpr(Node expression, String from, String to) {
+        expression.findAll(NameExpr.class, n -> from.equals(n.toString())).forEach(c -> c.replace(new NameExpr(to)));
     }
+
 }
