@@ -86,7 +86,7 @@ public class ObjectTypeNodeParser {
         ObjectSinkPropagator propagator = objectTypeNode.getObjectSinkPropagator();
 
         handler.startObjectTypeNode(objectTypeNode);
-        indexableConstraint = traversePropagator(null, propagator, handler);
+        indexableConstraint = traversePropagator(objectTypeNode, propagator, handler);
         handler.endObjectTypeNode(objectTypeNode);
     }
 

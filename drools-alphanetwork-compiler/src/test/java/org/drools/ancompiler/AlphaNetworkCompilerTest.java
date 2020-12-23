@@ -137,6 +137,46 @@ public class AlphaNetworkCompilerTest extends BaseModelTest {
     }
 
     @Test
+    public void testNodeHashingWithMultipleConditions() {
+        String str =
+                "import " + Person.class.getCanonicalName() + ";" +
+                        "global java.util.List results;\n" +
+                        "rule r1 when\n" +
+                        "  $p : Person( name == \"Luca\", likes == \"food\", age >= 33)\n" +
+                        "then\n" +
+                        "  results.add($p);\n" +
+                        "end\n" +
+                        "rule r2 when\n" +
+                        "  $p : Person( name == \"Luca\", likes == \"videogames\", age < 19)\n" +
+                        "then\n" +
+                        "end\n" +
+                        "rule r3 when\n" +
+                        "  $p : Person( name == \"Luca\", likes == \"music\", age == 20)\n" +
+                        "then\n" +
+                        "end";
+
+        final List<Person> results = new ArrayList<>();
+
+        KieSession ksession = getKieSession( str );
+
+        ksession.setGlobal("results", results);
+
+        final Person luca33 = new Person("Luca", 33).setLikes("food");
+        final Person luca20 = new Person("Luca", 20).setLikes("music");
+        final Person luca18 = new Person("Luca", 18).setLikes("videogames");
+
+        ksession.insert(luca33);
+        ksession.insert(luca20);
+        ksession.insert(luca18);
+
+        ksession.fireAllRules();
+
+        assertEquals( 1, results.size() );
+        assertEquals( luca33, results.iterator().next() );
+
+    }
+
+    @Test
     public void testHashedInteger() {
         String str =
                 "import " + Person.class.getCanonicalName() + ";" +
@@ -505,6 +545,5 @@ public class AlphaNetworkCompilerTest extends BaseModelTest {
         assertEquals( 1, list.size() );
         assertEquals( "Hello World", list.get(0) );
     }
-
 
 }
