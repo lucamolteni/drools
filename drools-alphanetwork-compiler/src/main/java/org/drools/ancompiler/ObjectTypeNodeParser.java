@@ -96,7 +96,7 @@ public class ObjectTypeNodeParser {
             // we know there is only a single child sink for this propagator
             ObjectSink sink = propagator.getSinks()[0];
 
-            traverseSink(parent, sink, handler);
+            foundIndexableConstraint = traverseSink(parent, sink, handler);
         } else if (propagator instanceof CompositeObjectSinkAdapter) {
             CompositeObjectSinkAdapter composite = (CompositeObjectSinkAdapter) propagator;
 
@@ -105,6 +105,7 @@ public class ObjectTypeNodeParser {
             traverseSinkList(composite.getOthers(), handler);
             traverseRangeIndexedAlphaNodes(composite.getRangeIndexMap(), handler);
             foundIndexableConstraint = traverseHashedAlphaNodes(composite.getHashedSinkMap(), handler);
+            System.out.println(foundIndexableConstraint);
         } else if (propagator instanceof CompositePartitionAwareObjectSinkAdapter) {
             CompositePartitionAwareObjectSinkAdapter composite = (CompositePartitionAwareObjectSinkAdapter) propagator;
             traverseSinkList(composite.getSinks(), handler);
@@ -184,13 +185,14 @@ public class ObjectTypeNodeParser {
         }
     }
 
-    private void traverseSink(Object parent, ObjectSink sink, NetworkHandler handler) {
+    private IndexableConstraint traverseSink(Object parent, ObjectSink sink, NetworkHandler handler) {
+        IndexableConstraint indexableConstraint = null;
         if (sink.getType() == NodeTypeEnums.AlphaNode) {
             AlphaNode alphaNode = (AlphaNode) sink;
 
             handler.startNonHashedAlphaNode(alphaNode);
 
-            traversePropagator(alphaNode, alphaNode.getObjectSinkPropagator(), handler );
+            indexableConstraint = traversePropagator(alphaNode, alphaNode.getObjectSinkPropagator(), handler);
 
             handler.endNonHashedAlphaNode(alphaNode);
         } else if (NodeTypeEnums.isBetaNode( sink ) ) {
@@ -209,6 +211,7 @@ public class ObjectTypeNodeParser {
             handler.startWindowNode(windowNode);
             handler.endWindowNode(windowNode);
         }
+        return indexableConstraint;
     }
 
     /**

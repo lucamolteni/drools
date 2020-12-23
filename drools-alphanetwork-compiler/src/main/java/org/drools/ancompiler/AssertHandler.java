@@ -40,6 +40,7 @@ import org.drools.core.reteoo.ObjectTypeNode;
 import org.drools.core.rule.IndexableConstraint;
 import org.drools.core.util.index.AlphaRangeIndex;
 
+import static com.github.javaparser.StaticJavaParser.parseStatement;
 import static com.github.javaparser.ast.NodeList.nodeList;
 
 public class AssertHandler extends SwitchCompilerHandler {
@@ -84,11 +85,11 @@ public class AssertHandler extends SwitchCompilerHandler {
 
     @Override
     public void startLeftInputAdapterNode(Object parent, LeftInputAdapterNode leftInputAdapterNode) {
-        Statement assertStatement = StaticJavaParser.parseStatement("ALPHATERMINALNODE.assertObject(handle, context, wm);");
+        Statement assertStatement = parseStatement("ALPHATERMINALNODE.assertObject(handle, context, wm);");
         replaceNameExpr(assertStatement, "ALPHATERMINALNODE", getVariableName(leftInputAdapterNode));
 
         if(switchStmt == null) {
-            IfStmt ifStatement = StaticJavaParser.parseStatement("if (CONSTRAINT.isAllowed(handle, wm)) { }").asIfStmt();
+            IfStmt ifStatement = parseStatement("if (CONSTRAINT.isAllowed(handle, wm)) { }").asIfStmt();
 
             replaceNameExpr(ifStatement, "CONSTRAINT", getVariableName((AlphaNode) parent));
             ifStatement.setThenStmt(assertStatement);
@@ -150,7 +151,7 @@ public class AssertHandler extends SwitchCompilerHandler {
         BlockStmt body = new BlockStmt();
         propagateAssertObject.setBody(body);
 
-        body.addStatement(StaticJavaParser.parseStatement("if(logger.isDebugEnabled()) {\n" +
+        body.addStatement(parseStatement("if(logger.isDebugEnabled()) {\n" +
                                                           "            logger.debug(\"Propagate assert on compiled alpha network {} {} {}\", handle, context, wm);\n" +
                                                           "        }\n"));
 
