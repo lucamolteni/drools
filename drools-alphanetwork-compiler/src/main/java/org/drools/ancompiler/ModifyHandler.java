@@ -31,14 +31,14 @@ import com.github.javaparser.ast.stmt.BreakStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
-import com.github.javaparser.ast.stmt.SwitchEntry;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.VoidType;
 import org.drools.core.reteoo.AlphaNode;
+import org.drools.core.reteoo.BetaNode;
 import org.drools.core.reteoo.LeftInputAdapterNode;
 import org.drools.core.reteoo.ObjectTypeNode;
+import org.drools.core.reteoo.Sink;
 import org.drools.core.rule.IndexableConstraint;
-import org.drools.core.util.index.AlphaRangeIndex;
 
 import static com.github.javaparser.ast.NodeList.nodeList;
 
@@ -65,7 +65,6 @@ public class ModifyHandler extends SwitchCompilerHandler {
     private final List<MethodDeclaration> extractedModifyMethods = new ArrayList<>();
 
     private int switchCaseCounter = 0;
-    private SwitchEntry switchEntry;
 
     public ModifyHandler(StringBuilder builder, String factClassName, boolean alphaNetContainsHashedField) {
         super(builder);
@@ -89,19 +88,31 @@ public class ModifyHandler extends SwitchCompilerHandler {
 
     @Override
     public void startLeftInputAdapterNode(Object parent, LeftInputAdapterNode leftInputAdapterNode) {
-        Statement assertStatement = StaticJavaParser.parseStatement("ALPHATERMINALNODE.modifyObject(handle, modifyPreviousTuples, context, wm);");
-        replaceNameExpr(assertStatement, "ALPHATERMINALNODE", getVariableName(leftInputAdapterNode));
+        Statement modifyStatement = modifyMethod(leftInputAdapterNode);
 
         if(switchStmt == null) {
             IfStmt ifStatement = StaticJavaParser.parseStatement("if (CONSTRAINT.isAllowed(handle, wm)) { }").asIfStmt();
 
             replaceNameExpr(ifStatement, "CONSTRAINT", getVariableName((AlphaNode) parent));
-            ifStatement.setThenStmt(assertStatement);
+            ifStatement.setThenStmt(modifyStatement);
 
             statements.add(ifStatement);
+        } else if (switchEntry != null) {
+            switchEntry.addStatement(modifyStatement);
         } else if(currentModifyObjectMethod != null){
-            currentModifyObjectMethod.getBody().ifPresent(b -> b.addStatement(assertStatement));
+            currentModifyObjectMethod.getBody().ifPresent(b -> b.addStatement(modifyStatement));
         }
+    }
+
+    private Statement modifyMethod(Sink sink) {
+        Statement modifyStatement = StaticJavaParser.parseStatement("ALPHATERMINALNODE.modifyObject(handle, modifyPreviousTuples, context, wm);");
+        replaceNameExpr(modifyStatement, "ALPHATERMINALNODE", getVariableName(sink));
+        return modifyStatement;
+    }
+
+    @Override
+    public void startBetaNode(BetaNode betaNode) {
+        statements.add(modifyMethod(betaNode));
     }
 
     @Override
@@ -178,37 +189,4 @@ public class ModifyHandler extends SwitchCompilerHandler {
                         new Parameter(propagationContextType(), PROP_CONTEXT_PARAM_NAME),
                         new Parameter(workingMemoryType(), WORKING_MEMORY_PARAM_NAME));
     }
-
-
-    @Override
-    public void startRangeIndex(AlphaRangeIndex alphaRangeIndex) {
-        String rangeIndexVariableName = getRangeIndexVariableName(alphaRangeIndex, getMinIdFromRangeIndex(alphaRangeIndex));
-        String matchingResultVariableName = rangeIndexVariableName + "_result";
-        String matchingNodeVariableName = matchingResultVariableName + "_node";
-        builder.append("java.util.Collection<org.drools.core.reteoo.AlphaNode> " + matchingResultVariableName + " = " + rangeIndexVariableName + ".getMatchingAlphaNodes(" + FACT_HANDLE_PARAM_NAME + ".getObject());").append(NEWLINE);
-        builder.append("for (org.drools.core.reteoo.AlphaNode " + matchingNodeVariableName + " : " + matchingResultVariableName + ") {").append(NEWLINE);
-        builder.append("switch (" + matchingNodeVariableName + ".getId()) {").append(NEWLINE);
-    }
-
-    @Override
-    public void startRangeIndexedAlphaNode(AlphaNode alphaNode) {
-        builder.append("case " + alphaNode.getId() + ":").append(NEWLINE);
-    }
-
-    @Override
-    public void endRangeIndexedAlphaNode(AlphaNode alphaNode) {
-        builder.append("break;").append(NEWLINE);
-    }
-
-    @Override
-    public void endRangeIndex(AlphaRangeIndex alphaRangeIndex) {
-        closeStatement(builder);
-        closeStatement(builder);
-    }
-
-    @Override
-    public void nullCaseAlphaNodeStart(AlphaNode hashedAlpha) {
-        super.nullCaseAlphaNodeStart(hashedAlpha);
-    }
-
 }

@@ -31,7 +31,9 @@ import com.github.javaparser.ast.expr.NullLiteralExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.BreakStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.ast.stmt.ForEachStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.SwitchEntry;
@@ -45,6 +47,7 @@ import org.drools.core.reteoo.ModifyPreviousTuples;
 import org.drools.core.rule.IndexableConstraint;
 import org.drools.core.spi.InternalReadAccessor;
 import org.drools.core.spi.PropagationContext;
+import org.drools.core.util.index.AlphaRangeIndex;
 
 import static com.github.javaparser.StaticJavaParser.parseType;
 import static com.github.javaparser.ast.NodeList.nodeList;
@@ -86,8 +89,8 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
     static final String WORKING_MEMORY_PARAM_NAME = "wm";
 
     protected  NodeList<Statement> statements = new NodeList<>();
-    SwitchStmt switchStmt = null;
-
+    protected SwitchStmt switchStmt = null;
+    protected SwitchEntry switchEntry = null;
 
     protected SwitchCompilerHandler(StringBuilder builder) {
         this.builder = builder;
@@ -122,7 +125,7 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
             this.statements.add(nullCheck);
             this.switchStmt = switchStmt;
 
-        } else { // Hashable but not inlinable
+        } else { // Hashable but not inlinable TODO LUCA migrate to JP
 
             String localVariableName = "NodeId";
 
@@ -184,5 +187,53 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
                 new VariableDeclarationExpr(
                         new VariableDeclarator(type, variableName,
                                                new CastExpr(type, source))));
+    }
+
+    //  type variableName = (type) sourceObject.methodName();
+    protected ExpressionStmt localVariable(Type type, String variableName, MethodCallExpr source) {
+        return new ExpressionStmt(
+                new VariableDeclarationExpr(
+                        new VariableDeclarator(type, variableName,
+                                               source)));
+    }
+
+    protected void generateRangeIndexForSwitch(AlphaRangeIndex alphaRangeIndex) {
+        String rangeIndexVariableName = getRangeIndexVariableName(alphaRangeIndex, getMinIdFromRangeIndex(alphaRangeIndex));
+        String matchingResultVariableName = rangeIndexVariableName + "_result";
+        String matchingNodeVariableName = matchingResultVariableName + "_node";
+
+        ExpressionStmt matchingResultVariable = localVariable(parseType("java.util.Collection<org.drools.core.reteoo.AlphaNode>"),
+                                                              matchingResultVariableName,
+                                                              new MethodCallExpr(new NameExpr(rangeIndexVariableName),
+                                                                                 "getMatchingAlphaNodes",
+                                                                                 nodeList(new MethodCallExpr(new NameExpr(FACT_HANDLE_PARAM_NAME), "getObject"))));
+
+        statements.add(matchingResultVariable);
+
+        BlockStmt body = new BlockStmt();
+        ForEachStmt forEachStmt = new ForEachStmt(new VariableDeclarationExpr(parseType("org.drools.core.reteoo.AlphaNode"), matchingNodeVariableName),
+                                                  new NameExpr(matchingResultVariableName), body);
+
+        statements.add(forEachStmt);
+
+        this.switchStmt = new SwitchStmt().setSelector(new MethodCallExpr(new NameExpr(matchingNodeVariableName), "getId"));
+        body.addStatement(switchStmt);
+    }
+
+
+    @Override
+    public void startRangeIndex(AlphaRangeIndex alphaRangeIndex) {
+        generateRangeIndexForSwitch(alphaRangeIndex);
+    }
+
+    @Override
+    public void startRangeIndexedAlphaNode(AlphaNode alphaNode) {
+        switchEntry = new SwitchEntry().setLabels(nodeList(new IntegerLiteralExpr(alphaNode.getId())));
+        switchStmt.getEntries().add(switchEntry);
+    }
+
+    @Override
+    public void endRangeIndexedAlphaNode(AlphaNode alphaNode) {
+        switchEntry.getStatements().add(new BreakStmt().setValue(null));
     }
 }

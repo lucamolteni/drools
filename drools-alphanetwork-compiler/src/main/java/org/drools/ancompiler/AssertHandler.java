@@ -31,14 +31,14 @@ import com.github.javaparser.ast.stmt.BreakStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
-import com.github.javaparser.ast.stmt.SwitchEntry;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.VoidType;
 import org.drools.core.reteoo.AlphaNode;
+import org.drools.core.reteoo.BetaNode;
 import org.drools.core.reteoo.LeftInputAdapterNode;
 import org.drools.core.reteoo.ObjectTypeNode;
+import org.drools.core.reteoo.Sink;
 import org.drools.core.rule.IndexableConstraint;
-import org.drools.core.util.index.AlphaRangeIndex;
 
 import static com.github.javaparser.StaticJavaParser.parseStatement;
 import static com.github.javaparser.ast.NodeList.nodeList;
@@ -60,7 +60,6 @@ public class AssertHandler extends SwitchCompilerHandler {
     private final List<MethodDeclaration> extractedAssertMethod = new ArrayList<>();
 
     private int switchCaseCounter = 0;
-    private SwitchEntry switchEntry;
 
     public AssertHandler(StringBuilder builder, String factClassName, boolean alphaNetContainsHashedField) {
         super(builder);
@@ -85,19 +84,31 @@ public class AssertHandler extends SwitchCompilerHandler {
 
     @Override
     public void startLeftInputAdapterNode(Object parent, LeftInputAdapterNode leftInputAdapterNode) {
-        Statement assertStatement = parseStatement("ALPHATERMINALNODE.assertObject(handle, context, wm);");
-        replaceNameExpr(assertStatement, "ALPHATERMINALNODE", getVariableName(leftInputAdapterNode));
+        Statement assertStatement = assertObjectMethod(leftInputAdapterNode);
 
-        if(switchStmt == null) {
+        if (switchStmt == null) {
             IfStmt ifStatement = parseStatement("if (CONSTRAINT.isAllowed(handle, wm)) { }").asIfStmt();
 
             replaceNameExpr(ifStatement, "CONSTRAINT", getVariableName((AlphaNode) parent));
             ifStatement.setThenStmt(assertStatement);
 
             statements.add(ifStatement);
-        } else if(currentAssertObjectMethod != null){
+        } else if (switchEntry != null) {
+            switchEntry.addStatement(assertStatement);
+        } else if (currentAssertObjectMethod != null) {
             currentAssertObjectMethod.getBody().ifPresent(b -> b.addStatement(assertStatement));
         }
+    }
+
+    private Statement assertObjectMethod(Sink sink) {
+        Statement assertStatement = parseStatement("ALPHATERMINALNODE.assertObject(handle, context, wm);");
+        replaceNameExpr(assertStatement, "ALPHATERMINALNODE", getVariableName(sink));
+        return assertStatement;
+    }
+
+    @Override
+    public void startBetaNode(BetaNode betaNode) {
+        statements.add(assertObjectMethod(betaNode));
     }
 
     @Override
@@ -174,30 +185,6 @@ public class AssertHandler extends SwitchCompilerHandler {
                         new Parameter(workingMemoryType(), WORKING_MEMORY_PARAM_NAME));
     }
 
-    @Override
-    public void startRangeIndex(AlphaRangeIndex alphaRangeIndex) {
-        String rangeIndexVariableName = getRangeIndexVariableName(alphaRangeIndex, getMinIdFromRangeIndex(alphaRangeIndex));
-        String matchingResultVariableName = rangeIndexVariableName + "_result";
-        String matchingNodeVariableName = matchingResultVariableName + "_node";
-        builder.append("java.util.Collection<org.drools.core.reteoo.AlphaNode> " + matchingResultVariableName + " = " + rangeIndexVariableName + ".getMatchingAlphaNodes(" + FACT_HANDLE_PARAM_NAME + ".getObject());").append(NEWLINE);
-        builder.append("for (org.drools.core.reteoo.AlphaNode " + matchingNodeVariableName + " : " + matchingResultVariableName + ") {").append(NEWLINE);
-        builder.append("switch (" + matchingNodeVariableName + ".getId()) {").append(NEWLINE);
-    }
 
-    @Override
-    public void startRangeIndexedAlphaNode(AlphaNode alphaNode) {
-        builder.append("case " + alphaNode.getId() + ":").append(NEWLINE);
-    }
-
-    @Override
-    public void endRangeIndexedAlphaNode(AlphaNode alphaNode) {
-        builder.append("break;").append(NEWLINE);
-    }
-
-    @Override
-    public void endRangeIndex(AlphaRangeIndex alphaRangeIndex) {
-        builder.append("}").append(NEWLINE);
-        builder.append("}").append(NEWLINE);
-    }
 
 }
