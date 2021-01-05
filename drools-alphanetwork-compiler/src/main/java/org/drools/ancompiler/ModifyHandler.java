@@ -16,9 +16,6 @@
 
 package org.drools.ancompiler;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
@@ -27,10 +24,10 @@ import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.stmt.BreakStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.stmt.SwitchEntry;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.VoidType;
 import org.drools.core.reteoo.AlphaNode;
@@ -61,11 +58,6 @@ public class ModifyHandler extends SwitchCompilerHandler {
 
     private final String factClassName;
 
-    private MethodDeclaration currentModifyObjectMethod;
-    private final List<MethodDeclaration> extractedModifyMethods = new ArrayList<>();
-
-    private int switchCaseCounter = 0;
-
     public ModifyHandler(StringBuilder builder, String factClassName, boolean alphaNetContainsHashedField) {
         super(builder);
         this.factClassName = factClassName;
@@ -90,17 +82,17 @@ public class ModifyHandler extends SwitchCompilerHandler {
     public void startLeftInputAdapterNode(Object parent, LeftInputAdapterNode leftInputAdapterNode) {
         Statement modifyStatement = modifyMethod(leftInputAdapterNode);
 
-        if(switchStmt == null) {
+        if(switchStatements == null) {
             IfStmt ifStatement = StaticJavaParser.parseStatement("if (CONSTRAINT.isAllowed(handle, wm)) { }").asIfStmt();
 
             replaceNameExpr(ifStatement, "CONSTRAINT", getVariableName((AlphaNode) parent));
             ifStatement.setThenStmt(modifyStatement);
 
             statements.add(ifStatement);
-        } else if (switchEntry != null) {
-            switchEntry.addStatement(modifyStatement);
-        } else if(currentModifyObjectMethod != null){
-            currentModifyObjectMethod.getBody().ifPresent(b -> b.addStatement(modifyStatement));
+        } else if (switchEntries != null) {
+            switchEntries.peek().addStatement(modifyStatement);
+        } else if(currentMethod != null){
+            currentMethod.getBody().ifPresent(b -> b.addStatement(modifyStatement));
         }
     }
 
@@ -122,20 +114,21 @@ public class ModifyHandler extends SwitchCompilerHandler {
 
     @Override
     public void startHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
-        if(switchStmt == null) {
+        if(switchStatements == null) {
             throw new CouldNotCreateAlphaNetworkCompilerException("Cannot generate switch cases without statement");
         }
-        switchEntry = generateSwitchCase(hashedAlpha, hashedValue);
+        SwitchEntry switchEntry = generateSwitchCase(hashedAlpha, hashedValue);
+        this.switchEntries.push(switchEntry);
 
         String assertObjectMethodName = "modifyObject" + switchCaseCounter;
-        currentModifyObjectMethod = new MethodDeclaration()
+        currentMethod = new MethodDeclaration()
                 .setModifiers(Modifier.Keyword.PRIVATE)
                 .setName(assertObjectMethodName)
                 .setType(new VoidType())
                 .setParameters(modifyObjectParameters())
                 .setBody(new BlockStmt());
 
-        extractedModifyMethods.add(currentModifyObjectMethod);
+        extractedMethods.add(currentMethod);
 
         MethodCallExpr methodCallExpr = new MethodCallExpr(null, assertObjectMethodName,
                                                            nodeList(new NameExpr(FACT_HANDLE_PARAM_NAME),
@@ -143,15 +136,7 @@ public class ModifyHandler extends SwitchCompilerHandler {
                                                                     new NameExpr(PROP_CONTEXT_PARAM_NAME),
                                                                     new NameExpr(WORKING_MEMORY_PARAM_NAME)));
 
-        switchEntry.getStatements().add(new ExpressionStmt(methodCallExpr));
-    }
-
-    @Override
-    public void endHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
-        switchEntry.getStatements().add(new BreakStmt().setValue(null));
-        switchEntry = null;
-        currentModifyObjectMethod = null;
-        switchCaseCounter++;
+        this.switchEntries.peek().getStatements().add(new ExpressionStmt(methodCallExpr));
     }
 
     public void emitCode() {
@@ -178,7 +163,7 @@ public class ModifyHandler extends SwitchCompilerHandler {
         builder.append(methodBody);
 
         builder.append(NEWLINE);
-        for (MethodDeclaration s : extractedModifyMethods) {
+        for (MethodDeclaration s : extractedMethods) {
             builder.append(s.toString());
         }
     }

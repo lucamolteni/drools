@@ -16,9 +16,6 @@
 
 package org.drools.ancompiler;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
@@ -27,10 +24,10 @@ import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.stmt.BreakStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.stmt.SwitchEntry;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.VoidType;
 import org.drools.core.reteoo.AlphaNode;
@@ -55,11 +52,6 @@ public class AssertHandler extends SwitchCompilerHandler {
     private final boolean alphaNetContainsHashedField;
 
     private final String factClassName;
-
-    private MethodDeclaration currentAssertObjectMethod;
-    private final List<MethodDeclaration> extractedAssertMethod = new ArrayList<>();
-
-    private int switchCaseCounter = 0;
 
     public AssertHandler(StringBuilder builder, String factClassName, boolean alphaNetContainsHashedField) {
         super(builder);
@@ -86,17 +78,17 @@ public class AssertHandler extends SwitchCompilerHandler {
     public void startLeftInputAdapterNode(Object parent, LeftInputAdapterNode leftInputAdapterNode) {
         Statement assertStatement = assertObjectMethod(leftInputAdapterNode);
 
-        if (switchStmt == null) {
+        if (switchStatements == null) {
             IfStmt ifStatement = parseStatement("if (CONSTRAINT.isAllowed(handle, wm)) { }").asIfStmt();
 
             replaceNameExpr(ifStatement, "CONSTRAINT", getVariableName((AlphaNode) parent));
             ifStatement.setThenStmt(assertStatement);
 
             statements.add(ifStatement);
-        } else if (switchEntry != null) {
-            switchEntry.addStatement(assertStatement);
-        } else if (currentAssertObjectMethod != null) {
-            currentAssertObjectMethod.getBody().ifPresent(b -> b.addStatement(assertStatement));
+        } else if (switchEntries != null) {
+            switchEntries.peek().addStatement(assertStatement);
+        } else if (currentMethod != null) {
+            currentMethod.getBody().ifPresent(b -> b.addStatement(assertStatement));
         }
     }
 
@@ -118,36 +110,29 @@ public class AssertHandler extends SwitchCompilerHandler {
 
     @Override
     public void startHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
-        if(switchStmt == null) {
+        if(switchStatements == null) {
             throw new CouldNotCreateAlphaNetworkCompilerException("Cannot generate switch cases without statement");
         }
-        switchEntry = generateSwitchCase(hashedAlpha, hashedValue);
+        SwitchEntry switchEntry = generateSwitchCase(hashedAlpha, hashedValue);
+        this.switchEntries.push(switchEntry);
 
         String assertObjectMethodName = "assertObject" + switchCaseCounter;
-        currentAssertObjectMethod = new MethodDeclaration()
+        currentMethod = new MethodDeclaration()
                 .setModifiers(Modifier.Keyword.PRIVATE)
                 .setName(assertObjectMethodName)
                 .setType(new VoidType())
                 .setParameters(assertObjectParameters())
                 .setBody(new BlockStmt());
 
-        extractedAssertMethod.add(currentAssertObjectMethod);
+        extractedMethods.add(currentMethod);
 
         MethodCallExpr methodCallExpr = new MethodCallExpr(null, assertObjectMethodName,
                                                            nodeList(new NameExpr(FACT_HANDLE_PARAM_NAME),
                                                                     new NameExpr(PROP_CONTEXT_PARAM_NAME),
                                                                     new NameExpr(WORKING_MEMORY_PARAM_NAME)));
 
-        switchEntry.getStatements().add(new ExpressionStmt(methodCallExpr));
+        this.switchEntries.peek().getStatements().add(new ExpressionStmt(methodCallExpr));
 
-    }
-
-    @Override
-    public void endHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
-        switchEntry.getStatements().add(new BreakStmt().setValue(null));
-        switchEntry = null;
-        currentAssertObjectMethod = null;
-        switchCaseCounter++;
     }
 
     public void emitCode() {
@@ -174,7 +159,7 @@ public class AssertHandler extends SwitchCompilerHandler {
         builder.append(methodBody);
 
         builder.append(NEWLINE);
-        for (MethodDeclaration s : extractedAssertMethod) {
+        for (MethodDeclaration s : extractedMethods) {
             builder.append(s.toString());
         }
     }

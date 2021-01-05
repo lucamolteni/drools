@@ -16,10 +16,15 @@
 
 package org.drools.ancompiler;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
 import java.util.stream.Stream;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.CastExpr;
@@ -90,8 +95,8 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
     static final String WORKING_MEMORY_PARAM_NAME = "wm";
 
     protected  NodeList<Statement> statements = new NodeList<>();
-    protected SwitchStmt switchStmt = null;
-    protected SwitchEntry switchEntry = null;
+    protected Deque<SwitchStmt> switchStatements = new ArrayDeque<>();
+    protected Deque<SwitchEntry> switchEntries = new ArrayDeque<>();
 
     protected SwitchCompilerHandler(StringBuilder builder) {
         this.builder = builder;
@@ -124,7 +129,7 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
             }
 
             this.statements.add(nullCheck);
-            this.switchStmt = switchStmt;
+            this.switchStatements.push(switchStmt);
 
         } else { // Hashable but not inlinable TODO LUCA migrate to JP
 
@@ -162,7 +167,7 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
         } else {
             switchEntry.setLabels(nodeList(new IntegerLiteralExpr(hashedAlpha.getId())));
         }
-        switchStmt.getEntries().add(switchEntry);
+        switchStatements.getFirst().getEntries().add(switchEntry);
         return switchEntry;
     }
 
@@ -211,16 +216,19 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
                                                                                  "getMatchingAlphaNodes",
                                                                                  nodeList(new MethodCallExpr(new NameExpr(FACT_HANDLE_PARAM_NAME), "getObject"))));
 
-        statements.add(matchingResultVariable);
+        final NodeList<Statement> currentStatement = switchEntries.isEmpty() ? statements : switchEntries.peek().getStatements();
+
+        currentStatement.add(matchingResultVariable);
 
         BlockStmt body = new BlockStmt();
         ForEachStmt forEachStmt = new ForEachStmt(new VariableDeclarationExpr(parseType("org.drools.core.reteoo.AlphaNode"), matchingNodeVariableName),
                                                   new NameExpr(matchingResultVariableName), body);
 
-        statements.add(forEachStmt);
+        currentStatement.add(forEachStmt);
 
-        this.switchStmt = new SwitchStmt().setSelector(new MethodCallExpr(new NameExpr(matchingNodeVariableName), "getId"));
-        body.addStatement(switchStmt);
+        SwitchStmt switchStatement = new SwitchStmt().setSelector(new MethodCallExpr(new NameExpr(matchingNodeVariableName), "getId"));
+        this.switchStatements.push(switchStatement);
+        body.addStatement(switchStatement);
     }
 
 
@@ -231,12 +239,32 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
 
     @Override
     public void startRangeIndexedAlphaNode(AlphaNode alphaNode) {
-        switchEntry = new SwitchEntry().setLabels(nodeList(new IntegerLiteralExpr(alphaNode.getId())));
-        switchStmt.getEntries().add(switchEntry);
+        SwitchEntry switchEntry = new SwitchEntry().setLabels(nodeList(new IntegerLiteralExpr(alphaNode.getId())));
+        switchEntries.push(switchEntry);
+        switchStatements.peek().getEntries().add(switchEntry);
     }
 
     @Override
     public void endRangeIndexedAlphaNode(AlphaNode alphaNode) {
-        switchEntry.getStatements().add(new BreakStmt().setValue(null));
+        switchEntries.peek().getStatements().add(new BreakStmt().setValue(null));
     }
+
+    @Override
+    public void endRangeIndex(AlphaRangeIndex alphaRangeIndex) {
+        switchEntries.pop();
+    }
+
+    @Override
+    public void endHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
+        SwitchEntry switchEntry = switchEntries.pop();
+        switchEntry.getStatements().add(new BreakStmt().setValue(null));
+        currentMethod = null;
+        switchCaseCounter++;
+    }
+
+
+    protected MethodDeclaration currentMethod;
+    protected final List<MethodDeclaration> extractedMethods = new ArrayList<>();
+
+    protected int switchCaseCounter = 0;
 }
