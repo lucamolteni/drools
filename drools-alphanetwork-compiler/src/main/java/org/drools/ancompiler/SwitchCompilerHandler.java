@@ -25,6 +25,7 @@ import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.CastExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
+import com.github.javaparser.ast.expr.LongLiteralExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.NullLiteralExpr;
@@ -151,6 +152,8 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
             final Expression quotedHashedValue;
             if (hashedValue instanceof String) {
                 quotedHashedValue = new StringLiteralExpr((String) hashedValue);
+            } else if (hashedValue instanceof Long) {
+                quotedHashedValue = new LongLiteralExpr((Long) hashedValue);
             } else {
                 quotedHashedValue = new IntegerLiteralExpr((Integer) hashedValue);
             }
