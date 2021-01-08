@@ -147,6 +147,8 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
         final InternalReadAccessor fieldExtractor = indexableConstraint.getFieldExtractor();
         fieldType = fieldExtractor.getExtractToClass();
 
+        final SwitchStmt switchStmt;
+        final Statement nullCheck;
         if (canInlineValue(fieldType)) {
 
             String switchVariableName = "switchVar";
@@ -157,9 +159,9 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
                                                                                                 nodeList(new NameExpr(LOCAL_FACT_VAR_NAME))));
 
             this.statements.addStatement(switchVariable);
-            SwitchStmt switchStmt = new SwitchStmt().setSelector(new NameExpr(switchVariableName));
+            switchStmt = new SwitchStmt().setSelector(new NameExpr(switchVariableName));
 
-            Statement nullCheck;
+
             if (fieldType.isPrimitive()) {
                 nullCheck = new BlockStmt().addStatement(switchStmt);
             } else {
@@ -168,8 +170,6 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
                         .setThenStmt(switchStmt);
             }
 
-            this.statements.addStatement(nullCheck);
-            this.switchStatements.push(switchStmt);
         } else { // Hashable but not inlinable
 
             String localVariableName = "NodeId";
@@ -185,21 +185,26 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
 
             this.statements.addStatement(expressionStmt);
 
-            SwitchStmt switchStmt = new SwitchStmt().setSelector(new MethodCallExpr(new NameExpr(localVariableName), "intValue", nodeList()));
+            switchStmt = new SwitchStmt().setSelector(new MethodCallExpr(new NameExpr(localVariableName), "intValue", nodeList()));
 
             // ensure that the value is present in the node map
-            Statement nullCheck = new IfStmt()
+            nullCheck = new IfStmt()
                     .setCondition(new BinaryExpr(new NameExpr(localVariableName), new NullLiteralExpr(), BinaryExpr.Operator.NOT_EQUALS))
                     .setThenStmt(switchStmt);
 
-            this.statements.addStatement(nullCheck);
-            this.switchStatements.push(switchStmt);
         }
+
+        this.statements.addStatement(nullCheck);
+        this.switchStatements.push(switchStmt);
+    }
+
+    protected boolean canInlineValue(Class<?> fieldType) {
+        return Stream.of(String.class, Integer.class, int.class).anyMatch(c -> c.isAssignableFrom(fieldType));
     }
 
     @Override
     public void startHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
-        SwitchEntry switchEntry1 = new SwitchEntry();
+        SwitchEntry newSwitchEntry = new SwitchEntry();
 
         if (canInlineValue(fieldType)) {
             final Expression quotedHashedValue;
@@ -210,14 +215,12 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
             } else {
                 quotedHashedValue = new IntegerLiteralExpr((Integer) hashedValue);
             }
-
-            switchEntry1.setLabels(nodeList(quotedHashedValue));
+            newSwitchEntry.setLabels(nodeList(quotedHashedValue));
         } else {
-            switchEntry1.setLabels(nodeList(new IntegerLiteralExpr(hashedAlpha.getId())));
+            newSwitchEntry.setLabels(nodeList(new IntegerLiteralExpr(hashedAlpha.getId())));
         }
-        switchStatements.getFirst().getEntries().add(switchEntry1);
-
-        this.switchEntries.push(switchEntry1);
+        switchStatements.getFirst().getEntries().add(newSwitchEntry);
+        this.switchEntries.push(newSwitchEntry);
     }
 
     @Override
@@ -262,7 +265,7 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
     @Override
     public void endRangeIndex(AlphaRangeIndex alphaRangeIndex) {
         SwitchStmt lastSwitch = this.switchStatements.pop();
-        // Pop all entries from lastSwitch.
+        // Pop all entries from lastSwitch
         // If there were only one stack, we could do this in one single operation.
         // TODO LUCA change this
         int lastSwitchEntries = lastSwitch.getEntries().size();
@@ -275,26 +278,6 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
     public void endHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
         SwitchEntry switchEntry = switchEntries.pop();
         addBreakStatement(switchEntry);
-    }
-
-    protected boolean canInlineValue(Class<?> fieldType) {
-        return Stream.of(String.class, Integer.class, int.class).anyMatch(c -> c.isAssignableFrom(fieldType));
-    }
-
-    //  type variableName = (type) sourceObject.methodName();
-    protected ExpressionStmt localVariableWithCastInitializer(Type type, String variableName, MethodCallExpr source) {
-        return new ExpressionStmt(
-                new VariableDeclarationExpr(
-                        new VariableDeclarator(type, variableName,
-                                               new CastExpr(type, source))));
-    }
-
-    //  type variableName = (type) sourceObject.methodName();
-    protected ExpressionStmt localVariable(Type type, String variableName, MethodCallExpr source) {
-        return new ExpressionStmt(
-                new VariableDeclarationExpr(
-                        new VariableDeclarator(type, variableName,
-                                               source)));
     }
 
     private void addBreakStatement(SwitchEntry switchEntry) {
@@ -351,5 +334,21 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
 
     public ClassOrInterfaceType workingMemoryType() {
         return StaticJavaParser.parseClassOrInterfaceType(InternalWorkingMemory.class.getName());
+    }
+
+    //  type variableName = (type) sourceObject.methodName();
+    protected ExpressionStmt localVariableWithCastInitializer(Type type, String variableName, MethodCallExpr source) {
+        return new ExpressionStmt(
+                new VariableDeclarationExpr(
+                        new VariableDeclarator(type, variableName,
+                                               new CastExpr(type, source))));
+    }
+
+    //  type variableName = (type) sourceObject.methodName();
+    protected ExpressionStmt localVariable(Type type, String variableName, MethodCallExpr source) {
+        return new ExpressionStmt(
+                new VariableDeclarationExpr(
+                        new VariableDeclarator(type, variableName,
+                                               source)));
     }
 }
