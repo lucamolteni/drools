@@ -261,7 +261,14 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
 
     @Override
     public void endRangeIndex(AlphaRangeIndex alphaRangeIndex) {
-        this.switchStatements.pop();
+        SwitchStmt lastSwitch = this.switchStatements.pop();
+        // Pop all entries from lastSwitch.
+        // If there were only one stack, we could do this in one single operation.
+        // TODO LUCA change this
+        int lastSwitchEntries = lastSwitch.getEntries().size();
+        for(int i = 0; i < lastSwitchEntries; i++) {
+            switchEntries.pop();
+        }
     }
 
     @Override
