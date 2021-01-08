@@ -35,8 +35,10 @@ import org.drools.core.reteoo.BetaNode;
 import org.drools.core.reteoo.LeftInputAdapterNode;
 import org.drools.core.reteoo.ObjectTypeNode;
 import org.drools.core.reteoo.Sink;
+import org.drools.core.reteoo.WindowNode;
 import org.drools.core.rule.IndexableConstraint;
 
+import static com.github.javaparser.StaticJavaParser.parseStatement;
 import static com.github.javaparser.ast.NodeList.nodeList;
 
 public class ModifyHandler extends SwitchCompilerHandler {
@@ -74,25 +76,7 @@ public class ModifyHandler extends SwitchCompilerHandler {
             ClassOrInterfaceType type = StaticJavaParser.parseClassOrInterfaceType(factClassName);
             ExpressionStmt factVariable = localVariableWithCastInitializer(type, LOCAL_FACT_VAR_NAME, new MethodCallExpr(new NameExpr(FACT_HANDLE_PARAM_NAME), "getObject"));
 
-            statements.add(factVariable);
-        }
-    }
-
-    @Override
-    public void startLeftInputAdapterNode(Object parent, LeftInputAdapterNode leftInputAdapterNode) {
-        Statement modifyStatement = modifyMethod(leftInputAdapterNode);
-
-        if(switchStatements == null) {
-            IfStmt ifStatement = StaticJavaParser.parseStatement("if (CONSTRAINT.isAllowed(handle, wm)) { }").asIfStmt();
-
-            replaceNameExpr(ifStatement, "CONSTRAINT", getVariableName((AlphaNode) parent));
-            ifStatement.setThenStmt(modifyStatement);
-
-            statements.add(ifStatement);
-        } else if (switchEntries != null) {
-            switchEntries.peek().addStatement(modifyStatement);
-        } else if(currentMethod != null){
-            currentMethod.getBody().ifPresent(b -> b.addStatement(modifyStatement));
+            statements.addStatement(factVariable);
         }
     }
 
@@ -102,10 +86,41 @@ public class ModifyHandler extends SwitchCompilerHandler {
         return modifyStatement;
     }
 
+
     @Override
     public void startBetaNode(BetaNode betaNode) {
-        statements.add(modifyMethod(betaNode));
+        getStatementToAdd().addStatement((modifyMethod(betaNode)));
     }
+
+    @Override
+    public void startWindowNode(WindowNode windowNode) {
+        getStatementToAdd().addStatement((modifyMethod(windowNode)));
+    }
+
+
+    @Override
+    public void startLeftInputAdapterNode(Object parent, LeftInputAdapterNode leftInputAdapterNode) {
+        getStatementToAdd().addStatement(modifyMethod(leftInputAdapterNode));
+    }
+
+    @Override
+    public void startNonHashedAlphaNode(AlphaNode alphaNode) {
+
+        IfStmt ifStatement = parseStatement("if (CONSTRAINT.isAllowed(handle, wm)) { }").asIfStmt();
+
+        replaceNameExpr(ifStatement, "CONSTRAINT", getVariableName(alphaNode));
+
+        getStatementToAdd().addStatement(ifStatement);
+
+        ifStatements.push(ifStatement);
+    }
+
+
+    @Override
+    public void endNonHashedAlphaNode(AlphaNode alphaNode) {
+        ifStatements.pop();
+    }
+
 
     @Override
     public void startHashedAlphaNodes(IndexableConstraint indexableConstraint) {
@@ -114,30 +129,10 @@ public class ModifyHandler extends SwitchCompilerHandler {
 
     @Override
     public void startHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
-        if(switchStatements == null) {
-            throw new CouldNotCreateAlphaNetworkCompilerException("Cannot generate switch cases without statement");
-        }
         SwitchEntry switchEntry = generateSwitchCase(hashedAlpha, hashedValue);
         this.switchEntries.push(switchEntry);
-
-        String assertObjectMethodName = "modifyObject" + switchCaseCounter;
-        currentMethod = new MethodDeclaration()
-                .setModifiers(Modifier.Keyword.PRIVATE)
-                .setName(assertObjectMethodName)
-                .setType(new VoidType())
-                .setParameters(modifyObjectParameters())
-                .setBody(new BlockStmt());
-
-        extractedMethods.add(currentMethod);
-
-        MethodCallExpr methodCallExpr = new MethodCallExpr(null, assertObjectMethodName,
-                                                           nodeList(new NameExpr(FACT_HANDLE_PARAM_NAME),
-                                                                    new NameExpr(MODIFY_PREVIOUS_TUPLE_PARAM_NAME),
-                                                                    new NameExpr(PROP_CONTEXT_PARAM_NAME),
-                                                                    new NameExpr(WORKING_MEMORY_PARAM_NAME)));
-
-        this.switchEntries.peek().getStatements().add(new ExpressionStmt(methodCallExpr));
     }
+
 
     public void emitCode() {
 
@@ -155,7 +150,7 @@ public class ModifyHandler extends SwitchCompilerHandler {
                                                                   "            logger.debug(\"Propagate modify object on compiled alpha network {} {} {}\", handle, context, wm);\n" +
                                                                   "        }\n"));
 
-        for (Statement s : statements) {
+        for (Statement s : statements.getStatements()) {
             body.addStatement(s);
         }
 

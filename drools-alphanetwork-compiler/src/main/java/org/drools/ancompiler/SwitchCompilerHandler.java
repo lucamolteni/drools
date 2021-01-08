@@ -94,9 +94,11 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
     static final String PROP_CONTEXT_PARAM_NAME = "context";
     static final String WORKING_MEMORY_PARAM_NAME = "wm";
 
-    protected  NodeList<Statement> statements = new NodeList<>();
+    protected  BlockStmt statements = new BlockStmt();
     protected Deque<SwitchStmt> switchStatements = new ArrayDeque<>();
     protected Deque<SwitchEntry> switchEntries = new ArrayDeque<>();
+
+    protected Deque<IfStmt> ifStatements = new ArrayDeque<>();
 
     protected SwitchCompilerHandler(StringBuilder builder) {
         this.builder = builder;
@@ -116,7 +118,7 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
                                                                                                 nodeList(new NameExpr(LOCAL_FACT_VAR_NAME))));
 
 
-            this.statements.add(switchVariable);
+            this.statements.addStatement(switchVariable);
             SwitchStmt switchStmt = new SwitchStmt().setSelector(new NameExpr(switchVariableName));
 
             Statement nullCheck;
@@ -128,25 +130,33 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
                         .setThenStmt(switchStmt);
             }
 
-            this.statements.add(nullCheck);
+            this.statements.addStatement(nullCheck);
             this.switchStatements.push(switchStmt);
 
-        } else { // Hashable but not inlinable TODO LUCA migrate to JP
+        } else { // Hashable but not inlinable
 
             String localVariableName = "NodeId";
 
-            builder.append("Integer ").append(localVariableName);
-            // todo we are casting to Integer because generics aren't supported
-            builder.append(" = (Integer)").append(getVariableName())
-                    .append(".get(")
-                    .append("readAccessor.getValue(")
-                    .append(LOCAL_FACT_VAR_NAME).append(")")
-                    .append(");").append(NEWLINE);
+            ExpressionStmt expressionStmt = localVariableWithCastInitializer(parseType("java.lang.Integer"),
+                                                                             localVariableName,
+                                                                             new MethodCallExpr(new NameExpr(getVariableName()), "get", nodeList(
+                                                                                     new MethodCallExpr(
+                                                                                             new NameExpr("readAccessor"),
+                                                                                             "getValue",
+                                                                                             nodeList(new NameExpr(LOCAL_FACT_VAR_NAME))
+                                                                                     ))));
+
+            this.statements.addStatement(expressionStmt);
+
+            SwitchStmt switchStmt = new SwitchStmt().setSelector(new MethodCallExpr(new NameExpr(localVariableName), "intValue", nodeList()));
 
             // ensure that the value is present in the node map
-            builder.append("if(").append(localVariableName).append(" != null) {").append(NEWLINE);
-            // todo we had the .intValue() because JANINO has a problem with it
-            builder.append("switch(").append(localVariableName).append(".intValue()) {").append(NEWLINE);
+            Statement nullCheck  = new IfStmt()
+                        .setCondition(new BinaryExpr(new NameExpr(localVariableName), new NullLiteralExpr(), BinaryExpr.Operator.NOT_EQUALS))
+                        .setThenStmt(switchStmt);
+
+            this.statements.addStatement(nullCheck);
+            this.switchStatements.push(switchStmt);
         }
     }
 
@@ -216,15 +226,15 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
                                                                                  "getMatchingAlphaNodes",
                                                                                  nodeList(new MethodCallExpr(new NameExpr(FACT_HANDLE_PARAM_NAME), "getObject"))));
 
-        final NodeList<Statement> currentStatement = switchEntries.isEmpty() ? statements : switchEntries.peek().getStatements();
+        final BlockStmt currentStatement = getStatementToAdd();
 
-        currentStatement.add(matchingResultVariable);
+        currentStatement.addStatement(matchingResultVariable);
 
         BlockStmt body = new BlockStmt();
         ForEachStmt forEachStmt = new ForEachStmt(new VariableDeclarationExpr(parseType("org.drools.core.reteoo.AlphaNode"), matchingNodeVariableName),
                                                   new NameExpr(matchingResultVariableName), body);
 
-        currentStatement.add(forEachStmt);
+        currentStatement.addStatement(forEachStmt);
 
         SwitchStmt switchStatement = new SwitchStmt().setSelector(new MethodCallExpr(new NameExpr(matchingNodeVariableName), "getId"));
         this.switchStatements.push(switchStatement);
@@ -246,25 +256,40 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
 
     @Override
     public void endRangeIndexedAlphaNode(AlphaNode alphaNode) {
-        switchEntries.peek().getStatements().add(new BreakStmt().setValue(null));
+        addBreakStatement(switchEntries.peek());
     }
 
     @Override
     public void endRangeIndex(AlphaRangeIndex alphaRangeIndex) {
-        switchEntries.pop();
+        this.switchStatements.pop();
     }
 
     @Override
     public void endHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
         SwitchEntry switchEntry = switchEntries.pop();
-        switchEntry.getStatements().add(new BreakStmt().setValue(null));
+        addBreakStatement(switchEntry);
         currentMethod = null;
         switchCaseCounter++;
     }
 
+    private void addBreakStatement(SwitchEntry switchEntry) {
+        switchEntry.getStatements().add(new BreakStmt().setValue(null));
+    }
 
     protected MethodDeclaration currentMethod;
     protected final List<MethodDeclaration> extractedMethods = new ArrayList<>();
 
     protected int switchCaseCounter = 0;
+
+
+    public BlockStmt getStatementToAdd() {
+        IfStmt peek = ifStatements.peek();
+        if(peek != null) {
+            return peek.getThenStmt().asBlockStmt();
+        } else if (switchEntries.peek() != null) {
+            return new BlockStmt (switchEntries.peek().getStatements());
+        } else {
+            return statements;
+        }
+    }
 }

@@ -35,6 +35,7 @@ import org.drools.core.reteoo.BetaNode;
 import org.drools.core.reteoo.LeftInputAdapterNode;
 import org.drools.core.reteoo.ObjectTypeNode;
 import org.drools.core.reteoo.Sink;
+import org.drools.core.reteoo.WindowNode;
 import org.drools.core.rule.IndexableConstraint;
 
 import static com.github.javaparser.StaticJavaParser.parseStatement;
@@ -70,25 +71,7 @@ public class AssertHandler extends SwitchCompilerHandler {
             ClassOrInterfaceType type = StaticJavaParser.parseClassOrInterfaceType(factClassName);
             ExpressionStmt factVariable = localVariableWithCastInitializer(type, LOCAL_FACT_VAR_NAME, new MethodCallExpr(new NameExpr(FACT_HANDLE_PARAM_NAME), "getObject"));
 
-            statements.add(factVariable);
-        }
-    }
-
-    @Override
-    public void startLeftInputAdapterNode(Object parent, LeftInputAdapterNode leftInputAdapterNode) {
-        Statement assertStatement = assertObjectMethod(leftInputAdapterNode);
-
-        if (switchStatements == null) {
-            IfStmt ifStatement = parseStatement("if (CONSTRAINT.isAllowed(handle, wm)) { }").asIfStmt();
-
-            replaceNameExpr(ifStatement, "CONSTRAINT", getVariableName((AlphaNode) parent));
-            ifStatement.setThenStmt(assertStatement);
-
-            statements.add(ifStatement);
-        } else if (switchEntries != null) {
-            switchEntries.peek().addStatement(assertStatement);
-        } else if (currentMethod != null) {
-            currentMethod.getBody().ifPresent(b -> b.addStatement(assertStatement));
+            getStatementToAdd().addStatement(factVariable);
         }
     }
 
@@ -100,39 +83,47 @@ public class AssertHandler extends SwitchCompilerHandler {
 
     @Override
     public void startBetaNode(BetaNode betaNode) {
-        statements.add(assertObjectMethod(betaNode));
+        getStatementToAdd().addStatement((assertObjectMethod(betaNode)));
     }
+
+    @Override
+    public void startWindowNode(WindowNode windowNode) {
+        getStatementToAdd().addStatement((assertObjectMethod(windowNode)));
+    }
+
+    @Override
+    public void startLeftInputAdapterNode(Object parent, LeftInputAdapterNode leftInputAdapterNode) {
+        getStatementToAdd().addStatement(assertObjectMethod(leftInputAdapterNode));
+    }
+
+    @Override
+    public void startNonHashedAlphaNode(AlphaNode alphaNode) {
+
+        IfStmt ifStatement = parseStatement("if (CONSTRAINT.isAllowed(handle, wm)) { }").asIfStmt();
+
+        replaceNameExpr(ifStatement, "CONSTRAINT", getVariableName(alphaNode));
+
+        getStatementToAdd().addStatement(ifStatement);
+
+        ifStatements.push(ifStatement);
+    }
+
+    @Override
+    public void endNonHashedAlphaNode(AlphaNode alphaNode) {
+        ifStatements.pop();
+    }
+
 
     @Override
     public void startHashedAlphaNodes(IndexableConstraint indexableConstraint) {
         generateSwitch(indexableConstraint);
     }
 
+
     @Override
     public void startHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
-        if(switchStatements == null) {
-            throw new CouldNotCreateAlphaNetworkCompilerException("Cannot generate switch cases without statement");
-        }
         SwitchEntry switchEntry = generateSwitchCase(hashedAlpha, hashedValue);
         this.switchEntries.push(switchEntry);
-
-        String assertObjectMethodName = "assertObject" + switchCaseCounter;
-        currentMethod = new MethodDeclaration()
-                .setModifiers(Modifier.Keyword.PRIVATE)
-                .setName(assertObjectMethodName)
-                .setType(new VoidType())
-                .setParameters(assertObjectParameters())
-                .setBody(new BlockStmt());
-
-        extractedMethods.add(currentMethod);
-
-        MethodCallExpr methodCallExpr = new MethodCallExpr(null, assertObjectMethodName,
-                                                           nodeList(new NameExpr(FACT_HANDLE_PARAM_NAME),
-                                                                    new NameExpr(PROP_CONTEXT_PARAM_NAME),
-                                                                    new NameExpr(WORKING_MEMORY_PARAM_NAME)));
-
-        this.switchEntries.peek().getStatements().add(new ExpressionStmt(methodCallExpr));
-
     }
 
     public void emitCode() {
@@ -151,7 +142,7 @@ public class AssertHandler extends SwitchCompilerHandler {
                                                           "            logger.debug(\"Propagate assert on compiled alpha network {} {} {}\", handle, context, wm);\n" +
                                                           "        }\n"));
 
-        for (Statement s : statements) {
+        for (Statement s : statements.getStatements()) {
             body.addStatement(s);
         }
 
