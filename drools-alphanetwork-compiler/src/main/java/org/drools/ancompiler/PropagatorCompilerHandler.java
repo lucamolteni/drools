@@ -83,9 +83,34 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
     private Class<?> fieldType;
 
     protected BlockStmt statements = new BlockStmt();
-    protected Deque<SwitchStmt> switchStatements = new ArrayDeque<>();
-    protected Deque<SwitchEntry> switchEntries = new ArrayDeque<>();
+    protected Deque<CurrentSwitch> switchStatements = new ArrayDeque<>();
     protected Deque<IfStmt> ifStatements = new ArrayDeque<>();
+
+    static class CurrentSwitch {
+        private final SwitchStmt switchStmt;
+        private final Deque<SwitchEntry> switchEntries = new ArrayDeque<>();
+
+        public CurrentSwitch(SwitchStmt switchStmt) {
+            this.switchStmt = switchStmt;
+        }
+
+        SwitchEntry lastEntry() {
+            return this.switchEntries.peek();
+        }
+
+        public void addEntry(SwitchEntry e) {
+            switchStmt.getEntries().add(e);
+            switchEntries.push(e);
+        }
+
+        public SwitchEntry popLastEntry() {
+            return switchEntries.pop();
+        }
+
+        public BlockStmt currentBlockStmt() {
+            return new BlockStmt(switchEntries.peek().getStatements());
+        }
+    }
 
     protected PropagatorCompilerHandler(boolean alphaNetContainsHashedField, String factClassName) {
         this.alphaNetContainsHashedField = alphaNetContainsHashedField;
@@ -195,7 +220,7 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
         }
 
         this.statements.addStatement(nullCheck);
-        this.switchStatements.push(switchStmt);
+        this.switchStatements.push(new CurrentSwitch(switchStmt));
     }
 
     protected boolean canInlineValue(Class<?> fieldType) {
@@ -219,8 +244,7 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
         } else {
             newSwitchEntry.setLabels(nodeList(new IntegerLiteralExpr(hashedAlpha.getId())));
         }
-        switchStatements.getFirst().getEntries().add(newSwitchEntry);
-        this.switchEntries.push(newSwitchEntry);
+        switchStatements.getFirst().addEntry(newSwitchEntry);
     }
 
     @Override
@@ -246,37 +270,30 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
         currentStatement.addStatement(forEachStmt);
 
         SwitchStmt switchStatement = new SwitchStmt().setSelector(new MethodCallExpr(new NameExpr(matchingNodeVariableName), "getId"));
-        this.switchStatements.push(switchStatement);
+        this.switchStatements.push(new CurrentSwitch(switchStatement));
         body.addStatement(switchStatement);
     }
 
     @Override
     public void startRangeIndexedAlphaNode(AlphaNode alphaNode) {
         SwitchEntry switchEntry = new SwitchEntry().setLabels(nodeList(new IntegerLiteralExpr(alphaNode.getId())));
-        switchEntries.push(switchEntry);
-        switchStatements.peek().getEntries().add(switchEntry);
+        CurrentSwitch currentSwitch = switchStatements.peek();
+        currentSwitch.addEntry(switchEntry);
     }
 
     @Override
     public void endRangeIndexedAlphaNode(AlphaNode alphaNode) {
-        addBreakStatement(switchEntries.peek());
+        addBreakStatement(switchStatements.peek().lastEntry());
     }
 
     @Override
     public void endRangeIndex(AlphaRangeIndex alphaRangeIndex) {
-        SwitchStmt lastSwitch = this.switchStatements.pop();
-        // Pop all entries from lastSwitch
-        // If there were only one stack, we could do this in one single operation.
-        // TODO LUCA change this
-        int lastSwitchEntries = lastSwitch.getEntries().size();
-        for (int i = 0; i < lastSwitchEntries; i++) {
-            switchEntries.pop();
-        }
+        this.switchStatements.pop();
     }
 
     @Override
     public void endHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
-        SwitchEntry switchEntry = switchEntries.pop();
+        SwitchEntry switchEntry = this.switchStatements.peek().popLastEntry();
         addBreakStatement(switchEntry);
     }
 
@@ -288,8 +305,8 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
         IfStmt peek = ifStatements.peek();
         if (peek != null) {
             return peek.getThenStmt().asBlockStmt();
-        } else if (switchEntries.peek() != null) {
-            return new BlockStmt(switchEntries.peek().getStatements());
+        } else if (!this.switchStatements.isEmpty() && this.switchStatements.peek().lastEntry() != null) {
+            return this.switchStatements.peek().currentBlockStmt();
         } else {
             return statements;
         }
