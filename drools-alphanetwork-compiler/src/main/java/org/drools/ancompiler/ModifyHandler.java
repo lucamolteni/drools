@@ -26,7 +26,7 @@ import static com.github.javaparser.ast.NodeList.nodeList;
 
 public class ModifyHandler extends PropagatorCompilerHandler {
 
-    public ModifyHandler(StringBuilder builder, String factClassName, boolean alphaNetContainsHashedField) {
+    public ModifyHandler(String factClassName, boolean alphaNetContainsHashedField) {
         super(alphaNetContainsHashedField, factClassName);
     }
 

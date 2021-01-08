@@ -98,11 +98,11 @@ public class ObjectTypeNodeCompiler {
         partitionedSwitch.emitCode(builder);
 
         // create assert method
-        AssertHandler assertHandler = new AssertHandler(builder, className, hashedAlphaDeclarations.size() > 0);
+        AssertHandler assertHandler = new AssertHandler(className, hashedAlphaDeclarations.size() > 0);
         parser.accept(assertHandler);
         builder.append(assertHandler.emitCode());
 
-        ModifyHandler modifyHandler = new ModifyHandler(builder, className, !hashedAlphaDeclarations.isEmpty());
+        ModifyHandler modifyHandler = new ModifyHandler(className, !hashedAlphaDeclarations.isEmpty());
         parser.accept(modifyHandler);
         builder.append(modifyHandler.emitCode());
 

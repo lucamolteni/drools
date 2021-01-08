@@ -26,7 +26,7 @@ import static com.github.javaparser.ast.NodeList.nodeList;
 
 public class AssertHandler extends PropagatorCompilerHandler {
 
-    public AssertHandler(StringBuilder builder, String factClassName, boolean alphaNetContainsHashedField) {
+    public AssertHandler(String factClassName, boolean alphaNetContainsHashedField) {
         super(alphaNetContainsHashedField, factClassName);
     }
 
