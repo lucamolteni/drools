@@ -17,14 +17,14 @@
 package org.drools.ancompiler;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
-import java.util.List;
 import java.util.stream.Stream;
 
 import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.CastExpr;
@@ -46,69 +46,108 @@ import com.github.javaparser.ast.stmt.SwitchEntry;
 import com.github.javaparser.ast.stmt.SwitchStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
+import com.github.javaparser.ast.type.VoidType;
 import org.drools.core.common.InternalFactHandle;
 import org.drools.core.common.InternalWorkingMemory;
 import org.drools.core.reteoo.AlphaNode;
+import org.drools.core.reteoo.BetaNode;
+import org.drools.core.reteoo.LeftInputAdapterNode;
 import org.drools.core.reteoo.ModifyPreviousTuples;
+import org.drools.core.reteoo.ObjectTypeNode;
+import org.drools.core.reteoo.Sink;
+import org.drools.core.reteoo.WindowNode;
 import org.drools.core.rule.IndexableConstraint;
 import org.drools.core.spi.InternalReadAccessor;
 import org.drools.core.spi.PropagationContext;
 import org.drools.core.util.index.AlphaRangeIndex;
 
+import static com.github.javaparser.StaticJavaParser.parseStatement;
 import static com.github.javaparser.StaticJavaParser.parseType;
 import static com.github.javaparser.ast.NodeList.nodeList;
 
-public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
+// As AssertCompiler and ModifyCompiler classes are quite similar except for the method they propagate in the Rete (assert vs modify) they share a common class
+public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler {
 
-    protected static final String MODIFY_PREVIOUS_TUPLE_TYPE = ModifyPreviousTuples.class.getCanonicalName();
+    /**
+     * This states if there is at least 1 set of hashed alpha nodes in the network
+     */
+    protected final boolean alphaNetContainsHashedField;
+    protected final String factClassName;
 
-    public ClassOrInterfaceType modifyPreviousTuplesType() {
-        return StaticJavaParser.parseClassOrInterfaceType(MODIFY_PREVIOUS_TUPLE_TYPE);
-    }
-
+    protected static final String FACT_HANDLE_PARAM_NAME = "handle";
+    protected static final String PROP_CONTEXT_PARAM_NAME = "context";
+    protected static final String WORKING_MEMORY_PARAM_NAME = "wm";
     protected static final String MODIFY_PREVIOUS_TUPLE_PARAM_NAME = "modifyPreviousTuples";
+    protected static final String LOCAL_FACT_VAR_NAME = "fact";
 
-    protected final StringBuilder builder;
     private Class<?> fieldType;
 
-    static final String LOCAL_FACT_VAR_NAME = "fact";
-    protected static final String FACT_HANDLE_PARAM_TYPE = InternalFactHandle.class.getCanonicalName();
-
-    public ClassOrInterfaceType factHandleType() {
-        return StaticJavaParser.parseClassOrInterfaceType(FACT_HANDLE_PARAM_TYPE);
-    }
-
-    protected static final String PROP_CONTEXT_PARAM_TYPE = PropagationContext.class.getName();
-
-    public ClassOrInterfaceType propagationContextType() {
-        return StaticJavaParser.parseClassOrInterfaceType(PROP_CONTEXT_PARAM_TYPE);
-    }
-
-    protected static final String WORKING_MEMORY_PARAM_TYPE = InternalWorkingMemory.class.getName();
-
-    public ClassOrInterfaceType workingMemoryType() {
-        return StaticJavaParser.parseClassOrInterfaceType(WORKING_MEMORY_PARAM_TYPE);
-    }
-
-    static final String FACT_HANDLE_PARAM_NAME = "handle";
-    static final String PROP_CONTEXT_PARAM_NAME = "context";
-    static final String WORKING_MEMORY_PARAM_NAME = "wm";
-
-    protected  BlockStmt statements = new BlockStmt();
+    protected BlockStmt statements = new BlockStmt();
     protected Deque<SwitchStmt> switchStatements = new ArrayDeque<>();
     protected Deque<SwitchEntry> switchEntries = new ArrayDeque<>();
-
     protected Deque<IfStmt> ifStatements = new ArrayDeque<>();
 
-    protected SwitchCompilerHandler(StringBuilder builder) {
-        this.builder = builder;
+    protected PropagatorCompilerHandler(boolean alphaNetContainsHashedField, String factClassName) {
+        this.alphaNetContainsHashedField = alphaNetContainsHashedField;
+        this.factClassName = factClassName;
     }
 
-    protected void generateSwitch(IndexableConstraint indexableConstraint) {
+    protected abstract Statement propagateMethod(Sink sink);
+
+    protected abstract NodeList<Parameter> methodParameters();
+
+    @Override
+    public void startObjectTypeNode(ObjectTypeNode objectTypeNode) {
+        // we only need to create a reference to the object, not handle, if there is a hashed alpha in the network
+        if (alphaNetContainsHashedField) {
+            // example of what this will look like
+            // ExampleFact fact = (ExampleFact) handle.getObject();
+
+            ClassOrInterfaceType type = StaticJavaParser.parseClassOrInterfaceType(factClassName);
+            ExpressionStmt factVariable = localVariableWithCastInitializer(type, LOCAL_FACT_VAR_NAME, new MethodCallExpr(new NameExpr(FACT_HANDLE_PARAM_NAME), "getObject"));
+
+            getCurrentBlockStatement().addStatement(factVariable);
+        }
+    }
+
+    @Override
+    public void startBetaNode(BetaNode betaNode) {
+        getCurrentBlockStatement().addStatement((propagateMethod(betaNode)));
+    }
+
+    @Override
+    public void startWindowNode(WindowNode windowNode) {
+        getCurrentBlockStatement().addStatement((propagateMethod(windowNode)));
+    }
+
+    @Override
+    public void startLeftInputAdapterNode(Object parent, LeftInputAdapterNode leftInputAdapterNode) {
+        getCurrentBlockStatement().addStatement(propagateMethod(leftInputAdapterNode));
+    }
+
+    @Override
+    public void startNonHashedAlphaNode(AlphaNode alphaNode) {
+
+        IfStmt ifStatement = parseStatement("if (CONSTRAINT.isAllowed(handle, wm)) { }").asIfStmt();
+
+        replaceNameExpr(ifStatement, "CONSTRAINT", getVariableName(alphaNode));
+
+        getCurrentBlockStatement().addStatement(ifStatement);
+
+        ifStatements.push(ifStatement);
+    }
+
+    @Override
+    public void endNonHashedAlphaNode(AlphaNode alphaNode) {
+        ifStatements.pop();
+    }
+
+    @Override
+    public void startHashedAlphaNodes(IndexableConstraint indexableConstraint) {
         final InternalReadAccessor fieldExtractor = indexableConstraint.getFieldExtractor();
         fieldType = fieldExtractor.getExtractToClass();
 
-        if (canInlineValue()) {
+        if (canInlineValue(fieldType)) {
 
             String switchVariableName = "switchVar";
             ExpressionStmt switchVariable = localVariableWithCastInitializer(parseType(fieldType.getCanonicalName()),
@@ -116,7 +155,6 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
                                                                              new MethodCallExpr(new NameExpr("readAccessor"),
                                                                                                 "getValue",
                                                                                                 nodeList(new NameExpr(LOCAL_FACT_VAR_NAME))));
-
 
             this.statements.addStatement(switchVariable);
             SwitchStmt switchStmt = new SwitchStmt().setSelector(new NameExpr(switchVariableName));
@@ -132,7 +170,6 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
 
             this.statements.addStatement(nullCheck);
             this.switchStatements.push(switchStmt);
-
         } else { // Hashable but not inlinable
 
             String localVariableName = "NodeId";
@@ -151,19 +188,20 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
             SwitchStmt switchStmt = new SwitchStmt().setSelector(new MethodCallExpr(new NameExpr(localVariableName), "intValue", nodeList()));
 
             // ensure that the value is present in the node map
-            Statement nullCheck  = new IfStmt()
-                        .setCondition(new BinaryExpr(new NameExpr(localVariableName), new NullLiteralExpr(), BinaryExpr.Operator.NOT_EQUALS))
-                        .setThenStmt(switchStmt);
+            Statement nullCheck = new IfStmt()
+                    .setCondition(new BinaryExpr(new NameExpr(localVariableName), new NullLiteralExpr(), BinaryExpr.Operator.NOT_EQUALS))
+                    .setThenStmt(switchStmt);
 
             this.statements.addStatement(nullCheck);
             this.switchStatements.push(switchStmt);
         }
     }
 
-    protected SwitchEntry generateSwitchCase(AlphaNode hashedAlpha, Object hashedValue) {
-        SwitchEntry switchEntry = new SwitchEntry();
+    @Override
+    public void startHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
+        SwitchEntry switchEntry1 = new SwitchEntry();
 
-        if (canInlineValue()) {
+        if (canInlineValue(fieldType)) {
             final Expression quotedHashedValue;
             if (hashedValue instanceof String) {
                 quotedHashedValue = new StringLiteralExpr((String) hashedValue);
@@ -173,49 +211,17 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
                 quotedHashedValue = new IntegerLiteralExpr((Integer) hashedValue);
             }
 
-            switchEntry.setLabels(nodeList(quotedHashedValue));
+            switchEntry1.setLabels(nodeList(quotedHashedValue));
         } else {
-            switchEntry.setLabels(nodeList(new IntegerLiteralExpr(hashedAlpha.getId())));
+            switchEntry1.setLabels(nodeList(new IntegerLiteralExpr(hashedAlpha.getId())));
         }
-        switchStatements.getFirst().getEntries().add(switchEntry);
-        return switchEntry;
-    }
+        switchStatements.getFirst().getEntries().add(switchEntry1);
 
-    protected boolean canInlineValue() {
-        return Stream.of(String.class, Integer.class, int.class).anyMatch(c -> c.isAssignableFrom(fieldType));
+        this.switchEntries.push(switchEntry1);
     }
 
     @Override
-    public void nullCaseAlphaNodeStart(AlphaNode hashedAlpha) {
-        if (canInlineValue()) {
-            builder.append("else { ");
-        }
-    }
-
-    @Override
-    public void nullCaseAlphaNodeEnd(AlphaNode hashedAlpha) {
-        if (canInlineValue()) {
-            builder.append("}").append(NEWLINE);
-        }
-    }
-
-    //  type variableName = (type) sourceObject.methodName();
-    protected ExpressionStmt localVariableWithCastInitializer(Type type, String variableName, MethodCallExpr source) {
-        return new ExpressionStmt(
-                new VariableDeclarationExpr(
-                        new VariableDeclarator(type, variableName,
-                                               new CastExpr(type, source))));
-    }
-
-    //  type variableName = (type) sourceObject.methodName();
-    protected ExpressionStmt localVariable(Type type, String variableName, MethodCallExpr source) {
-        return new ExpressionStmt(
-                new VariableDeclarationExpr(
-                        new VariableDeclarator(type, variableName,
-                                               source)));
-    }
-
-    protected void generateRangeIndexForSwitch(AlphaRangeIndex alphaRangeIndex) {
+    public void startRangeIndex(AlphaRangeIndex alphaRangeIndex) {
         String rangeIndexVariableName = getRangeIndexVariableName(alphaRangeIndex, getMinIdFromRangeIndex(alphaRangeIndex));
         String matchingResultVariableName = rangeIndexVariableName + "_result";
         String matchingNodeVariableName = matchingResultVariableName + "_node";
@@ -226,7 +232,7 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
                                                                                  "getMatchingAlphaNodes",
                                                                                  nodeList(new MethodCallExpr(new NameExpr(FACT_HANDLE_PARAM_NAME), "getObject"))));
 
-        final BlockStmt currentStatement = getStatementToAdd();
+        final BlockStmt currentStatement = getCurrentBlockStatement();
 
         currentStatement.addStatement(matchingResultVariable);
 
@@ -239,12 +245,6 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
         SwitchStmt switchStatement = new SwitchStmt().setSelector(new MethodCallExpr(new NameExpr(matchingNodeVariableName), "getId"));
         this.switchStatements.push(switchStatement);
         body.addStatement(switchStatement);
-    }
-
-
-    @Override
-    public void startRangeIndex(AlphaRangeIndex alphaRangeIndex) {
-        generateRangeIndexForSwitch(alphaRangeIndex);
     }
 
     @Override
@@ -266,7 +266,7 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
         // If there were only one stack, we could do this in one single operation.
         // TODO LUCA change this
         int lastSwitchEntries = lastSwitch.getEntries().size();
-        for(int i = 0; i < lastSwitchEntries; i++) {
+        for (int i = 0; i < lastSwitchEntries; i++) {
             switchEntries.pop();
         }
     }
@@ -275,28 +275,81 @@ public abstract class SwitchCompilerHandler extends AbstractCompilerHandler {
     public void endHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
         SwitchEntry switchEntry = switchEntries.pop();
         addBreakStatement(switchEntry);
-        currentMethod = null;
-        switchCaseCounter++;
+    }
+
+    protected boolean canInlineValue(Class<?> fieldType) {
+        return Stream.of(String.class, Integer.class, int.class).anyMatch(c -> c.isAssignableFrom(fieldType));
+    }
+
+    //  type variableName = (type) sourceObject.methodName();
+    protected ExpressionStmt localVariableWithCastInitializer(Type type, String variableName, MethodCallExpr source) {
+        return new ExpressionStmt(
+                new VariableDeclarationExpr(
+                        new VariableDeclarator(type, variableName,
+                                               new CastExpr(type, source))));
+    }
+
+    //  type variableName = (type) sourceObject.methodName();
+    protected ExpressionStmt localVariable(Type type, String variableName, MethodCallExpr source) {
+        return new ExpressionStmt(
+                new VariableDeclarationExpr(
+                        new VariableDeclarator(type, variableName,
+                                               source)));
     }
 
     private void addBreakStatement(SwitchEntry switchEntry) {
         switchEntry.getStatements().add(new BreakStmt().setValue(null));
     }
 
-    protected MethodDeclaration currentMethod;
-    protected final List<MethodDeclaration> extractedMethods = new ArrayList<>();
-
-    protected int switchCaseCounter = 0;
-
-
-    public BlockStmt getStatementToAdd() {
+    public BlockStmt getCurrentBlockStatement() {
         IfStmt peek = ifStatements.peek();
-        if(peek != null) {
+        if (peek != null) {
             return peek.getThenStmt().asBlockStmt();
         } else if (switchEntries.peek() != null) {
-            return new BlockStmt (switchEntries.peek().getStatements());
+            return new BlockStmt(switchEntries.peek().getStatements());
         } else {
             return statements;
         }
+    }
+
+    protected abstract String propagateMethodName();
+
+    public String emitCode() {
+
+        MethodDeclaration propagateMethod =
+                new MethodDeclaration()
+                        .setModifiers(Modifier.Keyword.PUBLIC, Modifier.Keyword.FINAL)
+                        .setType(new VoidType())
+                        .setName(propagateMethodName())
+                        .setParameters(methodParameters());
+
+        BlockStmt body = new BlockStmt();
+        propagateMethod.setBody(body);
+
+        body.addStatement(StaticJavaParser.parseStatement(String.format("if(logger.isDebugEnabled()) {\n" +
+                                                                                "            logger.debug(\"%s on compiled alpha network {} {} {}\", handle, context, wm);\n" +
+                                                                                "        }\n", propagateMethodName())));
+
+        for (Statement s : statements.getStatements()) {
+            body.addStatement(s);
+        }
+
+        return propagateMethod.toString();
+    }
+
+    public ClassOrInterfaceType modifyPreviousTuplesType() {
+        return StaticJavaParser.parseClassOrInterfaceType(ModifyPreviousTuples.class.getCanonicalName());
+    }
+
+    public ClassOrInterfaceType factHandleType() {
+        return StaticJavaParser.parseClassOrInterfaceType(InternalFactHandle.class.getCanonicalName());
+    }
+
+    public ClassOrInterfaceType propagationContextType() {
+        return StaticJavaParser.parseClassOrInterfaceType(PropagationContext.class.getName());
+    }
+
+    public ClassOrInterfaceType workingMemoryType() {
+        return StaticJavaParser.parseClassOrInterfaceType(InternalWorkingMemory.class.getName());
     }
 }
