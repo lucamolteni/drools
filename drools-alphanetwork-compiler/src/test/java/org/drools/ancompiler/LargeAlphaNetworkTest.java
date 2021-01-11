@@ -43,11 +43,16 @@ public class LargeAlphaNetworkTest extends BaseModelTest {
         ArrayList<Object> results = new ArrayList<>();
         ksession.setGlobal("results", results);
         Person a = new Person("a", 1);
+        Person b = new Person("b", 1);
+        Person c = new Person("a", 7);
         ksession.insert(a);
+        ksession.insert(b);
+        ksession.insert(c);
 
         try {
             int rulesFired = ksession.fireAllRules();
-            Assertions.assertThat(results).contains(a);
+            Assertions.assertThat(results).contains(a, c);
+            Assertions.assertThat(results).doesNotContain(b);
         } finally {
             ksession.dispose();
         }
