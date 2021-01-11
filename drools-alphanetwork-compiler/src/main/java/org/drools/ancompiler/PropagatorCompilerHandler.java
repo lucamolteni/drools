@@ -161,7 +161,6 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
             this.allStatements.addStatement(switchVariable);
             switchStmt = new SwitchStmt().setSelector(new NameExpr(switchVariableName));
 
-
             if (fieldType.isPrimitive()) {
                 nullCheck = new BlockStmt().addStatement(switchStmt);
             } else {
@@ -169,7 +168,6 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
                         .setCondition(new BinaryExpr(new NameExpr(switchVariableName), new NullLiteralExpr(), BinaryExpr.Operator.NOT_EQUALS))
                         .setThenStmt(switchStmt);
             }
-
         } else { // Hashable but not inlinable
 
             String localVariableName = "NodeId";
@@ -191,7 +189,6 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
             nullCheck = new IfStmt()
                     .setCondition(new BinaryExpr(new NameExpr(localVariableName), new NullLiteralExpr(), BinaryExpr.Operator.NOT_EQUALS))
                     .setThenStmt(switchStmt);
-
         }
 
         this.allStatements.addStatement(nullCheck);
@@ -219,14 +216,8 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
         } else {
             newSwitchEntry.setLabels(nodeList(new IntegerLiteralExpr(hashedAlpha.getId())));
         }
-        SwitchStmt switchStmt = (SwitchStmt) currentStatement.peek();
-        BlockStmt stmt = new BlockStmt();
-        stmt.setParentNode(newSwitchEntry);
-        this.currentStatement.push(stmt);
-        newSwitchEntry.setStatements(nodeList(stmt));
-        switchStmt.getEntries().add(newSwitchEntry);
+        addNewSwitchEntryToStack(newSwitchEntry);
     }
-
 
     @Override
     public void endHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
@@ -246,15 +237,15 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
                                                                                  "getMatchingAlphaNodes",
                                                                                  nodeList(new MethodCallExpr(new NameExpr(FACT_HANDLE_PARAM_NAME), "getObject"))));
 
-        final BlockStmt currentStatement = getCurrentBlockStatement();
+        final BlockStmt currentBlockStatement = getCurrentBlockStatement();
 
-        currentStatement.addStatement(matchingResultVariable);
+        currentBlockStatement.addStatement(matchingResultVariable);
 
         BlockStmt body = new BlockStmt();
         ForEachStmt forEachStmt = new ForEachStmt(new VariableDeclarationExpr(parseType("org.drools.core.reteoo.AlphaNode"), matchingNodeVariableName),
                                                   new NameExpr(matchingResultVariableName), body);
 
-        currentStatement.addStatement(forEachStmt);
+        currentBlockStatement.addStatement(forEachStmt);
 
         SwitchStmt switchStatement = new SwitchStmt().setSelector(new MethodCallExpr(new NameExpr(matchingNodeVariableName), "getId"));
         this.currentStatement.push(switchStatement);
@@ -264,7 +255,11 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
     @Override
     public void startRangeIndexedAlphaNode(AlphaNode alphaNode) {
         SwitchEntry switchEntry = new SwitchEntry().setLabels(nodeList(new IntegerLiteralExpr(alphaNode.getId())));
-        SwitchStmt currentSwitch = (SwitchStmt) currentStatement.peek();
+        addNewSwitchEntryToStack(switchEntry);
+    }
+
+    private void addNewSwitchEntryToStack(SwitchEntry switchEntry) {
+        SwitchStmt currentSwitch = (SwitchStmt) currentStatement.getFirst();
         BlockStmt block = new BlockStmt();
         block.setParentNode(switchEntry);
         this.currentStatement.push(block);
@@ -279,7 +274,10 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
     }
 
     public SwitchEntry getLastSwitchEntry() {
-        return this.currentStatement.getFirst().findAncestor(SwitchEntry.class).get();
+        return this.currentStatement
+                .getFirst()
+                .findAncestor(SwitchEntry.class)
+                .orElseThrow(() -> new CouldNotCreateAlphaNetworkCompilerException("No switch entry to break found"));
     }
 
     @Override
@@ -292,10 +290,10 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
     }
 
     public BlockStmt getCurrentBlockStatement() {
-        if(currentStatement.peek() instanceof IfStmt) {
-            return (BlockStmt) ((IfStmt)currentStatement.peek()).getThenStmt();
+        if (currentStatement.getFirst() instanceof IfStmt) {
+            return (BlockStmt) ((IfStmt) currentStatement.getFirst()).getThenStmt();
         }
-        return (BlockStmt) currentStatement.peek();
+        return (BlockStmt) currentStatement.getFirst();
     }
 
     protected abstract String propagateMethodName();
