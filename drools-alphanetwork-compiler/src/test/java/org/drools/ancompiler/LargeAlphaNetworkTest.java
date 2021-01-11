@@ -32,48 +32,31 @@ public class LargeAlphaNetworkTest extends BaseModelTest {
     public void testVeryLargeAlphaNetwork() {
         final StringBuilder rule =
                 new StringBuilder("global java.util.List results;\n" +
-                        "import " + Person.class.getCanonicalName() + ";\n");
+                                          "import " + Person.class.getCanonicalName() + ";\n");
 
-
-        rule.append(rulesOnLetter("a"));
+        int alphalength = 9;
+        for (int i = 0; i < alphalength; i++) {
+            rule.append(ruleWithIndex(i));
+        }
 
         KieSession ksession = getKieSession(rule.toString());
         ArrayList<Object> results = new ArrayList<>();
         ksession.setGlobal("results", results);
-        Person a = new Person("a", 15);
-        Person b = new Person("a", 26);
+        Person a = new Person("a", 1);
         ksession.insert(a);
-        ksession.insert(b);
 
         try {
             int rulesFired = ksession.fireAllRules();
             Assertions.assertThat(results).contains(a);
-            Assertions.assertThat(results).contains(b);
         } finally {
             ksession.dispose();
         }
     }
 
-    private String rulesOnLetter(final String letter) {
-        String quotedLetter = String.format("\"%s\"", letter);
+    private String ruleWithIndex(final Integer index) {
 
-        return "rule minus18 when\n" +
-                "    $p : Person( name == " + quotedLetter + ", age < 18 )\n" +
-                "then\n" +
-                " results.add($p);\n" +
-                "end\n" +
-                "rule between1825 when\n" +
-                "    $p : Person( name == " + quotedLetter + ", age >= 18, age <= 25 )\n" +
-                "then\n" +
-                " results.add($p);\n" +
-                "end\n" +
-                "rule between2530 when\n" +
-                "    $p : Person( name == " + quotedLetter + ", age >= 25, age <= 30 )\n" +
-                "then\n" +
-                " results.add($p);\n" +
-                "end\n" +
-                "rule greaterThan30 when\n" +
-                "    $p : Person( name == " + quotedLetter + ", age > 30 )\n" +
+        return "rule rule" + index + " when\n" +
+                "    $p : Person( name == \"a\" , age >= " + index + ", age < " + (index + 1) + " )\n" +
                 "then\n" +
                 " results.add($p);\n" +
                 "end\n";
