@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.Modifier;
+import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
@@ -82,39 +83,13 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
 
     private Class<?> fieldType;
 
-    protected BlockStmt statements = new BlockStmt();
-    protected Deque<CurrentSwitch> switchStatements = new ArrayDeque<>();
-    protected Deque<IfStmt> ifStatements = new ArrayDeque<>();
-
-    static class CurrentSwitch {
-        private final SwitchStmt switchStmt;
-        private final Deque<SwitchEntry> switchEntries = new ArrayDeque<>();
-
-        public CurrentSwitch(SwitchStmt switchStmt) {
-            this.switchStmt = switchStmt;
-        }
-
-        SwitchEntry lastEntry() {
-            return this.switchEntries.peek();
-        }
-
-        public void addEntry(SwitchEntry e) {
-            switchStmt.getEntries().add(e);
-            switchEntries.push(e);
-        }
-
-        public SwitchEntry popLastEntry() {
-            return switchEntries.pop();
-        }
-
-        public BlockStmt currentBlockStmt() {
-            return new BlockStmt(switchEntries.peek().getStatements());
-        }
-    }
+    protected BlockStmt allStatements = new BlockStmt();
+    protected Deque<Node> currentStatement = new ArrayDeque<>();
 
     protected PropagatorCompilerHandler(boolean alphaNetContainsHashedField, String factClassName) {
         this.alphaNetContainsHashedField = alphaNetContainsHashedField;
         this.factClassName = factClassName;
+        currentStatement.push(allStatements);
     }
 
     protected abstract Statement propagateMethod(Sink sink);
@@ -159,12 +134,12 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
 
         getCurrentBlockStatement().addStatement(ifStatement);
 
-        ifStatements.push(ifStatement);
+        currentStatement.push(ifStatement);
     }
 
     @Override
     public void endNonHashedAlphaNode(AlphaNode alphaNode) {
-        ifStatements.pop();
+        currentStatement.pop();
     }
 
     @Override
@@ -183,7 +158,7 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
                                                                                                 "getValue",
                                                                                                 nodeList(new NameExpr(LOCAL_FACT_VAR_NAME))));
 
-            this.statements.addStatement(switchVariable);
+            this.allStatements.addStatement(switchVariable);
             switchStmt = new SwitchStmt().setSelector(new NameExpr(switchVariableName));
 
 
@@ -208,7 +183,7 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
                                                                                              nodeList(new NameExpr(LOCAL_FACT_VAR_NAME))
                                                                                      ))));
 
-            this.statements.addStatement(expressionStmt);
+            this.allStatements.addStatement(expressionStmt);
 
             switchStmt = new SwitchStmt().setSelector(new MethodCallExpr(new NameExpr(localVariableName), "intValue", nodeList()));
 
@@ -219,8 +194,8 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
 
         }
 
-        this.statements.addStatement(nullCheck);
-        this.switchStatements.push(new CurrentSwitch(switchStmt));
+        this.allStatements.addStatement(nullCheck);
+        this.currentStatement.push(switchStmt);
     }
 
     protected boolean canInlineValue(Class<?> fieldType) {
@@ -244,7 +219,19 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
         } else {
             newSwitchEntry.setLabels(nodeList(new IntegerLiteralExpr(hashedAlpha.getId())));
         }
-        switchStatements.getFirst().addEntry(newSwitchEntry);
+        SwitchStmt switchStmt = (SwitchStmt) currentStatement.peek();
+        BlockStmt stmt = new BlockStmt();
+        stmt.setParentNode(newSwitchEntry);
+        this.currentStatement.push(stmt);
+        newSwitchEntry.setStatements(nodeList(stmt));
+        switchStmt.getEntries().add(newSwitchEntry);
+    }
+
+
+    @Override
+    public void endHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
+        addBreakStatement(getLastSwitchEntry());
+        this.currentStatement.pop();
     }
 
     @Override
@@ -270,31 +257,34 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
         currentStatement.addStatement(forEachStmt);
 
         SwitchStmt switchStatement = new SwitchStmt().setSelector(new MethodCallExpr(new NameExpr(matchingNodeVariableName), "getId"));
-        this.switchStatements.push(new CurrentSwitch(switchStatement));
+        this.currentStatement.push(switchStatement);
         body.addStatement(switchStatement);
     }
 
     @Override
     public void startRangeIndexedAlphaNode(AlphaNode alphaNode) {
         SwitchEntry switchEntry = new SwitchEntry().setLabels(nodeList(new IntegerLiteralExpr(alphaNode.getId())));
-        CurrentSwitch currentSwitch = switchStatements.peek();
-        currentSwitch.addEntry(switchEntry);
+        SwitchStmt currentSwitch = (SwitchStmt) currentStatement.peek();
+        BlockStmt block = new BlockStmt();
+        block.setParentNode(switchEntry);
+        this.currentStatement.push(block);
+        switchEntry.setStatements(nodeList(block));
+        currentSwitch.getEntries().add(switchEntry);
     }
 
     @Override
     public void endRangeIndexedAlphaNode(AlphaNode alphaNode) {
-        addBreakStatement(switchStatements.peek().lastEntry());
+        addBreakStatement(getLastSwitchEntry());
+        this.currentStatement.pop();
+    }
+
+    public SwitchEntry getLastSwitchEntry() {
+        return this.currentStatement.getFirst().findAncestor(SwitchEntry.class).get();
     }
 
     @Override
     public void endRangeIndex(AlphaRangeIndex alphaRangeIndex) {
-        this.switchStatements.pop();
-    }
-
-    @Override
-    public void endHashedAlphaNode(AlphaNode hashedAlpha, Object hashedValue) {
-        SwitchEntry switchEntry = this.switchStatements.peek().popLastEntry();
-        addBreakStatement(switchEntry);
+        this.currentStatement.pop();
     }
 
     private void addBreakStatement(SwitchEntry switchEntry) {
@@ -302,14 +292,10 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
     }
 
     public BlockStmt getCurrentBlockStatement() {
-        IfStmt peek = ifStatements.peek();
-        if (peek != null) {
-            return peek.getThenStmt().asBlockStmt();
-        } else if (!this.switchStatements.isEmpty() && this.switchStatements.peek().lastEntry() != null) {
-            return this.switchStatements.peek().currentBlockStmt();
-        } else {
-            return statements;
+        if(currentStatement.peek() instanceof IfStmt) {
+            return (BlockStmt) ((IfStmt)currentStatement.peek()).getThenStmt();
         }
+        return (BlockStmt) currentStatement.peek();
     }
 
     protected abstract String propagateMethodName();
@@ -330,7 +316,7 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
                                                                                 "            logger.debug(\"%s on compiled alpha network {} {} {}\", handle, context, wm);\n" +
                                                                                 "        }\n", propagateMethodName())));
 
-        for (Statement s : statements.getStatements()) {
+        for (Statement s : allStatements.getStatements()) {
             body.addStatement(s);
         }
 
