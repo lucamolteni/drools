@@ -34,7 +34,7 @@ public class LargeAlphaNetworkTest extends BaseModelTest {
                 new StringBuilder("global java.util.List results;\n" +
                                           "import " + Person.class.getCanonicalName() + ";\n");
 
-        int alphalength = 9;
+        int alphalength = 10;
         for (int i = 0; i < alphalength; i++) {
             rule.append(ruleWithIndex(i));
         }
@@ -43,7 +43,7 @@ public class LargeAlphaNetworkTest extends BaseModelTest {
         ArrayList<Object> results = new ArrayList<>();
         ksession.setGlobal("results", results);
         Person a = new Person("a", 1);
-        Person b = new Person("b", 1);
+        Person b = new Person("b", 0);
         Person c = new Person("a", 7);
         ksession.insert(a);
         ksession.insert(b);
@@ -51,8 +51,7 @@ public class LargeAlphaNetworkTest extends BaseModelTest {
 
         try {
             int rulesFired = ksession.fireAllRules();
-            Assertions.assertThat(results).contains(a, c);
-            Assertions.assertThat(results).doesNotContain(b);
+            Assertions.assertThat(results).contains(a, b, c);
         } finally {
             ksession.dispose();
         }
@@ -60,8 +59,21 @@ public class LargeAlphaNetworkTest extends BaseModelTest {
 
     private String ruleWithIndex(final Integer index) {
 
-        return "rule rule" + index + " when\n" +
-                "    $p : Person( name == \"a\" , age >= " + index + ", age < " + (index + 1) + " )\n" +
+        return "rule rule" + index + "A when\n" +
+                "    $p : Person( name == \"a\" , " +
+                "                   age == " + index + " )\n" +
+                "then\n" +
+                " results.add($p);\n" +
+                "end\n" +
+                "rule rule" + index + "B when\n" +
+                "    $p : Person( name == \"b\" , " +
+                "                   age == " + index + " )\n" +
+                "then\n" +
+                " results.add($p);\n" +
+                "end\n" +
+                "rule rule" + index + "c when\n" +
+                "    $p : Person( name == \"c\" , " +
+                "                   age == " + index +  ")\n" +
                 "then\n" +
                 " results.add($p);\n" +
                 "end\n";
