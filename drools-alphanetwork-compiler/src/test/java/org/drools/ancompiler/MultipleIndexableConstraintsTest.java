@@ -22,14 +22,17 @@ import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.kie.api.runtime.KieSession;
 
-public class LargeAlphaNetworkTest extends BaseModelTest {
+public class MultipleIndexableConstraintsTest extends BaseModelTest {
 
-    public LargeAlphaNetworkTest(RUN_TYPE testRunType) {
+    public MultipleIndexableConstraintsTest(RUN_TYPE testRunType) {
         super(testRunType);
     }
 
+    /* Currently we don't support multiple indexable constraints in the ANC, so this test will pass because
+        it disables the switch generation and the inlining. See DROOLS-5947
+     */
     @Test
-    public void testVeryLargeAlphaNetwork() {
+    public void testMultipleIndexedConstraintTest() {
         final StringBuilder rule =
                 new StringBuilder("global java.util.List results;\n" +
                                           "import " + Person.class.getCanonicalName() + ";\n");
@@ -50,7 +53,6 @@ public class LargeAlphaNetworkTest extends BaseModelTest {
         ksession.insert(c);
 
         try {
-            int rulesFired = ksession.fireAllRules();
             Assertions.assertThat(results).contains(a, b, c);
         } finally {
             ksession.dispose();

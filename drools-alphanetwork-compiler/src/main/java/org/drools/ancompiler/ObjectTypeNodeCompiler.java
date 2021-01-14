@@ -79,6 +79,13 @@ public class ObjectTypeNodeCompiler {
         DebugHandler debugHandler = new DebugHandler();
         parser.accept(debugHandler);
 
+        // After the first parsing we decide whether to traverse hashedAlphaNodes or not
+
+        if(parser.getIndexableConstraints().size() > 1) {
+            logger.warn("Alpha Network Compiler with multiple Indexable Constraints is not supported, reverting to non hashed-ANC. This might be slower ");
+            parser.setTraverseHashedAlphaNodes(false);
+        }
+
         // create declarations
         DeclarationsHandler declarations = new DeclarationsHandler(builder);
         parser.accept(declarations);
