@@ -17,7 +17,10 @@
 package org.drools.ancompiler;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.github.javaparser.StaticJavaParser;
@@ -27,6 +30,7 @@ import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
+import com.github.javaparser.ast.comments.LineComment;
 import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.CastExpr;
 import com.github.javaparser.ast.expr.Expression;
@@ -65,6 +69,7 @@ import org.drools.core.util.index.AlphaRangeIndex;
 import static com.github.javaparser.StaticJavaParser.parseStatement;
 import static com.github.javaparser.StaticJavaParser.parseType;
 import static com.github.javaparser.ast.NodeList.nodeList;
+import static org.drools.core.util.StringUtils.md5Hash;
 
 // As AssertCompiler and ModifyCompiler classes are quite similar except for the method they propagate in the Rete (assert vs modify) they share a common class
 public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler {
@@ -85,6 +90,7 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
 
     protected BlockStmt allStatements = new BlockStmt();
     protected Deque<Node> currentStatement = new ArrayDeque<>();
+    protected List<MethodDeclaration> extractedMethods = new ArrayList<>();
 
     protected PropagatorCompilerHandler(boolean alphaNetContainsHashedField, String factClassName) {
         this.alphaNetContainsHashedField = alphaNetContainsHashedField;
@@ -95,6 +101,8 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
     protected abstract Statement propagateMethod(Sink sink);
 
     protected abstract NodeList<Parameter> methodParameters();
+
+    protected abstract NodeList<Expression> arguments();
 
     @Override
     public void startObjectTypeNode(ObjectTypeNode objectTypeNode) {
@@ -314,11 +322,67 @@ public abstract class PropagatorCompilerHandler extends AbstractCompilerHandler 
                                                                                 "            logger.debug(\"%s on compiled alpha network {} {} {}\", handle, context, wm);\n" +
                                                                                 "        }\n", propagateMethodName())));
 
+        postProcessAllStatements();
+
         for (Statement s : allStatements.getStatements()) {
             body.addStatement(s);
         }
 
-        return propagateMethod.toString();
+        StringBuilder allCodeGenerated = new StringBuilder();
+        allCodeGenerated.append(propagateMethod.toString());
+        allCodeGenerated.append(NEWLINE);
+
+        for(MethodDeclaration md : extractedMethods) {
+            allCodeGenerated.append(md.toString());
+            allCodeGenerated.append(NEWLINE);
+            allCodeGenerated.append(NEWLINE);
+        }
+        return allCodeGenerated.toString();
+    }
+
+    private void postProcessAllStatements() {
+        partitionSwitchEntries();
+    }
+
+    private void partitionSwitchEntries() {
+        this.allStatements
+                .findAll(SwitchEntry.class)
+                .forEach(this::extractMethod);
+    }
+
+    private void extractMethod(SwitchEntry switchEntry) {
+
+        String label = switchEntry.getLabels().stream().map(Node::toString).collect(Collectors.joining());
+
+        SwitchStmt switchStatement = switchEntry.findAncestor(SwitchStmt.class)
+                .orElseThrow(() -> new CouldNotCreateAlphaNetworkCompilerException("SwitchEntry without SwitchStatement"));
+
+        int index = switchStatement.getEntries().indexOf(switchEntry);
+        String selectorString = switchStatement.getSelector().toString();
+
+        String newMethodName = String.format("extractedPropagated_%s_%d", md5Hash(selectorString), index);
+
+        // First statement is actual block, second statement is break
+        BlockStmt switchEntryStatements = (BlockStmt) switchEntry.getStatements().get(0);
+        MethodDeclaration extractedMethod = new MethodDeclaration()
+                .setModifiers(nodeList(Modifier.publicModifier()))
+                .setName(newMethodName)
+                .setParameters(methodParameters())
+                .setType(new VoidType())
+                .setBody(switchEntryStatements);
+
+        extractedMethod.setComment(new LineComment(selectorString + " " + label));
+
+        MethodCallExpr callExtractedMethod = new MethodCallExpr()
+                .setName(newMethodName)
+                .setArguments(arguments());
+
+        switchEntry.setStatements(nodeList(
+                new ExpressionStmt(callExtractedMethod),
+                new BreakStmt().setValue(null)
+        ));
+
+        extractedMethods.add(extractedMethod);
     }
 
     public ClassOrInterfaceType modifyPreviousTuplesType() {

@@ -35,7 +35,7 @@ public class LargeAlphaNetworkTest extends BaseModelTest {
                 new StringBuilder("global java.util.List results;\n" +
                                           "import " + Person.class.getCanonicalName() + ";\n");
 
-        int alphalength = 10;
+        int alphalength = 620;
         for (int i = 0; i < alphalength; i++) {
             rule.append(ruleWithIndex(i));
         }
