@@ -53,6 +53,7 @@ public class MultipleIndexableConstraintsTest extends BaseModelTest {
         ksession.insert(c);
 
         try {
+            ksession.fireAllRules();
             Assertions.assertThat(results).contains(a, b, c);
         } finally {
             ksession.dispose();
