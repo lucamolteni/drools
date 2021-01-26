@@ -23,11 +23,11 @@ public class TableContext {
     private final EvaluationContext evalCtx;
     private final Object[] values;
 
-    public TableContext(EvaluationContext evalCtx, String... propNames) {
+    public TableContext(EvaluationContext evalCtx, String... propertyNames) {
         this.evalCtx = evalCtx;
-        this.values = new Object[propNames.length];
-        for (int i = 0; i < propNames.length; i++) {
-            values[i] = evalCtx.getValue( propNames[i] );
+        this.values = new Object[propertyNames.length];
+        for (int i = 0; i < propertyNames.length; i++) {
+            values[i] = evalCtx.getValue(propertyNames[i]);
         }
     }
 

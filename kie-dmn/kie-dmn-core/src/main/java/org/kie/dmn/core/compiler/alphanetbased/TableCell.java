@@ -16,6 +16,7 @@
 
 package org.kie.dmn.core.compiler.alphanetbased;
 
+import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Optional;
 
@@ -26,10 +27,12 @@ import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.AssignExpr;
+import com.github.javaparser.ast.expr.ClassExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.MethodReferenceExpr;
 import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.NullLiteralExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.ThisExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
@@ -40,11 +43,12 @@ import org.kie.dmn.core.compiler.DMNFEELHelper;
 import org.kie.dmn.core.compiler.execmodelbased.DTableModel;
 import org.kie.dmn.feel.codegen.feel11.CodegenStringUtil;
 import org.kie.dmn.feel.lang.Type;
+import org.kie.dmn.feel.lang.types.BuiltInType;
 
 import static com.github.javaparser.StaticJavaParser.parseExpression;
 import static com.github.javaparser.StaticJavaParser.parseType;
 import static java.lang.String.format;
-import static org.kie.dmn.feel.codegen.feel11.CodegenStringUtil.replaceClassNameWith;
+import static org.kie.dmn.feel.codegen.feel11.CodegenStringUtil.replaceSimpleNameWith;
 
 public class TableCell {
 
@@ -104,23 +108,43 @@ public class TableCell {
 
         VariableDeclarationExpr variable = new VariableDeclarationExpr(indexType, indexName);
 
-        Expression indexValueExpr;
-        if(isAQuotedString()) { // no need to quote it
-            indexValueExpr = new NameExpr(input);
-        } else {
-            indexValueExpr = new StringLiteralExpr().setValue(input);
-        }
-        Expression alphaNodeCreation = new MethodCallExpr(null, CREATE_INDEX_NODE_METHOD, NodeList.nodeList(
-                parseExpression("String.class"),
-                parseExpression(format("x -> (String)x.getValue(%s)",
-                                       tableIndex.columnIndex())),
-                indexValueExpr
-
-        ));
-        final Expression expr = new AssignExpr(variable, alphaNodeCreation, AssignExpr.Operator.ASSIGN);
+        Expression indexMethodExpression = createIndexMethodExpression();
+        final Expression expr = new AssignExpr(variable, indexMethodExpression, AssignExpr.Operator.ASSIGN);
         stmt.addStatement(expr);
 
         return indexName;
+    }
+
+    private Expression createIndexMethodExpression() {
+        if (type.equals(BuiltInType.NUMBER)) {
+            return createBigDecimalIndex();
+        } else if (type.equals(BuiltInType.STRING)) {
+            return createStringIndex();
+        } else {
+            throw new UnsupportedOperationException("Unknown Index Type");
+        }
+    }
+
+    private Expression createBigDecimalIndex() {
+        String bigDecimalClassFulName = BigDecimal.class.getCanonicalName();
+        return new MethodCallExpr(null, CREATE_INDEX_NODE_METHOD, NodeList.nodeList(
+                new ClassExpr(parseType(bigDecimalClassFulName)),
+                parseExpression(format("x -> (%s)x.getValue(%s)",
+                                       bigDecimalClassFulName,
+                                       tableIndex.columnIndex())),
+                new NullLiteralExpr()
+
+        ));
+    }
+
+    private Expression createStringIndex() {
+        return new MethodCallExpr(null, CREATE_INDEX_NODE_METHOD, NodeList.nodeList(
+                new ClassExpr(parseType(String.class.getCanonicalName())),
+                parseExpression(format("x -> (String)x.getValue(%s)",
+                                       tableIndex.columnIndex())),
+                isAQuotedString() ? new NameExpr(input) : new NullLiteralExpr()
+
+        ));
     }
 
     private boolean isAQuotedString() {
@@ -170,7 +194,6 @@ public class TableCell {
         stmt.addStatement(expr);
 
         output.ifPresent(o -> {
-            //         addResultSink(ctx, this, alphac2r1, "HIGH");
             Expression resultSinkMethodCallExpr = new MethodCallExpr(null,
                                                                      "addResultSink",
                                                                      NodeList.nodeList(
@@ -188,7 +211,7 @@ public class TableCell {
                 type,
                 false);
 
-        replaceClassNameWith(sourceCode, "TemplateCompiledFEELUnaryTests", unaryTestClassName);
+        replaceSimpleNameWith(sourceCode, "TemplateCompiledFEELUnaryTests", unaryTestClassName);
 
         sourceCode.setName(unaryTestClassName);
 

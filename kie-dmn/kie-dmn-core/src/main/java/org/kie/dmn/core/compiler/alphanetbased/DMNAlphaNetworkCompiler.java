@@ -17,23 +17,31 @@
 package org.kie.dmn.core.compiler.alphanetbased;
 
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.expr.ArrayCreationExpr;
+import com.github.javaparser.ast.expr.ArrayInitializerExpr;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.type.ArrayType;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
 import org.kie.dmn.core.compiler.execmodelbased.DTableModel;
 import org.kie.dmn.core.impl.DMNModelImpl;
+import org.kie.dmn.feel.codegen.feel11.CodegenStringUtil;
 import org.kie.dmn.model.api.DecisionTable;
+import org.kie.dmn.model.api.InputClause;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.github.javaparser.StaticJavaParser.parseType;
 import static org.kie.dmn.core.compiler.generators.GeneratorsUtil.getDecisionTableName;
-import static org.kie.dmn.feel.codegen.feel11.CodegenStringUtil.replaceClassNameWith;
+import static org.kie.dmn.feel.codegen.feel11.CodegenStringUtil.replaceSimpleNameWith;
 
 public class DMNAlphaNetworkCompiler {
 
@@ -46,7 +54,6 @@ public class DMNAlphaNetworkCompiler {
     private CompilationUnit template;
     private ClassOrInterfaceDeclaration dmnAlphaNetworkClass;
 
-    Map<String, String> allClasses = new HashMap<>();
 
     public DMNAlphaNetworkCompiler(DMNCompilerContext ctx,
                                    DMNModelImpl model,
@@ -56,19 +63,26 @@ public class DMNAlphaNetworkCompiler {
         this.tableCellFactory = tableCellFactory;
     }
 
-    public Map<String, String> generateSourceCode(String dtName, DecisionTable dt) {
+    public GeneratedSources generateSourceCode(String dtName, DecisionTable decisionTable) {
+
+        GeneratedSources generatedSources = new GeneratedSources();
+
+        String decisionTableName = getDecisionTableName(dtName, decisionTable);
+        String escapedDecisionTableName = String.format("DMNAlphaNetwork_%s", CodegenStringUtil.escapeIdentifier(decisionTableName));
 
         initTemplate();
+        setDMNAlphaNetworkClassName(escapedDecisionTableName);
+        initPropertyNames(decisionTable.getInput());
 
-        String decisionName = getDecisionTableName(dtName, dt);
-        DTableModel dTableModel = new DTableModel(ctx.getFeelHelper(), model, dtName, decisionName, dt);
+        DTableModel dTableModel = new DTableModel(ctx.getFeelHelper(), model, dtName, decisionTableName, decisionTable);
 
         TableCells tableCells = parseCells(dTableModel);
 
         BlockStmt alphaNetworkStatements = new BlockStmt();
 
-        tableCells.addUnaryTestClass(allClasses);
-        tableCells.addAlphaNetworkNode(alphaNetworkStatements, dmnAlphaNetworkClass, allClasses);
+        generatedSources.addTableCells(tableCells);
+
+        tableCells.addAlphaNetworkNode(alphaNetworkStatements, generatedSources);
 
         BlockStmt alphaNetworkBlock = dmnAlphaNetworkClass
                 .findFirst(BlockStmt.class, DMNAlphaNetworkCompiler::blockHasComment)
@@ -76,11 +90,12 @@ public class DMNAlphaNetworkCompiler {
 
         alphaNetworkBlock.replace(alphaNetworkStatements);
 
-        allClasses.put("org.kie.dmn.core.alphasupport.DMNAlphaNetwork", template.toString());
+        String alphaNetworkClassWithPackage = String.format("org.kie.dmn.core.alphasupport.%s", escapedDecisionTableName);
+        generatedSources.addNewAlphaNetworkClass(alphaNetworkClassWithPackage, template.toString());
 
-        logGeneratedClasses();
+        generatedSources.logGeneratedClasses();
 
-        return allClasses;
+        return generatedSources;
     }
 
     private static boolean blockHasComment(BlockStmt block) {
@@ -88,18 +103,30 @@ public class DMNAlphaNetworkCompiler {
                 .isPresent();
     }
 
-    private void logGeneratedClasses() {
-        for (Map.Entry<String, String> kv : allClasses.entrySet()) {
-            logger.debug("Generated class {}", kv.getKey());
-            logger.debug(kv.getValue());
-        }
-    }
-
     private void initTemplate() {
         template = getMethodTemplate();
         dmnAlphaNetworkClass = template.getClassByName("DMNAlphaNetworkTemplate")
                 .orElseThrow(() -> new RuntimeException("Cannot find class"));
-        replaceClassNameWith(dmnAlphaNetworkClass, "DMNAlphaNetworkTemplate", "DMNAlphaNetwork");
+        dmnAlphaNetworkClass.removeComment();
+    }
+
+    private void setDMNAlphaNetworkClassName(String escapedDecisionTableName) {
+        replaceSimpleNameWith(dmnAlphaNetworkClass, "DMNAlphaNetworkTemplate", escapedDecisionTableName);
+    }
+
+    private void initPropertyNames(List<InputClause> input) {
+
+        NodeList<Expression> propertyNamesArray = input.stream()
+                .map(inputClause -> inputClause.getInputExpression().getText())
+                .map(StringLiteralExpr::new)
+                .collect(Collectors.toCollection(NodeList::new));
+
+        ArrayCreationExpr array = new ArrayCreationExpr()
+                .setElementType(new ArrayType(parseType(String.class.getCanonicalName())))
+                .setInitializer(new ArrayInitializerExpr(propertyNamesArray));
+
+        template.findAll(StringLiteralExpr.class, n -> n.asString().equals("PROPERTY_NAMES"))
+                .forEach(r -> r.replace(array));
     }
 
     public TableCells parseCells(DTableModel dTableModel) {

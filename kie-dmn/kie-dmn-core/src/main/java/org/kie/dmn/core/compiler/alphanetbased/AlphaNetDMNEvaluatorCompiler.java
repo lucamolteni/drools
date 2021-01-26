@@ -46,20 +46,19 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
     }
 
     @Override
-    protected DMNExpressionEvaluator compileDecisionTable(DMNCompilerContext ctx, DMNModelImpl model, DMNBaseNode node, String dtName, DecisionTable dt) {
-        String decisionName = getDecisionTableName(dtName, dt);
-        DTableModel dTableModel = new DTableModel(ctx.getFeelHelper(), model, dtName, decisionName, dt);
-
+    protected DMNExpressionEvaluator compileDecisionTable(DMNCompilerContext ctx, DMNModelImpl model, DMNBaseNode node, String decisionTableName, DecisionTable decisionTable) {
+        String decisionName = getDecisionTableName(decisionTableName, decisionTable);
+        DTableModel dTableModel = new DTableModel(ctx.getFeelHelper(), model, decisionTableName, decisionName, decisionTable);
 
         TableCell.TableCellFactory tableCellFactory = new TableCell.TableCellFactory(ctx.getFeelHelper(), ctx);
         DMNAlphaNetworkCompiler dmnAlphaNetworkCompiler = new DMNAlphaNetworkCompiler(ctx, model, tableCellFactory);
-        Map<String, String> allTypesSourceCode = dmnAlphaNetworkCompiler.generateSourceCode(dtName, dt);
+        GeneratedSources generatedSources = dmnAlphaNetworkCompiler.generateSourceCode(decisionTableName, decisionTable);
 
         ClassLoader thisDMNClassLoader = this.getClass().getClassLoader();
-        Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(allTypesSourceCode, thisDMNClassLoader);
+        Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(generatedSources.getAllClasses(), thisDMNClassLoader);
 
 //        DMNCompiledAlphaNetwork dmnCompiledAlphaNetwork = new HardCodedAlphaNetwork();
-        DMNCompiledAlphaNetwork dmnCompiledAlphaNetwork = createAlphaNetworkInstance(compiledClasses);
+        DMNCompiledAlphaNetwork dmnCompiledAlphaNetwork = generatedSources.newInstanceOfAlphaNetwork(compiledClasses);
 
         dmnCompiledAlphaNetwork.initRete();
         CompiledNetwork compiledAlphaNetwork = dmnCompiledAlphaNetwork.createCompiledAlphaNetwork(this);
@@ -82,15 +81,5 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         return compiledNetworkSource.createInstanceAndSet(aClass);
     }
 
-    // TODO LUCA fix this
-    protected DMNCompiledAlphaNetwork createAlphaNetworkInstance(Map<String, Class<?>> compiled) {
-        Class<?> inputSetClass = compiled.get("org.kie.dmn.core.alphasupport.DMNAlphaNetwork");
-        Object inputSetInstance = null;
-        try {
-            inputSetInstance = inputSetClass.getDeclaredConstructor().newInstance();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        return (DMNCompiledAlphaNetwork) inputSetInstance;
-    }
+
 }

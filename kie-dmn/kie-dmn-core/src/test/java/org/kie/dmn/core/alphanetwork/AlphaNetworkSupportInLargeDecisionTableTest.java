@@ -37,6 +37,7 @@ import org.kie.dmn.api.core.DMNResult;
 import org.kie.dmn.api.core.DMNRuntime;
 import org.kie.dmn.core.compiler.AlphaNetworkOption;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.kie.dmn.core.classloader.DMNClassloaderTest.getPom;
@@ -89,6 +90,7 @@ public class AlphaNetworkSupportInLargeDecisionTableTest {
 
         DMNResult dmnResult = dmnRuntime.evaluateAll(dmnModel, dmnContext);
         assertFalse(dmnResult.hasErrors());
+        assertThat(dmnResult.getDecisionResultById("decision-table").getResult()).isEqualTo("Declined");
     }
 
     public String createDMN(int numberOfTableRules) {

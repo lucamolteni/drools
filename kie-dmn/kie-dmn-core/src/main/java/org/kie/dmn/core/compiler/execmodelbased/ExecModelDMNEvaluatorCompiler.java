@@ -47,7 +47,7 @@ import static java.util.stream.Collectors.joining;
 
 import static org.drools.modelcompiler.builder.JavaParserCompiler.getCompiler;
 import static org.kie.dmn.core.compiler.generators.GeneratorsUtil.getDecisionTableName;
-import static org.kie.dmn.feel.codegen.feel11.CodegenStringUtil.replaceClassNameWith;
+import static org.kie.dmn.feel.codegen.feel11.CodegenStringUtil.replaceSimpleNameWith;
 
 public class ExecModelDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
 
@@ -368,7 +368,7 @@ public class ExecModelDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
                                 ctx,
                                 dTableModel.getColumns().get(j).getType());
 
-                        replaceClassNameWith(classOrInterfaceDeclaration, "TemplateCompiledFEELUnaryTests", testClass);
+                        replaceSimpleNameWith(classOrInterfaceDeclaration, "TemplateCompiledFEELUnaryTests", testClass);
                         String sourceCode = classOrInterfaceDeclaration.setName(testClass).toString();
 
                         testsBuilder.append( "\n" );

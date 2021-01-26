@@ -284,7 +284,7 @@ public class DTableModel {
             return inputs;
         }
 
-        // LUCA TODO: avoid exposing outputs
+        // TODO LUCA: avoid exposing outputs
         public List<String> getOutputs() {
             return outputs;
         }
