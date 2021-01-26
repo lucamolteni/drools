@@ -20,6 +20,7 @@ import java.util.UUID;
 
 import org.drools.core.reteoo.AlphaNode;
 import org.drools.core.reteoo.ObjectSource;
+import org.drools.core.reteoo.builder.BuildUtils;
 import org.drools.core.rule.Declaration;
 import org.drools.core.spi.Constraint;
 import org.drools.model.Index;
@@ -30,9 +31,13 @@ import org.drools.model.index.AlphaIndexImpl;
 import org.drools.modelcompiler.constraints.ConstraintEvaluator;
 import org.drools.modelcompiler.constraints.LambdaConstraint;
 
-import static org.drools.core.reteoo.builder.BuildUtils.attachNode;
-
 public class AlphaNetworkCompilerUtils {
+
+    private static final BuildUtils buildUtils = new BuildUtils();
+
+    private AlphaNetworkCompilerUtils() {
+
+    }
 
     public static void addResultSink(NetworkBuilderContext ctx, ObjectSource source, Object result) {
         source.addObjectSink(new ResultCollectorAlphaSink(ctx.buildContext.getNextId(), source, ctx.buildContext, result, ctx.resultCollector));
@@ -49,19 +54,18 @@ public class AlphaNetworkCompilerUtils {
 
     /**
      * IMPORTANT: remember to use the FEEL expression as an Identifier for the same constraint
-     *
+     * <p>
      * Prefix: column name + value
      */
     public static AlphaNode createAlphaNode(NetworkBuilderContext ctx, ObjectSource source, String id, Predicate1<TableContext> predicate, Index index) {
-        SingleConstraint1 constraint = new SingleConstraint1(id, ctx.variable, predicate);
+        SingleConstraint1<TableContext> constraint = new SingleConstraint1<>(id, ctx.variable, predicate);
         constraint.setIndex(index);
         LambdaConstraint lambda = new LambdaConstraint(new ConstraintEvaluator(new Declaration[]{ctx.declaration}, constraint));
         lambda.setType(Constraint.ConstraintType.ALPHA);
-        return attachNode(ctx.buildContext, new AlphaNode(ctx.buildContext.getNextId(), lambda, source, ctx.buildContext));
+        return buildUtils.attachNode(ctx.buildContext, new AlphaNode(ctx.buildContext.getNextId(), lambda, source, ctx.buildContext));
     }
 
     public static <I> AlphaIndexImpl<TableContext, I> createIndex(Class<I> indexedClass, Function1<TableContext, I> leftExtractor, I rightValue) {
-        return new AlphaIndexImpl<TableContext, I>(indexedClass, Index.ConstraintType.EQUAL, 1, leftExtractor, rightValue);
+        return new AlphaIndexImpl<>(indexedClass, Index.ConstraintType.EQUAL, 1, leftExtractor, rightValue);
     }
-
 }
