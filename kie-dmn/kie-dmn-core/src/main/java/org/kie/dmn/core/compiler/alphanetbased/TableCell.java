@@ -19,8 +19,6 @@ package org.kie.dmn.core.compiler.alphanetbased;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.swing.text.html.Option;
-
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.NodeList;
@@ -36,7 +34,6 @@ import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.ThisExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
 import org.kie.dmn.core.compiler.DMNFEELHelper;
@@ -46,6 +43,7 @@ import org.kie.dmn.feel.lang.Type;
 
 import static com.github.javaparser.StaticJavaParser.parseExpression;
 import static com.github.javaparser.StaticJavaParser.parseType;
+import static java.lang.String.format;
 import static org.kie.dmn.feel.codegen.feel11.CodegenStringUtil.replaceClassNameWith;
 
 public class TableCell {
@@ -106,17 +104,16 @@ public class TableCell {
 
         VariableDeclarationExpr variable = new VariableDeclarationExpr(indexType, indexName);
 
-        // TODO LUCA this is wrong
         Expression indexValueExpr;
-        if(input.contains("\"")) {
+        if(isAQuotedString()) { // no need to quote it
             indexValueExpr = new NameExpr(input);
         } else {
-            indexValueExpr = new StringLiteralExpr(input);
+            indexValueExpr = new StringLiteralExpr().setValue(input);
         }
         Expression alphaNodeCreation = new MethodCallExpr(null, CREATE_INDEX_NODE_METHOD, NodeList.nodeList(
                 parseExpression("String.class"),
-                parseExpression(String.format("x -> (String)x.getValue(%s)",
-                                              tableIndex.columnIndex())),
+                parseExpression(format("x -> (String)x.getValue(%s)",
+                                       tableIndex.columnIndex())),
                 indexValueExpr
 
         ));
@@ -124,6 +121,10 @@ public class TableCell {
         stmt.addStatement(expr);
 
         return indexName;
+    }
+
+    private boolean isAQuotedString() {
+        return input.startsWith("\"") && input.endsWith("\"");
     }
 
     public void addNodeCreation(BlockStmt stmt, ClassOrInterfaceDeclaration alphaNetworkClass) {
@@ -141,9 +142,9 @@ public class TableCell {
         unaryTestMethod.setParameters(NodeList.nodeList(new Parameter(parseType("TableContext"), "x")));
         unaryTestMethod.setType(parseType("boolean"));
 
-        MethodCallExpr testExpression = parseExpression(String.format("%s.getTestInstance().apply(x.getEvalCtx(), x.getValue(%s))",
-                                                                      unaryTestClassNameWithPackage,
-                                                                      tableIndex.columnIndex()));
+        MethodCallExpr testExpression = parseExpression(format("%s.getTestInstance().apply(x.getEvalCtx(), x.getValue(%s))",
+                                                               unaryTestClassNameWithPackage,
+                                                               tableIndex.columnIndex()));
         unaryTestMethod.setBody(new BlockStmt(NodeList.nodeList(new ReturnStmt(testExpression))));
 
         Expression alphaNodeCreation;

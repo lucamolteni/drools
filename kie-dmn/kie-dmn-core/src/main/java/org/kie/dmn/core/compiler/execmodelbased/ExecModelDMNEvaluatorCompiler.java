@@ -363,7 +363,7 @@ public class ExecModelDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
                         testClassesByInput.put(input, testClass);
                         instancesBuilder.append( "    private static final CompiledDTTest " + testClass + "_INSTANCE = new CompiledDTTest( new " + testClass + "() );\n" );
 
-                        ClassOrInterfaceDeclaration classOrInterfaceDeclaration = feel.generateUnaryTestsSource(
+                        ClassOrInterfaceDeclaration classOrInterfaceDeclaration = feel.generateStaticUnaryTestsSource(
                                 input,
                                 ctx,
                                 dTableModel.getColumns().get(j).getType());

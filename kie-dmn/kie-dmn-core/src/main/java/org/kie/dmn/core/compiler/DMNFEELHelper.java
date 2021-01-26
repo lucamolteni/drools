@@ -262,7 +262,7 @@ public class DMNFEELHelper {
                 .setStatic(isStatic);
     }
 
-    public ClassOrInterfaceDeclaration generateUnaryTestsSource(String unaryTests, DMNCompilerContext ctx, Type inputColumnType) {
+    public ClassOrInterfaceDeclaration generateStaticUnaryTestsSource(String unaryTests, DMNCompilerContext ctx, Type inputColumnType) {
         return generateUnaryTestsSource(unaryTests, ctx, inputColumnType, true);
     }
 

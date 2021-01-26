@@ -85,7 +85,6 @@ public class DefaultFactHandle extends AbstractBaseLinkedListNode<DefaultFactHan
     // ----------------------------------------------------------------------
 
     public DefaultFactHandle() {
-        System.out.println("here?");
     }
 
     public DefaultFactHandle(final Object object) {
