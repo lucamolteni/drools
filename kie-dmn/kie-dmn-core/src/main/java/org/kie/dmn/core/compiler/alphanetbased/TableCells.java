@@ -21,13 +21,10 @@ import java.util.Map;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.ConstructorDeclaration;
-import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.stmt.BlockStmt;
 
-import static com.github.javaparser.StaticJavaParser.parseType;
 import static org.kie.dmn.feel.codegen.feel11.CodegenStringUtil.replaceSimpleNameWith;
 
 public class TableCells {
@@ -47,7 +44,7 @@ public class TableCells {
         unitTestField.addToCells(cells);
     }
 
-    public void addUnaryTestClass(Map<String, String> allClasses) {
+    public void createUnaryTestClassesForCells(Map<String, String> allClasses) {
         // I'm pretty sure we can abstract this iteration to avoid copying it
         for (int rowIndex = 0; rowIndex < numRows; rowIndex++) {
             for (int columnIndex = 0; columnIndex < numColumns; columnIndex++) {

@@ -19,7 +19,6 @@ package org.kie.dmn.core.compiler.alphanetbased;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,8 +31,8 @@ public class GeneratedSources {
 
     private String alphaNetworkClass = null;
 
-    public void addTableCells(TableCells tableCells) {
-        tableCells.addUnaryTestClass(allClasses);
+    public void createUnaryTestClassesForCells(TableCells tableCells) {
+        tableCells.createUnaryTestClassesForCells(allClasses);
     }
 
     public void addNewSourceClass(String classNameWithPackage, String classSourceCode) {

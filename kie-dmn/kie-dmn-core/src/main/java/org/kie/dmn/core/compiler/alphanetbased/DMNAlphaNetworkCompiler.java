@@ -73,7 +73,7 @@ public class DMNAlphaNetworkCompiler {
 
         BlockStmt alphaNetworkStatements = new BlockStmt();
 
-        generatedSources.addTableCells(tableCells);
+        generatedSources.createUnaryTestClassesForCells(tableCells);
 
         tableCells.addAlphaNetworkNode(alphaNetworkStatements, generatedSources);
 
