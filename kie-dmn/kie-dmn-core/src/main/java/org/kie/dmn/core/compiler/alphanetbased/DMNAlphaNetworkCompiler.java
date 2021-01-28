@@ -30,8 +30,6 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.type.ArrayType;
-import org.kie.dmn.core.compiler.DMNCompilerContext;
-import org.kie.dmn.core.impl.DMNModelImpl;
 import org.kie.dmn.feel.codegen.feel11.CodegenStringUtil;
 import org.kie.dmn.model.api.DecisionTable;
 import org.kie.dmn.model.api.InputClause;
@@ -45,20 +43,11 @@ public class DMNAlphaNetworkCompiler {
 
     private static final Logger logger = LoggerFactory.getLogger(DMNAlphaNetworkCompiler.class);
 
-    private final DMNCompilerContext ctx;
-    private final DMNModelImpl model;
-    private final TableCell.TableCellFactory tableCellFactory;
-
     private CompilationUnit template;
     private ClassOrInterfaceDeclaration dmnAlphaNetworkClass;
 
 
-    public DMNAlphaNetworkCompiler(DMNCompilerContext ctx,
-                                   DMNModelImpl model,
-                                   TableCell.TableCellFactory tableCellFactory) {
-        this.ctx = ctx;
-        this.model = model;
-        this.tableCellFactory = tableCellFactory;
+    public DMNAlphaNetworkCompiler() {
     }
 
     public GeneratedSources generateSourceCode(DecisionTable decisionTable, TableCells tableCells, String decisionTableName) {

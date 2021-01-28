@@ -57,7 +57,7 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         TableCells tableCells = tableCellParser.parseCells(dTableModel);
 
         // Generate source code
-        DMNAlphaNetworkCompiler dmnAlphaNetworkCompiler = new DMNAlphaNetworkCompiler(ctx, model, tableCellFactory);
+        DMNAlphaNetworkCompiler dmnAlphaNetworkCompiler = new DMNAlphaNetworkCompiler();
         GeneratedSources generatedSources = dmnAlphaNetworkCompiler.generateSourceCode(decisionTable, tableCells, decisionTableName);
         ClassLoader thisDMNClassLoader = this.getClass().getClassLoader();
 
