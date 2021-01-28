@@ -70,15 +70,17 @@ public class TableCells {
             CompilationUnit alphaNetworkCreationCU = getAlphaClassTemplate();
             String methodName = String.format("AlphaNodeCreation%s", rowIndex);
 
-            ClassOrInterfaceDeclaration clazz = alphaNetworkCreationCU.findFirst(ClassOrInterfaceDeclaration.class).orElseThrow(RuntimeException::new);
-            replaceSimpleNameWith(clazz, "AlphaNodeCreationTemplate", methodName);
+            ClassOrInterfaceDeclaration alphaNodeCreationClass = alphaNetworkCreationCU.findFirst(ClassOrInterfaceDeclaration.class).orElseThrow(RuntimeException::new);
+            alphaNodeCreationClass.removeComment();
 
-            ConstructorDeclaration constructorDeclaration = clazz.addConstructor(Modifier.Keyword.PUBLIC);
+            replaceSimpleNameWith(alphaNodeCreationClass, "AlphaNodeCreationTemplate", methodName);
+
+            ConstructorDeclaration constructorDeclaration = alphaNodeCreationClass.addConstructor(Modifier.Keyword.PUBLIC);
             constructorDeclaration.addParameter(new Parameter(parseType("org.kie.dmn.core.compiler.alphanetbased.NetworkBuilderContext"), "ctx"));
 
             for (int columnIndex = 0; columnIndex < numColumns; columnIndex++) {
                 TableCell tableCell = cells[rowIndex][columnIndex];
-                tableCell.addNodeCreation(constructorDeclaration.getBody(), clazz);
+                tableCell.addNodeCreation(constructorDeclaration.getBody(), alphaNodeCreationClass);
             }
 
             String classNameWithPackage = TableCell.PACKAGE + "." + methodName;
