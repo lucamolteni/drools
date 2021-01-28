@@ -48,7 +48,6 @@ import org.slf4j.LoggerFactory;
 import static java.util.stream.Collectors.joining;
 
 import static org.drools.modelcompiler.builder.JavaParserCompiler.getCompiler;
-import static org.kie.dmn.core.compiler.generators.GeneratorsUtil.getDecisionTableName;
 import static org.kie.dmn.feel.codegen.feel11.CodegenStringUtil.replaceSimpleNameWith;
 
 public class ExecModelDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
@@ -92,6 +91,28 @@ public class ExecModelDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
             evaluator.initParameters(ctx.getFeelHelper(), ctx, dTableModel, node);
         }
         return evaluator;
+    }
+
+    protected static String getDecisionTableName(String dtName, DecisionTable dt) {
+        String decisionName;
+        if (dt.getParent() instanceof DRGElement) {
+            decisionName = dtName;
+        } else {
+            if (dt.getId() != null) {
+                decisionName = dt.getId();
+            } else {
+                DMNModelInstrumentedBase cursor = dt;
+                List<String> path = new ArrayList<>();
+                while (!(cursor instanceof DRGElement)) {
+                    int indexOf = cursor.getParent().getChildren().indexOf(cursor);
+                    path.add(String.valueOf(indexOf));
+                    cursor = cursor.getParent();
+                }
+                path.add(((DRGElement) cursor).getName());
+                decisionName = path.stream().sorted(Collections.reverseOrder()).collect(Collectors.joining("/"));
+            }
+        }
+        return decisionName;
     }
 
     public AbstractModelEvaluator generateEvaluator( DMNCompilerContext ctx, DTableModel dTableModel ) {
@@ -345,7 +366,6 @@ public class ExecModelDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
             return source;
         }
 
-        // Generate UT[][]
         public String getUnaryTestsSource( DMNCompilerContext ctx, DMNFEELHelper feel, DTableModel dTableModel, String pkgName, String className ) {
             StringBuilder testArrayBuilder = new StringBuilder();
             StringBuilder testsBuilder = new StringBuilder();
@@ -365,6 +385,7 @@ public class ExecModelDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
                         testClassesByInput.put(input, testClass);
                         instancesBuilder.append( "    private static final CompiledDTTest " + testClass + "_INSTANCE = new CompiledDTTest( new " + testClass + "() );\n" );
 
+                        // TODO Luca do we need to change this?
                         ClassOrInterfaceDeclaration classOrInterfaceDeclaration = feel.generateStaticUnaryTestsSource(
                                 input,
                                 ctx,

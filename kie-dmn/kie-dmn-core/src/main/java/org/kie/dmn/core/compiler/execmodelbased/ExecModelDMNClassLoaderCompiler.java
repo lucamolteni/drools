@@ -28,8 +28,6 @@ import org.kie.dmn.model.api.DecisionTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.kie.dmn.core.compiler.generators.GeneratorsUtil.getDecisionTableName;
-
 public class ExecModelDMNClassLoaderCompiler extends DMNEvaluatorCompiler {
 
     private DMNRuleClassFile dmnRuleClassFile;
@@ -44,7 +42,7 @@ public class ExecModelDMNClassLoaderCompiler extends DMNEvaluatorCompiler {
 
     @Override
     protected DMNExpressionEvaluator compileDecisionTable(DMNCompilerContext ctx, DMNModelImpl model, DMNBaseNode node, String dtName, DecisionTable dt) {
-        String decisionName = getDecisionTableName(dtName, dt);
+        String decisionName = ExecModelDMNEvaluatorCompiler.getDecisionTableName(dtName, dt);
         // This is used just to get the compiled class name, but it only needs the namespace and the table name. exec model DTableModel is used instead
         DTableModel dTableModel = new DTableModel(ctx.getFeelHelper(), model, dtName, decisionName, dt);
         String evaluatorClassName = dTableModel.getGeneratedClassName(ExecModelDMNEvaluatorCompiler.GeneratorsEnum.EVALUATOR);

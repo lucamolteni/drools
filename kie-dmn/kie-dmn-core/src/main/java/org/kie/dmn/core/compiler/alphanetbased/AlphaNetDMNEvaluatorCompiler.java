@@ -28,6 +28,7 @@ import org.kie.dmn.core.ast.DMNBaseNode;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
 import org.kie.dmn.core.compiler.DMNCompilerImpl;
 import org.kie.dmn.core.compiler.DMNEvaluatorCompiler;
+import org.kie.dmn.core.compiler.DMNFEELHelper;
 import org.kie.dmn.core.compiler.execmodelbased.DTableModel;
 import org.kie.dmn.core.impl.DMNModelImpl;
 import org.kie.dmn.model.api.DecisionTable;
@@ -35,7 +36,6 @@ import org.kie.memorycompiler.KieMemoryCompiler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.kie.dmn.core.compiler.generators.GeneratorsUtil.getDecisionTableName;
 
 public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
 
@@ -47,16 +47,22 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
 
     @Override
     protected DMNExpressionEvaluator compileDecisionTable(DMNCompilerContext ctx, DMNModelImpl model, DMNBaseNode node, String decisionTableName, DecisionTable decisionTable) {
-        String decisionName = getDecisionTableName(decisionTableName, decisionTable);
-        DTableModel dTableModel = new DTableModel(ctx.getFeelHelper(), model, decisionTableName, decisionName, decisionTable);
 
-        TableCell.TableCellFactory tableCellFactory = new TableCell.TableCellFactory(ctx.getFeelHelper(), ctx);
+        DMNFEELHelper feelHelper = ctx.getFeelHelper();
+
+        // Parse every cell in Decision Table
+        TableCell.TableCellFactory tableCellFactory = new TableCell.TableCellFactory(feelHelper, ctx);
+        DTableModel dTableModel = new DTableModel(feelHelper, model, decisionTableName, decisionTableName, decisionTable);
+        TableCellParser tableCellParser = new TableCellParser(feelHelper, ctx);
+        TableCells tableCells = tableCellParser.parseCells(dTableModel);
+
+        // Generate source code
         DMNAlphaNetworkCompiler dmnAlphaNetworkCompiler = new DMNAlphaNetworkCompiler(ctx, model, tableCellFactory);
-        GeneratedSources generatedSources = dmnAlphaNetworkCompiler.generateSourceCode(decisionTableName, decisionTable);
-
+        GeneratedSources generatedSources = dmnAlphaNetworkCompiler.generateSourceCode(decisionTable, tableCells, decisionTableName);
         ClassLoader thisDMNClassLoader = this.getClass().getClassLoader();
-        Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(generatedSources.getAllClasses(), thisDMNClassLoader);
 
+        // Instantiate Alpha Network
+        Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(generatedSources.getAllClasses(), thisDMNClassLoader);
 //        DMNCompiledAlphaNetwork dmnCompiledAlphaNetwork = new HardCodedAlphaNetwork();
         DMNCompiledAlphaNetwork dmnCompiledAlphaNetwork = generatedSources.newInstanceOfAlphaNetwork(compiledClasses);
 
@@ -65,7 +71,7 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         dmnCompiledAlphaNetwork.setCompiledAlphaNetwork(compiledAlphaNetwork);
 
         return new AlphaNetDMNExpressionEvaluator(dmnCompiledAlphaNetwork)
-                .initParameters(ctx.getFeelHelper(), ctx, dTableModel, node);
+                .initParameters(feelHelper, ctx, dTableModel, node);
     }
 
     public CompiledNetwork createCompiledAlphaNetwork(ObjectTypeNode otn) {

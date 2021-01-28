@@ -31,7 +31,6 @@ import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.type.ArrayType;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
-import org.kie.dmn.core.compiler.execmodelbased.DTableModel;
 import org.kie.dmn.core.impl.DMNModelImpl;
 import org.kie.dmn.feel.codegen.feel11.CodegenStringUtil;
 import org.kie.dmn.model.api.DecisionTable;
@@ -40,7 +39,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.github.javaparser.StaticJavaParser.parseType;
-import static org.kie.dmn.core.compiler.generators.GeneratorsUtil.getDecisionTableName;
 import static org.kie.dmn.feel.codegen.feel11.CodegenStringUtil.replaceSimpleNameWith;
 
 public class DMNAlphaNetworkCompiler {
@@ -63,20 +61,15 @@ public class DMNAlphaNetworkCompiler {
         this.tableCellFactory = tableCellFactory;
     }
 
-    public GeneratedSources generateSourceCode(String dtName, DecisionTable decisionTable) {
+    public GeneratedSources generateSourceCode(DecisionTable decisionTable, TableCells tableCells, String decisionTableName) {
 
         GeneratedSources generatedSources = new GeneratedSources();
 
-        String decisionTableName = getDecisionTableName(dtName, decisionTable);
         String escapedDecisionTableName = String.format("DMNAlphaNetwork_%s", CodegenStringUtil.escapeIdentifier(decisionTableName));
 
         initTemplate();
         setDMNAlphaNetworkClassName(escapedDecisionTableName);
         initPropertyNames(decisionTable.getInput());
-
-        DTableModel dTableModel = new DTableModel(ctx.getFeelHelper(), model, dtName, decisionTableName, decisionTable);
-
-        TableCells tableCells = parseCells(dTableModel);
 
         BlockStmt alphaNetworkStatements = new BlockStmt();
 
@@ -127,35 +120,6 @@ public class DMNAlphaNetworkCompiler {
 
         template.findAll(StringLiteralExpr.class, n -> n.asString().equals("PROPERTY_NAMES"))
                 .forEach(r -> r.replace(array));
-    }
-
-    public TableCells parseCells(DTableModel dTableModel) {
-
-        List<DTableModel.DRowModel> rows = dTableModel.getRows();
-        List<DTableModel.DColumnModel> columns = dTableModel.getColumns();
-        TableCells tableCells = new TableCells(rows.size(), columns.size());
-
-        for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
-            DTableModel.DRowModel row = rows.get(rowIndex);
-
-            for (int inputColumnIndex = 0; inputColumnIndex < row.getInputs().size(); inputColumnIndex++) {
-                String input = row.getInputs().get(inputColumnIndex);
-                TableIndex tableIndex = new TableIndex(rowIndex, inputColumnIndex);
-                DTableModel.DColumnModel column = tableIndex.getColumn(columns);
-                TableCell cell = tableCellFactory.createInputCell(tableIndex,
-                                                            column,
-                                                            input);
-
-                if(inputColumnIndex == row.getInputs().size() - 1) { // last column
-                    cell.setOutput(row.getOutputs().get(0)); // assume only one output
-                }
-
-                tableCells.add(cell);
-            }
-
-
-        }
-        return tableCells;
     }
 
     private CompilationUnit getMethodTemplate() {

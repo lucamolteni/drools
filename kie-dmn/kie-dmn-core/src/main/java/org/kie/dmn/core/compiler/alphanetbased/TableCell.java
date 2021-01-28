@@ -41,7 +41,6 @@ import com.github.javaparser.ast.stmt.ReturnStmt;
 import org.drools.model.Index;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
 import org.kie.dmn.core.compiler.DMNFEELHelper;
-import org.kie.dmn.core.compiler.execmodelbased.DTableModel;
 import org.kie.dmn.feel.codegen.feel11.CodegenStringUtil;
 import org.kie.dmn.feel.lang.Type;
 import org.kie.dmn.feel.lang.types.BuiltInType;
@@ -83,22 +82,23 @@ public class TableCell {
             this.ctx = ctx;
         }
 
-        public TableCell createInputCell(TableIndex tableIndex, DTableModel.DColumnModel columnModel, String input) {
-            return new TableCell(feel, ctx, tableIndex, columnModel, input);
+        public TableCell createInputCell(TableIndex tableIndex, String input, String columnName, Type columnType) {
+            return new TableCell(feel, ctx, tableIndex, input, columnName, columnType);
         }
     }
 
     private TableCell(DMNFEELHelper feel,
                       DMNCompilerContext ctx,
                       TableIndex tableIndex,
-                      DTableModel.DColumnModel columnModel,
-                      String input) {
+                      String input,
+                      String columnName,
+                      Type columnType) {
         this.feel = feel;
         this.ctx = ctx;
         this.tableIndex = tableIndex;
-        this.columnName = columnModel.getName();
+        this.columnName = columnName;
         this.input = input;
-        this.type = columnModel.getType();
+        this.type = columnType;
         this.unaryTestClassName = tableIndex.appendTableIndexSuffix("UnaryTest");
         this.unaryTestClassNameWithPackage = PACKAGE + "." + unaryTestClassName;
     }
