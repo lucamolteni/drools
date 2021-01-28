@@ -62,8 +62,8 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         ClassLoader thisDMNClassLoader = this.getClass().getClassLoader();
 
         // Instantiate Alpha Network
-        Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(generatedSources.getAllClasses(), thisDMNClassLoader);
 //        DMNCompiledAlphaNetwork dmnCompiledAlphaNetwork = new HardCodedAlphaNetwork();
+        Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(generatedSources.getAllClasses(), thisDMNClassLoader);
         DMNCompiledAlphaNetwork dmnCompiledAlphaNetwork = generatedSources.newInstanceOfAlphaNetwork(compiledClasses);
 
         dmnCompiledAlphaNetwork.initRete();

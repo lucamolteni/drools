@@ -38,6 +38,7 @@ import com.github.javaparser.ast.expr.ThisExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
+import org.drools.core.reteoo.AlphaNode;
 import org.drools.model.Index;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
 import org.kie.dmn.core.compiler.DMNFEELHelper;
@@ -128,7 +129,7 @@ public class TableCell {
 
     private Expression createBigDecimalIndex() {
         String bigDecimalClassFulName = BigDecimal.class.getCanonicalName();
-        return new MethodCallExpr(null, CREATE_INDEX_NODE_METHOD, NodeList.nodeList(
+        return new MethodCallExpr(alphaNodeCreationName(), CREATE_INDEX_NODE_METHOD, NodeList.nodeList(
                 new ClassExpr(parseType(bigDecimalClassFulName)),
                 parseExpression(format("x -> (%s)x.getValue(%s)",
                                        bigDecimalClassFulName,
@@ -139,7 +140,7 @@ public class TableCell {
     }
 
     private Expression createStringIndex() {
-        return new MethodCallExpr(null, CREATE_INDEX_NODE_METHOD, NodeList.nodeList(
+        return new MethodCallExpr(alphaNodeCreationName(), CREATE_INDEX_NODE_METHOD, NodeList.nodeList(
                 new ClassExpr(parseType(String.class.getCanonicalName())),
                 parseExpression(format("x -> (String)x.getValue(%s)",
                                        tableIndex.columnIndex())),
@@ -153,7 +154,7 @@ public class TableCell {
     }
 
     public void addNodeCreation(BlockStmt stmt, ClassOrInterfaceDeclaration alphaNetworkClass) {
-        com.github.javaparser.ast.type.Type alphaNodeType = StaticJavaParser.parseType("AlphaNode");
+        com.github.javaparser.ast.type.Type alphaNodeType = StaticJavaParser.parseType(AlphaNode.class.getCanonicalName());
         String alphaNodeName = tableIndex.appendTableIndexSuffix("alphaNode");
         VariableDeclarationExpr variable = new VariableDeclarationExpr(alphaNodeType, alphaNodeName);
 
@@ -175,16 +176,14 @@ public class TableCell {
         Expression alphaNodeCreation;
         if (tableIndex.isFirstColumn()) {
             String indexName = addIndex(stmt);
-            alphaNodeCreation = new MethodCallExpr(null, CREATE_ALPHA_NODE_METHOD, NodeList.nodeList(
-                    new NameExpr("ctx"),
+            alphaNodeCreation = new MethodCallExpr(alphaNodeCreationName(), CREATE_ALPHA_NODE_METHOD, NodeList.nodeList(
                     parseExpression("ctx.otn"),
                     new StringLiteralExpr(constraintIdentifier),
                     methodReference,
                     new NameExpr(indexName)
             ));
         } else {
-            alphaNodeCreation = new MethodCallExpr(null, CREATE_ALPHA_NODE_METHOD, NodeList.nodeList(
-                    new NameExpr("ctx"),
+            alphaNodeCreation = new MethodCallExpr(alphaNodeCreationName(), CREATE_ALPHA_NODE_METHOD, NodeList.nodeList(
                     new NameExpr(tableIndex.previousColumn().appendTableIndexSuffix("alphaNode")),
                     new StringLiteralExpr(constraintIdentifier),
                     methodReference
@@ -195,14 +194,17 @@ public class TableCell {
         stmt.addStatement(expr);
 
         output.ifPresent(o -> {
-            Expression resultSinkMethodCallExpr = new MethodCallExpr(null,
+            Expression resultSinkMethodCallExpr = new MethodCallExpr(alphaNodeCreationName(),
                                                                      "addResultSink",
                                                                      NodeList.nodeList(
-                                                                             new NameExpr("ctx"),
                                                                              new NameExpr(alphaNodeName),
                                                                              new NameExpr(o))); // why is this already quoted?
             stmt.addStatement(resultSinkMethodCallExpr);
         });
+    }
+
+    private NameExpr alphaNodeCreationName() {
+        return new NameExpr("alphaNetworkCreation");
     }
 
     public void addUnaryTestClass(Map<String, String> allClasses) {

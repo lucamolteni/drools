@@ -17,21 +17,14 @@
 package org.kie.dmn.core.compiler.alphanetbased;
 
 import java.util.Arrays;
-import java.util.Map;
 
 import org.drools.ancompiler.CompiledNetwork;
-import org.drools.ancompiler.CompiledNetworkSource;
-import org.drools.ancompiler.ObjectTypeNodeCompiler;
 import org.drools.core.common.DefaultFactHandle;
 import org.drools.core.reteoo.AlphaNode;
 import org.drools.model.Index;
 import org.kie.dmn.feel.lang.EvaluationContext;
-import org.kie.memorycompiler.KieMemoryCompiler;
 
-import static org.drools.core.util.MapUtils.mapValues;
-import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.addResultSink;
-import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.createAlphaNode;
-import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.createIndex;
+import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCreation.createIndex;
 import static org.kie.dmn.feel.codegen.feel11.CompiledFEELSemanticMappings.gracefulEq;
 import static org.kie.dmn.feel.codegen.feel11.CompiledFEELSemanticMappings.gt;
 import static org.kie.dmn.feel.codegen.feel11.CompiledFEELSemanticMappings.includes;
@@ -42,53 +35,62 @@ public class HardCodedAlphaNetwork implements DMNCompiledAlphaNetwork {
 
     protected final ResultCollector resultCollector = new ResultCollector();
     protected CompiledNetwork compiledNetwork;
+
     private final NetworkBuilderContext ctx;
+    private final AlphaNetworkCreation alphaNetworkCreation;
+
+    public HardCodedAlphaNetwork() {
+        ctx = new NetworkBuilderContext(resultCollector);
+        alphaNetworkCreation = new AlphaNetworkCreation(ctx);
+    }
 
     @Override
     public void initRete() {
-        Index index1 = createIndex(String.class, x -> (String)x.getValue(0), "false");
-        AlphaNode alphac1r1 = createAlphaNode(ctx, ctx.otn, "\"false\"", x -> UT1.apply(x.getEvalCtx(),
-                                                                                        x.getValue(0)), // numero colonna
+
+
+        Index index1 = createIndex(String.class, x -> (String) x.getValue(0), "false");
+        AlphaNode alphac1r1 = alphaNetworkCreation.createAlphaNode(ctx.otn, "\"false\"", x -> UT1.apply(x.getEvalCtx(),
+                                                                                        x.getValue(0)),
                                               index1);
 
-        AlphaNode alphac2r1 = createAlphaNode(ctx, alphac1r1, "<100", x -> UT2.apply(x.getEvalCtx(), x.getValue(1)));
-        addResultSink(ctx, alphac2r1, "HIGH");
+        AlphaNode alphac2r1 = alphaNetworkCreation.createAlphaNode( alphac1r1, "<100", x -> UT2.apply(x.getEvalCtx(), x.getValue(1)));
+        alphaNetworkCreation.addResultSink( alphac2r1, "HIGH");
 
         // == alphac1r1 (verifica alpha node sharing)
-        AlphaNode alphac1r2 = createAlphaNode(ctx, ctx.otn, "\"false\"", x -> UT1.apply(x.getEvalCtx(), x.getValue(0)), index1);
-        AlphaNode alphac2r2 = createAlphaNode(ctx, alphac1r2, "[100..120)", x -> UT3.apply(x.getEvalCtx(), x.getValue(1)));
+        AlphaNode alphac1r2 = alphaNetworkCreation.createAlphaNode( ctx.otn, "\"false\"", x -> UT1.apply(x.getEvalCtx(), x.getValue(0)), index1);
+        AlphaNode alphac2r2 = alphaNetworkCreation.createAlphaNode( alphac1r2, "[100..120)", x -> UT3.apply(x.getEvalCtx(), x.getValue(1)));
 
-        addResultSink(ctx, alphac2r2, "MEDIUM");
+        alphaNetworkCreation.addResultSink( alphac2r2, "MEDIUM");
 
-        AlphaNode alphac2r3 = createAlphaNode(ctx, alphac1r1, "[120..130]", x -> UT4.apply(x.getEvalCtx(), x.getValue(1)));
-        addResultSink(ctx, alphac2r3, "LOW");
+        AlphaNode alphac2r3 = alphaNetworkCreation.createAlphaNode( alphac1r1, "[120..130]", x -> UT4.apply(x.getEvalCtx(), x.getValue(1)));
+        alphaNetworkCreation.addResultSink( alphac2r3, "LOW");
 
-        AlphaNode alphac2r4 = createAlphaNode(ctx, alphac1r1, ">130", x -> UT5.apply(x.getEvalCtx(), x.getValue(1)));
-        addResultSink(ctx, alphac2r4, "VERY LOW");
+        AlphaNode alphac2r4 = alphaNetworkCreation.createAlphaNode( alphac1r1, ">130", x -> UT5.apply(x.getEvalCtx(), x.getValue(1)));
+        alphaNetworkCreation.addResultSink( alphac2r4, "VERY LOW");
 
-        Index index2 = createIndex(String.class, x -> (String)x.getValue(0), "true");
-        AlphaNode alphac1r5 = createAlphaNode(ctx, ctx.otn, "\"true\"", x -> UT6.apply(x.getEvalCtx(), x.getValue(0)), index2);
+        Index index2 = createIndex(String.class, x -> (String) x.getValue(0), "true");
+        AlphaNode alphac1r5 = alphaNetworkCreation.createAlphaNode( ctx.otn, "\"true\"", x -> UT6.apply(x.getEvalCtx(), x.getValue(0)), index2);
 
-        AlphaNode alphac2r5 = createAlphaNode(ctx, alphac1r5, "<80", x -> UT7.apply(x.getEvalCtx(), x.getValue(1)));
-        addResultSink(ctx, alphac2r5, "DECLINE");
-        AlphaNode alphac2r6 = createAlphaNode(ctx, alphac1r5, "[80..90)", x -> UT8.apply(x.getEvalCtx(), x.getValue(1)));
-        addResultSink(ctx, alphac2r6, "HIGH");
-        AlphaNode alphac2r7 = createAlphaNode(ctx, alphac1r5, "[90..110]", x -> UT9.apply(x.getEvalCtx(), x.getValue(1)));
-        addResultSink(ctx, alphac2r7, "MEDIUM");
-        AlphaNode alphac2r8 = createAlphaNode(ctx, alphac1r5, ">110", x -> UT10.apply(x.getEvalCtx(), x.getValue(1)));
-        addResultSink(ctx, alphac2r8, "LOW");
+        AlphaNode alphac2r5 = alphaNetworkCreation.createAlphaNode( alphac1r5, "<80", x -> UT7.apply(x.getEvalCtx(), x.getValue(1)));
+        alphaNetworkCreation.addResultSink( alphac2r5, "DECLINE");
+        AlphaNode alphac2r6 = alphaNetworkCreation.createAlphaNode( alphac1r5, "[80..90)", x -> UT8.apply(x.getEvalCtx(), x.getValue(1)));
+        alphaNetworkCreation.addResultSink( alphac2r6, "HIGH");
+        AlphaNode alphac2r7 = alphaNetworkCreation.createAlphaNode( alphac1r5, "[90..110]", x -> UT9.apply(x.getEvalCtx(), x.getValue(1)));
+        alphaNetworkCreation.addResultSink( alphac2r7, "MEDIUM");
+        AlphaNode alphac2r8 = alphaNetworkCreation.createAlphaNode( alphac1r5, ">110", x -> UT10.apply(x.getEvalCtx(), x.getValue(1)));
+        alphaNetworkCreation.addResultSink( alphac2r8, "LOW");
 
         char[] alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
         System.out.println(System.getProperty("alphalength"));
         int alphalength = Integer.valueOf(System.getProperty("alphalength", "52"));
         alphabet = Arrays.copyOf(alphabet, alphalength);
         for (char c : alphabet) {
-            alphabet(this, ctx, String.valueOf(c));
+            alphabet(ctx, String.valueOf(c));
         }
 
-        Index index3 = createIndex(String.class, x -> (String)x.getValue(0), "dummy");
-        AlphaNode alphaDummy = createAlphaNode(ctx, ctx.otn, x -> false, index3);
-        addResultSink(ctx, alphaDummy, "DUMMY");
+        Index index3 = createIndex(String.class, x -> (String) x.getValue(0), "dummy");
+        AlphaNode alphaDummy = alphaNetworkCreation.createAlphaNode( ctx.otn, x -> false, index3);
+        alphaNetworkCreation.addResultSink( alphaDummy, "DUMMY");
     }
 
     @Override
@@ -102,10 +104,10 @@ public class HardCodedAlphaNetwork implements DMNCompiledAlphaNetwork {
     }
 
     @Override
-    public Object evaluate( EvaluationContext evalCtx) {
+    public Object evaluate(EvaluationContext evalCtx) {
         resultCollector.clearResults();
-        TableContext ctx = new TableContext( evalCtx, "Existing Customer", "Application Risk Score" );
-        compiledNetwork.propagateAssertObject( new DefaultFactHandle( ctx ), null, null );
+        TableContext ctx = new TableContext(evalCtx, "Existing Customer", "Application Risk Score");
+        compiledNetwork.propagateAssertObject(new DefaultFactHandle(ctx), null, null);
         return resultCollector.getWithHitPolicy();
     }
 
@@ -114,7 +116,7 @@ public class HardCodedAlphaNetwork implements DMNCompiledAlphaNetwork {
         return resultCollector;
     }
 
-    public static final org.kie.dmn.feel.runtime.UnaryTest UT1 =  (feelExprCtx, left) -> gracefulEq(feelExprCtx, "false", left);
+    public static final org.kie.dmn.feel.runtime.UnaryTest UT1 = (feelExprCtx, left) -> gracefulEq(feelExprCtx, "false", left);
     public static final org.kie.dmn.feel.runtime.UnaryTest UT1x = (feelExprCtx, left) -> gracefulEq(feelExprCtx, "false", left);
 
     public static final java.math.BigDecimal K_80 = new java.math.BigDecimal(80, java.math.MathContext.DECIMAL128);
@@ -126,12 +128,10 @@ public class HardCodedAlphaNetwork implements DMNCompiledAlphaNetwork {
 
     public static final org.kie.dmn.feel.runtime.UnaryTest UT2 = (feelExprCtx, left) -> lt(left, K_100);
 
-
     public static final org.kie.dmn.feel.runtime.UnaryTest UT3 = (feelExprCtx, left) -> includes(feelExprCtx, range(feelExprCtx,
                                                                                                                     org.kie.dmn.feel.runtime.Range.RangeBoundary.CLOSED,
                                                                                                                     K_100, K_120,
                                                                                                                     org.kie.dmn.feel.runtime.Range.RangeBoundary.OPEN), left);
-
 
     public static final org.kie.dmn.feel.runtime.UnaryTest UT4 = (feelExprCtx, left) -> includes(feelExprCtx, range(feelExprCtx,
                                                                                                                     org.kie.dmn.feel.runtime.Range.RangeBoundary.CLOSED,
@@ -156,22 +156,18 @@ public class HardCodedAlphaNetwork implements DMNCompiledAlphaNetwork {
 
     public static final org.kie.dmn.feel.runtime.UnaryTest UT10 = (feelExprCtx, left) -> gt(left, K_110);
 
-    public HardCodedAlphaNetwork() {
-        ctx = new NetworkBuilderContext(resultCollector);
-    }
-
-    private static void alphabet(HardCodedAlphaNetwork network, NetworkBuilderContext ctx, String sChar) {
+    private void alphabet(NetworkBuilderContext ctx, String sChar) {
         final org.kie.dmn.feel.runtime.UnaryTest UTx = (feelExprCtx, left) -> gracefulEq(feelExprCtx, sChar, left);
         Index index1 = createIndex(String.class, x -> (String) x.getValue(0), sChar);
-        AlphaNode alphac1r1 = createAlphaNode(ctx, ctx.otn, "\"" + sChar + "\"", x -> UTx.apply(x.getEvalCtx(), x.getValue(0)), index1);
+        AlphaNode alphac1r1 = alphaNetworkCreation.createAlphaNode(ctx.otn,"\"" + sChar + "\"", x -> UTx.apply(x.getEvalCtx(), x.getValue(0)), index1);
 
-        AlphaNode alphac2r1 = createAlphaNode(ctx, alphac1r1, "<100", x -> UT2.apply(x.getEvalCtx(), x.getValue(1)));
-        addResultSink(ctx, alphac2r1, "HIGH");
-        AlphaNode alphac2r2 = createAlphaNode(ctx, alphac1r1, "[100..120)", x -> UT3.apply(x.getEvalCtx(), x.getValue(1)));
-        addResultSink(ctx, alphac2r2, "MEDIUM");
-        AlphaNode alphac2r3 = createAlphaNode(ctx, alphac1r1, "[120..130]", x -> UT4.apply(x.getEvalCtx(), x.getValue(1)));
-        addResultSink(ctx, alphac2r3, "LOW");
-        AlphaNode alphac2r4 = createAlphaNode(ctx, alphac1r1, ">130", x -> UT5.apply(x.getEvalCtx(), x.getValue(1)));
-        addResultSink(ctx, alphac2r4, "VERY LOW");
+        AlphaNode alphac2r1 = alphaNetworkCreation.createAlphaNode( alphac1r1, "<100", x -> UT2.apply(x.getEvalCtx(), x.getValue(1)));
+        alphaNetworkCreation.addResultSink( alphac2r1, "HIGH");
+        AlphaNode alphac2r2 = alphaNetworkCreation.createAlphaNode( alphac1r1, "[100..120)", x -> UT3.apply(x.getEvalCtx(), x.getValue(1)));
+        alphaNetworkCreation.addResultSink( alphac2r2, "MEDIUM");
+        AlphaNode alphac2r3 = alphaNetworkCreation.createAlphaNode( alphac1r1, "[120..130]", x -> UT4.apply(x.getEvalCtx(), x.getValue(1)));
+        alphaNetworkCreation.addResultSink( alphac2r3, "LOW");
+        AlphaNode alphac2r4 = alphaNetworkCreation.createAlphaNode( alphac1r1, ">130", x -> UT5.apply(x.getEvalCtx(), x.getValue(1)));
+        alphaNetworkCreation.addResultSink( alphac2r4, "VERY LOW");
     }
 }

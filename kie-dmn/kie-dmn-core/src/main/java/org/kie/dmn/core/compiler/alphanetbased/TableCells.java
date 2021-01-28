@@ -75,8 +75,7 @@ public class TableCells {
 
             replaceSimpleNameWith(alphaNodeCreationClass, "AlphaNodeCreationTemplate", methodName);
 
-            ConstructorDeclaration constructorDeclaration = alphaNodeCreationClass.addConstructor(Modifier.Keyword.PUBLIC);
-            constructorDeclaration.addParameter(new Parameter(parseType("org.kie.dmn.core.compiler.alphanetbased.NetworkBuilderContext"), "ctx"));
+            ConstructorDeclaration constructorDeclaration = alphaNodeCreationClass.findFirst(ConstructorDeclaration.class).orElseThrow(RuntimeException::new);
 
             for (int columnIndex = 0; columnIndex < numColumns; columnIndex++) {
                 TableCell tableCell = cells[rowIndex][columnIndex];

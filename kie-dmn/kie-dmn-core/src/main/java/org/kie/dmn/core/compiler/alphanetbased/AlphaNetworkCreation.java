@@ -31,25 +31,31 @@ import org.drools.model.index.AlphaIndexImpl;
 import org.drools.modelcompiler.constraints.ConstraintEvaluator;
 import org.drools.modelcompiler.constraints.LambdaConstraint;
 
-public class AlphaNetworkCompilerUtils {
+public class AlphaNetworkCreation {
 
     private static final BuildUtils buildUtils = new BuildUtils();
 
-    private AlphaNetworkCompilerUtils() {
+    private final NetworkBuilderContext ctx;
 
+    public AlphaNetworkCreation(NetworkBuilderContext ctx) {
+        this.ctx = ctx;
     }
 
-    public static void addResultSink(NetworkBuilderContext ctx, ObjectSource source, Object result) {
-        source.addObjectSink(new ResultCollectorAlphaSink(ctx.buildContext.getNextId(), source, ctx.buildContext, result, ctx.resultCollector));
+    public void addResultSink(ObjectSource source, Object result) {
+        source.addObjectSink(new ResultCollectorAlphaSink(getNextId(), source, ctx.buildContext, result, ctx.resultCollector));
     }
 
-    public static AlphaNode createAlphaNode(NetworkBuilderContext ctx, ObjectSource source, String id, Predicate1<TableContext> predicate) {
-        return createAlphaNode(ctx, source, id, predicate, null);
+    private int getNextId() {
+        return ctx.buildContext.getNextId();
+    }
+
+    public AlphaNode createAlphaNode(ObjectSource source, String id, Predicate1<TableContext> predicate) {
+        return createAlphaNode(source, id, predicate, null);
     }
 
     @Deprecated
-    public static AlphaNode createAlphaNode(NetworkBuilderContext ctx, ObjectSource source, Predicate1<TableContext> predicate, Index index) {
-        return createAlphaNode(ctx, source, UUID.randomUUID().toString(), predicate, null);
+    public AlphaNode createAlphaNode(ObjectSource source, Predicate1<TableContext> predicate, Index index) {
+        return createAlphaNode(source, UUID.randomUUID().toString(), predicate, null);
     }
 
     /**
@@ -57,12 +63,12 @@ public class AlphaNetworkCompilerUtils {
      * <p>
      * Prefix: column name + value
      */
-    public static AlphaNode createAlphaNode(NetworkBuilderContext ctx, ObjectSource source, String id, Predicate1<TableContext> predicate, Index index) {
+    public AlphaNode createAlphaNode(ObjectSource source, String id, Predicate1<TableContext> predicate, Index index) {
         SingleConstraint1<TableContext> constraint = new SingleConstraint1<>(id, ctx.variable, predicate);
         constraint.setIndex(index);
         LambdaConstraint lambda = new LambdaConstraint(new ConstraintEvaluator(new Declaration[]{ctx.declaration}, constraint));
         lambda.setType(Constraint.ConstraintType.ALPHA);
-        return buildUtils.attachNode(ctx.buildContext, new AlphaNode(ctx.buildContext.getNextId(), lambda, source, ctx.buildContext));
+        return buildUtils.attachNode(ctx.buildContext, new AlphaNode(getNextId(), lambda, source, ctx.buildContext));
     }
 
     public static <I> AlphaIndexImpl<TableContext, I> createIndex(Class<I> indexedClass, Function1<TableContext, I> leftExtractor, I rightValue) {

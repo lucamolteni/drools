@@ -13,6 +13,7 @@ import org.drools.core.reteoo.ObjectTypeNode;
 import org.drools.core.reteoo.Rete;
 import org.drools.core.reteoo.ReteDumper;
 import org.drools.model.Index;
+import org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCreation;
 import org.kie.dmn.core.compiler.alphanetbased.DMNCompiledAlphaNetwork;
 import org.kie.dmn.core.compiler.alphanetbased.NetworkBuilderContext;
 import org.kie.dmn.core.compiler.alphanetbased.ResultCollector;
@@ -20,11 +21,9 @@ import org.kie.dmn.feel.lang.EvaluationContext;
 import org.kie.dmn.core.compiler.alphanetbased.TableContext;
 import org.kie.memorycompiler.KieMemoryCompiler;
 import org.kie.dmn.core.compiler.alphanetbased.AlphaNetDMNEvaluatorCompiler;
+import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCreation.createIndex;
 
 import static org.drools.core.util.MapUtils.mapValues;
-import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.addResultSink;
-import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.createAlphaNode;
-import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCompilerUtils.createIndex;
 
 // All implementations are used only for templating purposes and should never be called
 public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetwork {
@@ -33,6 +32,7 @@ public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetwork {
     protected CompiledNetwork compiledNetwork;
 
     protected final NetworkBuilderContext ctx = new NetworkBuilderContext(resultCollector);
+    protected final AlphaNetworkCreation alphaNetworkCreation = new AlphaNetworkCreation(ctx);
 
     @Override
     public void initRete() {
@@ -42,8 +42,8 @@ public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetwork {
         }
 
         Index index3 = createIndex(String.class, x -> (String) x.getValue(0), "dummy");
-        AlphaNode alphaDummy = createAlphaNode(ctx, ctx.otn, x -> false, index3);
-        addResultSink(ctx, alphaDummy, "DUMMY");
+        AlphaNode alphaDummy = alphaNetworkCreation.createAlphaNode(ctx.otn, x -> false, index3);
+        alphaNetworkCreation.addResultSink(alphaDummy, "DUMMY");
     }
 
     @Override
