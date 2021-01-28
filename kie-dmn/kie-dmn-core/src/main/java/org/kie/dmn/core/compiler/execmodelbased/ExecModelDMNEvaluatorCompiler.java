@@ -17,9 +17,11 @@
 package org.kie.dmn.core.compiler.execmodelbased;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -34,9 +36,9 @@ import org.kie.dmn.core.compiler.DMNCompilerContext;
 import org.kie.dmn.core.compiler.DMNCompilerImpl;
 import org.kie.dmn.core.compiler.DMNEvaluatorCompiler;
 import org.kie.dmn.core.compiler.DMNFEELHelper;
-import org.kie.dmn.core.compiler.generators.FeelExpressionSourceGenerator;
-import org.kie.dmn.core.compiler.generators.SourceGenerator;
 import org.kie.dmn.core.impl.DMNModelImpl;
+import org.kie.dmn.model.api.DMNModelInstrumentedBase;
+import org.kie.dmn.model.api.DRGElement;
 import org.kie.dmn.model.api.DecisionTable;
 import org.kie.memorycompiler.CompilationProblem;
 import org.kie.memorycompiler.CompilationResult;
@@ -63,7 +65,7 @@ public class ExecModelDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         super(compiler);
     }
 
-    public enum GeneratorsEnum {
+    enum GeneratorsEnum {
         EVALUATOR("Evaluator", new EvaluatorSourceGenerator()),
         UNIT("DTUnit", new UnitSourceGenerator()),
         EXEC_MODEL("ExecModel", new ExecModelSourceGenerator()),
@@ -76,10 +78,6 @@ public class ExecModelDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         GeneratorsEnum( String type, SourceGenerator sourceGenerator) {
             this.type = type;
             this.sourceGenerator = sourceGenerator;
-        }
-
-        public String getType() {
-            return type;
         }
     }
 
@@ -115,7 +113,7 @@ public class ExecModelDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
     protected void generateSources(DMNCompilerContext ctx, DTableModel dTableModel, MemoryFileSystem srcMfs, String[] fileNames, List<GeneratedSource> generatedSources) {
         for (int i = 0; i < fileNames.length; i++) {
             GeneratorsEnum generator = getGenerators()[i];
-            String className = dTableModel.getGeneratedClassName(generator.getType());
+            String className = dTableModel.getGeneratedClassName(generator);
             String fileName = "src/main/java/" + className.replace('.', '/') + ".java";
             String javaSource = generator.sourceGenerator.generate(ctx, ctx.getFeelHelper(), dTableModel);
             fileNames[i] = fileName;
@@ -149,6 +147,10 @@ public class ExecModelDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
             Stream.of(errors).forEach(System.err::println);
             throw new RuntimeException();
         }
+    }
+
+    interface SourceGenerator {
+        String generate( DMNCompilerContext ctx, DMNFEELHelper feel, DTableModel dTableModel );
     }
 
     public static class EvaluatorSourceGenerator implements SourceGenerator {

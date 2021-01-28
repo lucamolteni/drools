@@ -54,7 +54,6 @@ import org.kie.dmn.model.api.UnaryTests;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-
 import static org.kie.dmn.core.compiler.DMNEvaluatorCompiler.inferTypeRef;
 import static org.kie.dmn.feel.lang.types.BuiltInType.determineTypeFromName;
 import static org.kie.dmn.feel.runtime.decisiontables.HitPolicy.fromString;
@@ -284,13 +283,13 @@ public class DTableModel {
             return inputs;
         }
 
+        public Object evaluate(EvaluationContext ctx, int pos) {
+            return compiledOutputs.get( pos ).apply( ctx );
+        }
+
         // TODO LUCA: avoid exposing outputs
         public List<String> getOutputs() {
             return outputs;
-        }
-
-        public Object evaluate(EvaluationContext ctx, int pos) {
-            return compiledOutputs.get( pos ).apply( ctx );
         }
     }
 
@@ -358,10 +357,10 @@ public class DTableModel {
         return Optional.ofNullable( inputClause.getInputValues() ).map( UnaryTests::getText ).orElse(null);
     }
 
-    public String getGeneratedClassName( String generatorType ) {
+    public String getGeneratedClassName(ExecModelDMNEvaluatorCompiler.GeneratorsEnum generator) {
         String pkgName = getNamespace();
         String tableName = getTableName();
-        return pkgName + "." + tableName + generatorType;
+        return pkgName + "." + tableName + generator.type;
     }
 
     public static class DOutputModel {
