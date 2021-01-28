@@ -75,8 +75,6 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
     }
 
     public CompiledNetwork createCompiledAlphaNetwork(ObjectTypeNode otn) {
-        // Move this outside so that we can debug it
-
         ObjectTypeNodeCompiler objectTypeNodeCompiler = new ObjectTypeNodeCompiler(otn);
         CompiledNetworkSource compiledNetworkSource = objectTypeNodeCompiler.generateSource();
 
