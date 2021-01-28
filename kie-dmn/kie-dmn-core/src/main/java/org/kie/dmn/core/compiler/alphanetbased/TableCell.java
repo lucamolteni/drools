@@ -38,6 +38,7 @@ import com.github.javaparser.ast.expr.ThisExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
+import org.drools.model.Index;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
 import org.kie.dmn.core.compiler.DMNFEELHelper;
 import org.kie.dmn.core.compiler.execmodelbased.DTableModel;
@@ -103,7 +104,7 @@ public class TableCell {
     }
 
     private String addIndex(BlockStmt stmt) {
-        com.github.javaparser.ast.type.Type indexType = StaticJavaParser.parseType("org.drools.model.Index");
+        com.github.javaparser.ast.type.Type indexType = StaticJavaParser.parseType(Index.class.getCanonicalName());
         String indexName = tableIndex.appendTableIndexSuffix("index");
 
         VariableDeclarationExpr variable = new VariableDeclarationExpr(indexType, indexName);
