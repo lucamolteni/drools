@@ -53,17 +53,21 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         // Parse every cell in Decision Table
         TableCell.TableCellFactory tableCellFactory = new TableCell.TableCellFactory(feelHelper, ctx);
         DTableModel dTableModel = new DTableModel(feelHelper, model, decisionTableName, decisionTableName, decisionTable);
-        TableCellParser tableCellParser = new TableCellParser(feelHelper, ctx);
+        TableCellParser tableCellParser = new TableCellParser(tableCellFactory);
         TableCells tableCells = tableCellParser.parseCells(dTableModel);
 
         // Generate source code
+        GeneratedSources allGeneratedSources = new GeneratedSources();
+
+        Map<String, String> unaryTestClasses = tableCells.createUnaryTestClasses();
+        allGeneratedSources.addUnaryTestClasses(unaryTestClasses);
+
         DMNAlphaNetworkCompiler dmnAlphaNetworkCompiler = new DMNAlphaNetworkCompiler();
-        GeneratedSources generatedSources = dmnAlphaNetworkCompiler.generateSourceCode(decisionTable, tableCells, decisionTableName);
-        ClassLoader thisDMNClassLoader = this.getClass().getClassLoader();
+        GeneratedSources generatedSources = dmnAlphaNetworkCompiler.generateSourceCode(decisionTable, tableCells, decisionTableName, allGeneratedSources);
 
         // Instantiate Alpha Network
 //        DMNCompiledAlphaNetwork dmnCompiledAlphaNetwork = new HardCodedAlphaNetwork();
-        Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(generatedSources.getAllClasses(), thisDMNClassLoader);
+        Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(generatedSources.getAllClasses(), this.getClass().getClassLoader());
         DMNCompiledAlphaNetwork dmnCompiledAlphaNetwork = generatedSources.newInstanceOfAlphaNetwork(compiledClasses);
 
         dmnCompiledAlphaNetwork.initRete();

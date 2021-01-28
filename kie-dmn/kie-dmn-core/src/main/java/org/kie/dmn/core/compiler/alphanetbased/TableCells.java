@@ -17,6 +17,7 @@
 package org.kie.dmn.core.compiler.alphanetbased;
 
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.github.javaparser.StaticJavaParser;
@@ -44,13 +45,15 @@ public class TableCells {
         unitTestField.addToCells(cells);
     }
 
-    public void createUnaryTestClassesForCells(Map<String, String> allClasses) {
+    public Map<String, String> createUnaryTestClasses() {
+        Map<String, String> allUnaryTests = new HashMap<>();
         // I'm pretty sure we can abstract this iteration to avoid copying it
         for (int rowIndex = 0; rowIndex < numRows; rowIndex++) {
             for (int columnIndex = 0; columnIndex < numColumns; columnIndex++) {
-                cells[rowIndex][columnIndex].addUnaryTestClass(allClasses);
+                cells[rowIndex][columnIndex].addUnaryTestClass(allUnaryTests);
             }
         }
+        return allUnaryTests;
     }
 
     private CompilationUnit getAlphaClassTemplate() {

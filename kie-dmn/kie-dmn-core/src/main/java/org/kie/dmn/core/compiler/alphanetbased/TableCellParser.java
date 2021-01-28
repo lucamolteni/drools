@@ -18,15 +18,13 @@ package org.kie.dmn.core.compiler.alphanetbased;
 
 import java.util.List;
 
-import org.kie.dmn.core.compiler.DMNCompilerContext;
-import org.kie.dmn.core.compiler.DMNFEELHelper;
 import org.kie.dmn.core.compiler.execmodelbased.DTableModel;
 
 public class TableCellParser {
     TableCell.TableCellFactory tableCellFactory;
 
-    public TableCellParser(DMNFEELHelper feelHelper, DMNCompilerContext context) {
-        this.tableCellFactory = new TableCell.TableCellFactory(feelHelper, context);
+    public TableCellParser(TableCell.TableCellFactory tableCellFactory) {
+        this.tableCellFactory = tableCellFactory;
     }
 
     public TableCells parseCells(DTableModel dTableModel) {

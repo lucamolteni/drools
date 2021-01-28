@@ -31,10 +31,6 @@ public class GeneratedSources {
 
     private String alphaNetworkClass = null;
 
-    public void createUnaryTestClassesForCells(TableCells tableCells) {
-        tableCells.createUnaryTestClassesForCells(allClasses);
-    }
-
     public void addNewSourceClass(String classNameWithPackage, String classSourceCode) {
         allClasses.put(classNameWithPackage, classSourceCode);
     }
@@ -66,5 +62,9 @@ public class GeneratedSources {
                 logger.debug(kv.getValue());
             }
         }
+    }
+
+    public void addUnaryTestClasses(Map<String, String> unaryTestClasses) {
+        allClasses.putAll(unaryTestClasses);
     }
 }

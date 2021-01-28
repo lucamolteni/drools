@@ -50,9 +50,7 @@ public class DMNAlphaNetworkCompiler {
     public DMNAlphaNetworkCompiler() {
     }
 
-    public GeneratedSources generateSourceCode(DecisionTable decisionTable, TableCells tableCells, String decisionTableName) {
-
-        GeneratedSources generatedSources = new GeneratedSources();
+    public GeneratedSources generateSourceCode(DecisionTable decisionTable, TableCells tableCells, String decisionTableName, GeneratedSources allGeneratedSources) {
 
         String escapedDecisionTableName = String.format("DMNAlphaNetwork_%s", CodegenStringUtil.escapeIdentifier(decisionTableName));
 
@@ -61,27 +59,24 @@ public class DMNAlphaNetworkCompiler {
         initPropertyNames(decisionTable.getInput());
 
         BlockStmt alphaNetworkStatements = new BlockStmt();
-
-        generatedSources.createUnaryTestClassesForCells(tableCells);
-
-        tableCells.addAlphaNetworkNode(alphaNetworkStatements, generatedSources);
+        tableCells.addAlphaNetworkNode(alphaNetworkStatements, allGeneratedSources);
 
         BlockStmt alphaNetworkBlock = dmnAlphaNetworkClass
-                .findFirst(BlockStmt.class, DMNAlphaNetworkCompiler::blockHasComment)
+                .findFirst(BlockStmt.class, block -> blockHasComment(block, " Alpha network creation statements"))
                 .orElseThrow(RuntimeException::new);
 
         alphaNetworkBlock.replace(alphaNetworkStatements);
 
         String alphaNetworkClassWithPackage = String.format("org.kie.dmn.core.alphasupport.%s", escapedDecisionTableName);
-        generatedSources.addNewAlphaNetworkClass(alphaNetworkClassWithPackage, template.toString());
+        allGeneratedSources.addNewAlphaNetworkClass(alphaNetworkClassWithPackage, template.toString());
 
-        generatedSources.logGeneratedClasses();
+        allGeneratedSources.logGeneratedClasses();
 
-        return generatedSources;
+        return allGeneratedSources;
     }
 
-    private static boolean blockHasComment(BlockStmt block) {
-        return block.getComment().filter(c -> " Alpha network creation statements".equals(c.getContent()))
+    private static boolean blockHasComment(BlockStmt block, String comment) {
+        return block.getComment().filter(c -> comment.equals(c.getContent()))
                 .isPresent();
     }
 
