@@ -96,8 +96,4 @@ public class AlphaNetDMNExpressionEvaluator implements DMNExpressionEvaluator {
         this.node = node;
         return this;
     }
-
-    public AlphaNetDMNExpressionEvaluator initParameters( DMNCompilerContext ctx, DTableModel dTableModel, DMNBaseNode node) {
-        return initParameters(ctx.getFeelHelper(), ctx, dTableModel, node);
-    }
 }

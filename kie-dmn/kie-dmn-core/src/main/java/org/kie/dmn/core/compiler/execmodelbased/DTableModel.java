@@ -287,7 +287,6 @@ public class DTableModel {
             return compiledOutputs.get( pos ).apply( ctx );
         }
 
-        // TODO LUCA: avoid exposing outputs
         public List<String> getOutputs() {
             return outputs;
         }
