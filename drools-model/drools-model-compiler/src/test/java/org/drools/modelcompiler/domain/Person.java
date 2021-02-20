@@ -233,4 +233,10 @@ public class Person extends AbstractReactiveObject {
         result = 31 * result + age;
         return result;
     }
+ 
+
+    public static Person identityFunction(Person p) {
+        return p;
+    }
+
 }
