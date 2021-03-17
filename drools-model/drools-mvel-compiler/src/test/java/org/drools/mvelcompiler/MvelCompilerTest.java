@@ -75,6 +75,12 @@ public class MvelCompilerTest implements CompilerTest {
     }
 
     @Test
+    public void testEnclosedExpression() {
+        test("{ Integer a = (2); }",
+             "{ Integer a = (2); }");
+    }
+
+    @Test
     public void testStringLength() {
         test(ctx -> ctx.addDeclaration("$p", Person.class),
              "{ $p.name.length; }",
@@ -455,6 +461,7 @@ public class MvelCompilerTest implements CompilerTest {
                      "    result -= 10000;\n" + // 40000
                      "    result /= 10;\n" + // 4000
                      "    result *= 10;\n" + // 40000
+                     "    (result *= $p.salary);\n" + // 40000
                      "    $p.salary = result;" +
                      "}",
              "{ " +
@@ -463,6 +470,7 @@ public class MvelCompilerTest implements CompilerTest {
                      "        result = result.subtract(new java.math.BigDecimal(10000));\n" +
                      "        result = result.divide(new java.math.BigDecimal(10));\n" +
                      "        result = result.multiply(new java.math.BigDecimal(10));\n" +
+                     "        result = result.multiply($p.getSalary());\n" +
                      "        $p.setSalary(result);\n" +
                      "}");
     }
