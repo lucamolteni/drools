@@ -76,8 +76,8 @@ public class MvelCompilerTest implements CompilerTest {
 
     @Test
     public void testEnclosedExpression() {
-        test("{ Integer a = (2); }",
-             "{ Integer a = (2); }");
+        test("{ java.lang.Integer a = (2); }",
+             "{ java.lang.Integer a = (2); }");
     }
 
     @Test
@@ -183,7 +183,7 @@ public class MvelCompilerTest implements CompilerTest {
                  ctx.addDeclaration("$p", Person.class);
              },
              "{ $p.salary = $p.salary + (bd1.multiply(bd2)); }",
-             "{ $p.setSalary($p.getSalary().add(bd1.multiply(bd2)));\n }");
+             "{ $p.setSalary($p.getSalary().add((bd1.multiply(bd2))));\n }");
     }
 
     @Test
@@ -376,8 +376,8 @@ public class MvelCompilerTest implements CompilerTest {
                      "    java.util.ArrayList l = new ArrayList();\n" +
                      "    l.add(\"first\");\n" +
                      "    m.put(\"content\", l);\n" +
-                     "    System.out.println(((java.util.ArrayList) m.get(\"content\")).get(0));\n" +
-                     "    list.add(((java.util.ArrayList) m.get(\"content\")).get(0));\n" +
+                     "    System.out.println((((java.util.ArrayList) m.get(\"content\"))).get(0));\n" +
+                     "    list.add((((java.util.ArrayList) m.get(\"content\"))).get(0));\n" +
                      "}");
     }
 
@@ -513,7 +513,7 @@ public class MvelCompilerTest implements CompilerTest {
     public void testModifySemiColon() {
         test(ctx -> ctx.addDeclaration("$p", Person.class),
              "{ modify($p) { setAge(1); }; }",
-             "{ $p.setAge(1); }",
+             "{ ($p).setAge(1); }",
              result -> assertThat(allUsedBindings(result), containsInAnyOrder("$p")));
     }
 
@@ -615,7 +615,7 @@ public class MvelCompilerTest implements CompilerTest {
                              "org.drools.Address $newAddress = new Address(); " +
                              "$newAddress.setCity(\"Brno\"); " +
                              "insert($newAddress); " +
-                             "$person.setAddress($newAddress); " +
+                             "($person).setAddress($newAddress); " +
                           "}");
     }
 

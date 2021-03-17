@@ -35,6 +35,7 @@ import org.drools.mvelcompiler.ast.BigDecimalConvertedExprT;
 import org.drools.mvelcompiler.ast.BinaryTExpr;
 import org.drools.mvelcompiler.ast.CastExprT;
 import org.drools.mvelcompiler.ast.CharacterLiteralExpressionT;
+import org.drools.mvelcompiler.ast.EnclosedExprT;
 import org.drools.mvelcompiler.ast.FieldAccessTExpr;
 import org.drools.mvelcompiler.ast.FieldToAccessorTExpr;
 import org.drools.mvelcompiler.ast.IntegerLiteralExpressionT;
@@ -317,7 +318,7 @@ public class RHSPhase implements DrlGenericVisitor<TypedExpression, RHSPhase.Con
 
     @Override
     public TypedExpression visit(EnclosedExpr n, Context arg) {
-        return n.getInner().accept(this, arg);
+        return new EnclosedExprT(n.getInner().accept(this, arg));
     }
 
     @Override
