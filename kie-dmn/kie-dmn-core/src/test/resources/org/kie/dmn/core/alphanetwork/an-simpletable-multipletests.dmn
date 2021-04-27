@@ -1,117 +1,152 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!--
-  ~ Copyright 2017 Red Hat, Inc. and/or its affiliates.
-  ~
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
-  ~ you may not use this file except in compliance with the License.
-  ~ You may obtain a copy of the License at
-  ~
-  ~       http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
-  -->
-<!--
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
-  ~ you may not use this file except in compliance with the License.
-  ~ You may obtain a copy of the License at
-  ~
-  ~       http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
-  -->
-<semantic:definitions xmlns="https://github.com/kiegroup/kie-dmn"
-                      xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
-                      xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/"
-                      xmlns:dmndi="http://www.omg.org/spec/DMN/20180521/DMNDI/"
-                      xmlns:feel="http://www.omg.org/spec/DMN/20180521/FEEL/"
-                      xmlns:semantic="http://www.omg.org/spec/DMN/20180521/MODEL/"
-                      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                      id="_edbd2d8e-a5a8-4660-9bb9-adaa792d900c"
-                      namespace="https://github.com/kiegroup/kie-dmn"
-                      name="an-simpletable-multipletests"
-                      >
-   <semantic:decision id="an-simpletable-multipletests" name="an-simpletable-multipletests">
-      <semantic:variable name="Approval Status" typeRef="string"/>
-      <semantic:informationRequirement>
-         <semantic:requiredInput href="#_Age"/>
-      </semantic:informationRequirement>
-      <semantic:informationRequirement>
-         <semantic:requiredInput href="#_RiskCategory"/>
-      </semantic:informationRequirement>
-      <semantic:informationRequirement>
-         <semantic:requiredInput href="#_isAffordable"/>
-      </semantic:informationRequirement>
-      <semantic:decisionTable hitPolicy="ANY"
-                              preferredOrientation="Rule-as-Row"
-                              outputLabel="Approval Status">
-         <semantic:input id="_iAge" label="Age">
-            <semantic:inputExpression typeRef="number">
-               <semantic:text>Age</semantic:text>
-            </semantic:inputExpression>
-         </semantic:input>
-         <semantic:input id="_iRiskCategory" label="RiskCategory">
-            <semantic:inputExpression typeRef="string">
-               <semantic:text>RiskCategory</semantic:text>
-            </semantic:inputExpression>
-            <semantic:inputValues>
-               <semantic:text>"High", "Low", "Medium"</semantic:text>
-            </semantic:inputValues>
-         </semantic:input>
-         <semantic:input id="_iIsAffordable" label="isAffordable">
-            <semantic:inputExpression typeRef="boolean">
-               <semantic:text>isAffordable</semantic:text>
-            </semantic:inputExpression>
-         </semantic:input>
-         <semantic:output id="_oApprovalStatus" name="Approval Status" typeRef="string">
-            <semantic:outputValues>
-               <semantic:text>"Approved", "Declined"</semantic:text>
-            </semantic:outputValues>
-         </semantic:output>
-         <semantic:rule id="_7f03803d-2636-40ab-8346-7fd7f38ab695">
-            <semantic:inputEntry id="_7f03803d-2636-40ab-8346-7fd7f38ab695-0">
-               <semantic:text>&gt;=18</semantic:text>
-            </semantic:inputEntry>
-            <semantic:inputEntry id="_7f03803d-2636-40ab-8346-7fd7f38ab695-1">
-               <semantic:text>"Medium","Low"</semantic:text>
-            </semantic:inputEntry>
-            <semantic:inputEntry id="_7f03803d-2636-40ab-8346-7fd7f38ab695-2">
-               <semantic:text>true</semantic:text>
-            </semantic:inputEntry>
-            <semantic:outputEntry id="_7f03803d-2636-40ab-8346-7fd7f38ab695-3">
-               <semantic:text>"Approved"</semantic:text>
-            </semantic:outputEntry>
-         </semantic:rule>
-         <semantic:rule id="_7f03803d-2636-40ab-8346-7fd7f38ab691">
-            <semantic:inputEntry id="_7f03803d-2636-40ab-8346-7fd7f38ab691-0">
-               <semantic:text>&gt;=18</semantic:text>
-            </semantic:inputEntry>
-            <semantic:inputEntry id="_7f03803d-2636-40ab-8346-7fd7f38ab691-1">
-               <semantic:text>"Medium","Low"</semantic:text>
-            </semantic:inputEntry>
-            <semantic:inputEntry id="_7f03803d-2636-40ab-8346-7fd7f38ab691-2">
-               <semantic:text>true</semantic:text>
-            </semantic:inputEntry>
-            <semantic:outputEntry id="_7f03803d-2636-40ab-8346-7fd7f38ab691-3">
-               <semantic:text>"Approved"</semantic:text>
-            </semantic:outputEntry>
-         </semantic:rule>
-      </semantic:decisionTable>
-   </semantic:decision>
-   <semantic:inputData id="_Age" name="Age">
-      <semantic:variable name="Age" typeRef="number"/>
-   </semantic:inputData>
-   <semantic:inputData id="_RiskCategory" name="RiskCategory">
-      <semantic:variable name="RiskCategory" typeRef="string"/>
-   </semantic:inputData>
-   <semantic:inputData id="_isAffordable" name="isAffordable">
-      <semantic:variable name="isAffordable" typeRef="boolean"/>
-   </semantic:inputData>
-</semantic:definitions>
+<dmn:definitions xmlns:dmn="http://www.omg.org/spec/DMN/20180521/MODEL/" xmlns="https://github.com/kiegroup/kie-dmn" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" xmlns:dmndi="http://www.omg.org/spec/DMN/20180521/DMNDI/" xmlns:feel="http://www.omg.org/spec/DMN/20180521/FEEL/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:kie="http://www.drools.org/kie/dmn/1.2" id="_edbd2d8e-a5a8-4660-9bb9-adaa792d900c" name="an-simpletable-multipletests" typeLanguage="http://www.omg.org/spec/DMN/20180521/FEEL/" namespace="https://github.com/kiegroup/kie-dmn">
+  <dmn:extensionElements/>
+  <dmn:decision id="an-simpletable-multipletests" name="Approval Status">
+    <dmn:extensionElements/>
+    <dmn:variable id="_34BC4716-C3E0-4FCA-A6A6-50D6EBBB5205" name="Approval Status" typeRef="string"/>
+    <dmn:informationRequirement id="_226A869F-0C97-4104-BF34-4B9562D8449F">
+      <dmn:requiredInput href="#_Age"/>
+    </dmn:informationRequirement>
+    <dmn:informationRequirement id="_40A30CE9-7268-436A-AE3F-0C279630580D">
+      <dmn:requiredInput href="#_RiskCategory"/>
+    </dmn:informationRequirement>
+    <dmn:informationRequirement id="_BF83BD78-595F-4BF6-8201-84DDF9E2F624">
+      <dmn:requiredInput href="#_isAffordable"/>
+    </dmn:informationRequirement>
+    <dmn:decisionTable id="_7F2DAF9C-B55E-478D-92EE-5E533499AFBC" hitPolicy="ANY" preferredOrientation="Rule-as-Row" outputLabel="Approval Status">
+      <dmn:input id="_iAge">
+        <dmn:inputExpression id="_BF256C05-A4AA-43D9-91FF-A1C6350BB06D" typeRef="number">
+          <dmn:text>Age</dmn:text>
+        </dmn:inputExpression>
+      </dmn:input>
+      <dmn:input id="_iRiskCategory">
+        <dmn:inputExpression id="_9F17CD68-9D22-4442-8EED-4431437167AC" typeRef="string">
+          <dmn:text>RiskCategory</dmn:text>
+        </dmn:inputExpression>
+        <dmn:inputValues id="_27073A9C-1649-42B4-8DFB-84FCA949F5B5">
+          <dmn:text>"High", "Low", "Medium"</dmn:text>
+        </dmn:inputValues>
+      </dmn:input>
+      <dmn:input id="_iIsAffordable">
+        <dmn:inputExpression id="_E14DB80F-42F4-44CB-BF40-D670F2404A46" typeRef="boolean">
+          <dmn:text>isAffordable</dmn:text>
+        </dmn:inputExpression>
+      </dmn:input>
+      <dmn:output id="_oApprovalStatus">
+        <dmn:outputValues id="_5CE51BA8-597A-47C1-BA71-79D43EABCDD2">
+          <dmn:text>"Approved", "Declined"</dmn:text>
+        </dmn:outputValues>
+      </dmn:output>
+      <dmn:annotation name=""/>
+      <dmn:rule id="_7f03803d-2636-40ab-8346-7fd7f38ab695">
+        <dmn:inputEntry id="_7f03803d-2636-40ab-8346-7fd7f38ab695-0">
+          <dmn:text>&gt;=18</dmn:text>
+        </dmn:inputEntry>
+        <dmn:inputEntry id="_7f03803d-2636-40ab-8346-7fd7f38ab695-1">
+          <dmn:text>"Medium","Low"</dmn:text>
+        </dmn:inputEntry>
+        <dmn:inputEntry id="_7f03803d-2636-40ab-8346-7fd7f38ab695-2">
+          <dmn:text>true</dmn:text>
+        </dmn:inputEntry>
+        <dmn:outputEntry id="_7f03803d-2636-40ab-8346-7fd7f38ab695-3">
+          <dmn:text>"Approved"</dmn:text>
+        </dmn:outputEntry>
+        <dmn:annotationEntry>
+          <dmn:text/>
+        </dmn:annotationEntry>
+      </dmn:rule>
+      <dmn:rule id="_7f03803d-2636-40ab-8346-7fd7f38ab691">
+        <dmn:inputEntry id="_7f03803d-2636-40ab-8346-7fd7f38ab691-0">
+          <dmn:text>&lt; 18</dmn:text>
+        </dmn:inputEntry>
+        <dmn:inputEntry id="_7f03803d-2636-40ab-8346-7fd7f38ab691-1">
+          <dmn:text>"Medium","Low"</dmn:text>
+        </dmn:inputEntry>
+        <dmn:inputEntry id="_7f03803d-2636-40ab-8346-7fd7f38ab691-2">
+          <dmn:text>true</dmn:text>
+        </dmn:inputEntry>
+        <dmn:outputEntry id="_7f03803d-2636-40ab-8346-7fd7f38ab691-3">
+          <dmn:text>"Not Approved"</dmn:text>
+        </dmn:outputEntry>
+        <dmn:annotationEntry>
+          <dmn:text/>
+        </dmn:annotationEntry>
+      </dmn:rule>
+    </dmn:decisionTable>
+  </dmn:decision>
+  <dmn:inputData id="_Age" name="Age">
+    <dmn:extensionElements/>
+    <dmn:variable id="_B3B009BC-0FD7-42F0-83BE-FF0F43EEB048" name="Age" typeRef="number"/>
+  </dmn:inputData>
+  <dmn:inputData id="_RiskCategory" name="RiskCategory">
+    <dmn:extensionElements/>
+    <dmn:variable id="_2873AC0D-8A09-4663-BC03-215ADB3EA9D0" name="RiskCategory" typeRef="string"/>
+  </dmn:inputData>
+  <dmn:inputData id="_isAffordable" name="isAffordable">
+    <dmn:extensionElements/>
+    <dmn:variable id="_D0DA3464-DFA2-4E99-AC60-B52F16AFF6F9" name="isAffordable" typeRef="boolean"/>
+  </dmn:inputData>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="_5EAE982A-9AC8-4CE0-A7A3-0D2DA24F29BB" name="DRG">
+      <di:extension>
+        <kie:ComponentsWidthsExtension>
+          <kie:ComponentWidths dmnElementRef="_7F2DAF9C-B55E-478D-92EE-5E533499AFBC">
+            <kie:width>50</kie:width>
+            <kie:width>100</kie:width>
+            <kie:width>100</kie:width>
+            <kie:width>100</kie:width>
+            <kie:width>100</kie:width>
+            <kie:width>100</kie:width>
+          </kie:ComponentWidths>
+        </kie:ComponentsWidthsExtension>
+      </di:extension>
+      <dmndi:DMNShape id="dmnshape-drg-an-simpletable-multipletests" dmnElementRef="an-simpletable-multipletests" isCollapsed="false">
+        <dmndi:DMNStyle>
+          <dmndi:FillColor red="255" green="255" blue="255"/>
+          <dmndi:StrokeColor red="0" green="0" blue="0"/>
+          <dmndi:FontColor red="0" green="0" blue="0"/>
+        </dmndi:DMNStyle>
+        <dc:Bounds x="225" y="48" width="100" height="50"/>
+        <dmndi:DMNLabel/>
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="dmnshape-drg-_Age" dmnElementRef="_Age" isCollapsed="false">
+        <dmndi:DMNStyle>
+          <dmndi:FillColor red="255" green="255" blue="255"/>
+          <dmndi:StrokeColor red="0" green="0" blue="0"/>
+          <dmndi:FontColor red="0" green="0" blue="0"/>
+        </dmndi:DMNStyle>
+        <dc:Bounds x="50" y="225" width="100" height="50"/>
+        <dmndi:DMNLabel/>
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="dmnshape-drg-_RiskCategory" dmnElementRef="_RiskCategory" isCollapsed="false">
+        <dmndi:DMNStyle>
+          <dmndi:FillColor red="255" green="255" blue="255"/>
+          <dmndi:StrokeColor red="0" green="0" blue="0"/>
+          <dmndi:FontColor red="0" green="0" blue="0"/>
+        </dmndi:DMNStyle>
+        <dc:Bounds x="225" y="225" width="100" height="50"/>
+        <dmndi:DMNLabel/>
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="dmnshape-drg-_isAffordable" dmnElementRef="_isAffordable" isCollapsed="false">
+        <dmndi:DMNStyle>
+          <dmndi:FillColor red="255" green="255" blue="255"/>
+          <dmndi:StrokeColor red="0" green="0" blue="0"/>
+          <dmndi:FontColor red="0" green="0" blue="0"/>
+        </dmndi:DMNStyle>
+        <dc:Bounds x="400" y="225" width="100" height="50"/>
+        <dmndi:DMNLabel/>
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="dmnedge-drg-_226A869F-0C97-4104-BF34-4B9562D8449F" dmnElementRef="_226A869F-0C97-4104-BF34-4B9562D8449F">
+        <di:waypoint x="50" y="225"/>
+        <di:waypoint x="225" y="48"/>
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="dmnedge-drg-_40A30CE9-7268-436A-AE3F-0C279630580D" dmnElementRef="_40A30CE9-7268-436A-AE3F-0C279630580D">
+        <di:waypoint x="225" y="225"/>
+        <di:waypoint x="225" y="48"/>
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="dmnedge-drg-_BF83BD78-595F-4BF6-8201-84DDF9E2F624" dmnElementRef="_BF83BD78-595F-4BF6-8201-84DDF9E2F624">
+        <di:waypoint x="400" y="225"/>
+        <di:waypoint x="225" y="48"/>
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</dmn:definitions>
