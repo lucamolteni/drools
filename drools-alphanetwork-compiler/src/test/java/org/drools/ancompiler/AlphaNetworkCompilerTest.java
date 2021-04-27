@@ -249,7 +249,7 @@ public class AlphaNetworkCompilerTest extends BaseModelTest {
                         "end\n" +
                         "rule \"Bind3\"\n" +
                         "when\n" +
-                        "  $s : Person( name == \"Matteo\") \n" +
+                        "  $s : Person( name == \"Toshiya\") \n" +
                         "then\n" +
                         "end\n";
 
