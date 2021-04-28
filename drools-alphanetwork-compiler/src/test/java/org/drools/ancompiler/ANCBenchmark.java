@@ -45,7 +45,7 @@ import org.openjdk.jmh.infra.Blackhole;
 @Measurement(iterations = 3)
 public class ANCBenchmark {
 
-    // todo use splittable random per generare stringhe più diverse
+    //  use splittable random
 
     // TODO
     // -prof perfnorm
