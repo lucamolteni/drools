@@ -17,17 +17,23 @@
 package org.kie.dmn.core.compiler.alphanetbased;
 
 import org.drools.ancompiler.CompiledNetwork;
+import org.drools.core.reteoo.ObjectTypeNode;
+import org.kie.dmn.api.feel.runtime.events.FEELEvent;
 import org.kie.dmn.feel.lang.EvaluationContext;
+import org.kie.dmn.feel.runtime.decisiontables.DecisionTable;
 
 public interface DMNCompiledAlphaNetwork {
 
     void initRete();
 
-    CompiledNetwork createCompiledAlphaNetwork(AlphaNetDMNEvaluatorCompiler compiler);
-
     void setCompiledAlphaNetwork(CompiledNetwork compiledAlphaNetwork);
 
-    Object evaluate(EvaluationContext evalCtx);
+    ObjectTypeNode getObjectTypeNode();
+
+    FEELEvent validate(EvaluationContext evaluationContext);
+
+    Object evaluate(EvaluationContext evaluationContext, DecisionTable decisionTable);
 
     ResultCollector getResultCollector();
+
 }
