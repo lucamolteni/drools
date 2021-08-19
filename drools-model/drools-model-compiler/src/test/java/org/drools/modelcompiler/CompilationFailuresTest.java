@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.kie.api.builder.Message;
 import org.kie.api.builder.Results;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -164,5 +165,28 @@ public class CompilationFailuresTest extends BaseModelTest {
 
         // RHS error : line = 1 with STANDARD_FROM_DRL (RuleDescr)
         assertEquals(1, results.getMessages().get(0).getLine());
+    }
+
+
+    @Test
+    public void testVariableInsideBinding() {
+        String str =
+                "import " + Person.class.getCanonicalName() + ";" +
+                        "import " + NameLengthCount.class.getCanonicalName() + ";" +
+                        "rule X when\n" +
+                        "  $nlc : NameLengthCount() \n" +
+                        "  Person ( $nameLength : $nlc.getNameLength(name))" +
+                        "then\n" +
+                        "end";
+
+        Results results = createKieBuilder(str ).getResults();
+        assertThat(results.getMessages(Message.Level.ERROR).stream().map(Message::getText))
+                .contains("Variables can not be used inside bindings. Variable [$nlc] is being used in binding '$nlc.getNameLength(name)'");
+    }
+
+    public static class NameLengthCount {
+        public int getNameLength(String name) {
+            return name.length();
+        }
     }
 }
