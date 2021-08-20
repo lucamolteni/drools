@@ -175,16 +175,21 @@ public class CompilationFailuresTest extends BaseModelTest {
                         "import " + NameLengthCount.class.getCanonicalName() + ";" +
                         "rule X when\n" +
                         "  $nlc : NameLengthCount() \n" +
-                        "  Person ( $nameLength : $nlc.getNameLength(name))" +
+                        "  Person ( $nameLength : $nlc.self.getNameLength(name))" +
                         "then\n" +
                         "end";
 
         Results results = createKieBuilder(str ).getResults();
         assertThat(results.getMessages(Message.Level.ERROR).stream().map(Message::getText))
-                .contains("Variables can not be used inside bindings. Variable [$nlc] is being used in binding '$nlc.getNameLength(name)'");
+                .contains("Variables can not be used inside bindings. Variable [$nlc] is being used in binding '$nlc.self.getNameLength(name)'");
     }
 
     public static class NameLengthCount {
+
+        public NameLengthCount getSelf() {
+            return this;
+        }
+
         public int getNameLength(String name) {
             return name.length();
         }
