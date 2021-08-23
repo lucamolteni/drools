@@ -98,40 +98,34 @@ import static org.drools.mvel.parser.printer.PrintUtil.printConstraint;
 
 /**
  * Parses the MVEL String Constraint and Compiles it to a Java Expression
- * There are three kinds of ConstraintParser, only the default will check for variables used in the constraint
+ * There are three kinds of ConstraintParser
  *
  * ConstraintParser#defaultConstraintParser
- * ConstraintParser#fromConstraintParser
- * ConstraintParser#evalConstraintParser
+ * ConstraintParser#withoutVariableValidation
+ *
+ * As there are some cases (such as from, eval) in which variables are allowed in the constraint
  *
  */
 public class ConstraintParser {
 
     private final RuleContext context;
     private final PackageModel packageModel;
-    private final boolean isFromConstraint;
-    private final boolean isEvalConstraint;
+    private final boolean skipVariableValidation;
 
     private ConstraintParser(RuleContext context,
                              PackageModel packageModel,
-                             boolean isFromConstraint,
-                             boolean isEvalConstraint) {
+                             boolean skipVariableValidation) {
         this.context = context;
         this.packageModel = packageModel;
-        this.isFromConstraint = isFromConstraint;
-        this.isEvalConstraint = isEvalConstraint;
+        this.skipVariableValidation = skipVariableValidation;
     }
 
     public static ConstraintParser defaultConstraintParser(RuleContext context, PackageModel packageModel) {
-        return new ConstraintParser(context, packageModel, false, false);
+        return new ConstraintParser(context, packageModel, false);
     }
 
-    public static ConstraintParser fromConstraintParser(RuleContext context, PackageModel packageModel) {
-        return new ConstraintParser(context, packageModel, true, false);
-    }
-
-    public static ConstraintParser evalConstraintParser(RuleContext context, PackageModel packageModel) {
-        return new ConstraintParser(context, packageModel, false, true);
+    public static ConstraintParser withoutVariableValidationConstraintParser(RuleContext context, PackageModel packageModel) {
+        return new ConstraintParser(context, packageModel, true);
     }
 
     public DrlxParseResult drlxParse(Class<?> patternType, String bindingId, String expression) {
@@ -201,7 +195,7 @@ public class ConstraintParser {
 
     private Optional<DrlxParseFail> validateVariable(Expression drlxExpr, boolean hasBind) {
         // Variables are allowed in `from` and `eval` constraints
-        if (drlxExpr instanceof MethodCallExpr && hasBind && !isFromConstraint && !isEvalConstraint) {
+        if (!skipVariableValidation && drlxExpr instanceof MethodCallExpr && hasBind) {
             return DrlxParseUtil.findRootNodeViaScope(drlxExpr).flatMap(s -> {
                 String rootNode = s.toString();
                 if(context.hasDeclaration(rootNode)) { // Root node is a variable

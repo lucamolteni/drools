@@ -41,7 +41,7 @@ public class EvalVisitor {
 
     public void visit(EvalDescr descr) {
         String expression = descr.getContent().toString();
-        DrlxParseResult drlxParseResult = ConstraintParser.evalConstraintParser(context, packageModel)
+        DrlxParseResult drlxParseResult = ConstraintParser.withoutVariableValidationConstraintParser(context, packageModel)
                 .drlxParse(null, null, expression);
 
         drlxParseResult.accept(drlxParseSuccess -> {

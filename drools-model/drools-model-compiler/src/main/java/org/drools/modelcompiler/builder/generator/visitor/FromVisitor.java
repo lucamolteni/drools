@@ -279,7 +279,7 @@ public class FromVisitor {
             DeclarationSpec declarationSpec = context.getDeclarationById( bindingId ).orElseThrow( RuntimeException::new );
             Class<?> clazz = declarationSpec.getDeclarationClass();
 
-            DrlxParseResult drlxParseResult = ConstraintParser.fromConstraintParser(context, packageModel)
+            DrlxParseResult drlxParseResult = ConstraintParser.withoutVariableValidationConstraintParser(context, packageModel)
                     .drlxParse(clazz, bindingId, expression);
 
             return drlxParseResult.acceptWithReturnValue( drlxParseSuccess -> {
