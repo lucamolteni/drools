@@ -420,7 +420,7 @@ public class Consequence {
             Optional<Expression> root = removeRootNodeViaScope.getRootNode()
                     .filter(s -> isNameExprWithName(s, updatedVar));
             if (methodCall.getScope().isPresent() && root.isPresent()) {
-                boolean isDirectMethod = removeRootNodeViaScope.getFirstChild().equals(removeRootNodeViaScope.getWithoutRootNode());
+                boolean isDirectMethod = removeRootNodeViaScope.getFirstChildOfRootNode().equals(removeRootNodeViaScope.getWithoutRootNode());
                 if (isDirectMethod) {
                     ClassDefinition clsDef = packageModel.getClassDefinition(updatedClass);
                     if (clsDef != null) {
@@ -441,7 +441,7 @@ public class Consequence {
                 } else if (!isDirectMethod && !isGetter(methodCall.getNameAsString())) {
                     // indirect setter so the prop of the first getter is modified
                     // using "!isGetter()" instead of "isSetter()" because we want the behavior similar to standard-drl (DialectUtil.parseModifiedProperties)
-                    Expression firstExpr = removeRootNodeViaScope.getFirstChild();
+                    Expression firstExpr = removeRootNodeViaScope.getFirstChildOfRootNode();
                     if (firstExpr.isMethodCallExpr()) {
                         propName = getter2property(firstExpr.asMethodCallExpr().getNameAsString());
                     }

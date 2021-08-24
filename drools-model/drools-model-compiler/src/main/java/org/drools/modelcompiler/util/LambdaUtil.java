@@ -35,7 +35,7 @@ public class LambdaUtil {
 
         DrlxParseUtil.RemoveRootNodeResult removeRootNodeResult = DrlxParseUtil.removeRootNode(l2ExprStmt.getExpression());
 
-        NodeWithOptionalScope<?> newExpr = (NodeWithOptionalScope<?>) removeRootNodeResult.getFirstChild();
+        NodeWithOptionalScope<?> newExpr = (NodeWithOptionalScope<?>) removeRootNodeResult.getFirstChildOfRootNode();
 
         newExpr.setScope(l1ExprStmt.getExpression());
         l1.setBody(new ExpressionStmt(removeRootNodeResult.getWithoutRootNode()));

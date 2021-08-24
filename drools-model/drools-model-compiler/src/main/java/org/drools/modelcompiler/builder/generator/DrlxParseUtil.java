@@ -27,9 +27,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -76,6 +74,7 @@ import com.github.javaparser.ast.expr.ThisExpr;
 import com.github.javaparser.ast.expr.UnaryExpr;
 import com.github.javaparser.ast.nodeTypes.NodeWithArguments;
 import com.github.javaparser.ast.nodeTypes.NodeWithOptionalScope;
+import com.github.javaparser.ast.nodeTypes.NodeWithScope;
 import com.github.javaparser.ast.nodeTypes.NodeWithTraversableScope;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
@@ -346,7 +345,7 @@ public class DrlxParseUtil {
         } else if (parentNode.isPresent()) {
             return findRootNodeViaParent(parentNode.get());
         } else {
-            return Optional.of(expr);
+            return of(expr);
         }
     }
 
@@ -372,70 +371,101 @@ public class DrlxParseUtil {
     }
 
     public static RemoveRootNodeResult findRemoveRootNodeViaScope(Expression expr) {
-        return findRootNodeViaScopeRec(expr, new LinkedList<>());
+        return findRootNodeViaScopeRec(expr, null, new FindRootNodeViaScopeResult(expr))
+                .sanitizedExpressionWithRemovedRootResult();
     }
 
     public static Optional<Expression> findRootNodeViaScope(Expression expr) {
-        return findRemoveRootNodeViaScope(expr).rootNode;
+        return findRootNodeViaScopeRec(expr, null, new FindRootNodeViaScopeResult(expr)).optionalRootNode;
     }
 
     public static RemoveRootNodeResult removeRootNode(Expression expr) {
         return findRemoveRootNodeViaScope(expr);
     }
 
-    private static RemoveRootNodeResult findRootNodeViaScopeRec(Expression expr, LinkedList<Expression> acc) {
+    private static FindRootNodeViaScopeResult findRootNodeViaScopeRec(Expression expr,
+                                                                      Expression parent,
+                                                                      FindRootNodeViaScopeResult result) {
 
-        if (expr.isArrayAccessExpr()) {
+        if (expr.isArrayAccessExpr()) { // can this be removed?
             throw new RuntimeException("This doesn't work on arrayAccessExpr convert them to a method call");
         }
 
-        if (expr instanceof EnclosedExpr) {
-            return findRootNodeViaScopeRec(expr.asEnclosedExpr().getInner(), acc);
-        } else if (expr instanceof CastExpr) {
-            return findRootNodeViaScopeRec(expr.asCastExpr().getExpression(), acc);
-        } else if (expr instanceof ThisExpr) {
-            return new RemoveRootNodeResult(Optional.of(expr), expr, expr);
-        } else if (expr instanceof NodeWithTraversableScope) {
+        if (expr instanceof NodeWithTraversableScope) {
             final NodeWithTraversableScope exprWithScope = (NodeWithTraversableScope) expr;
 
-            return exprWithScope.traverseScope().map((Expression scope) -> {
-                Expression sanitizedExpr = DrlxParseUtil.transformDrlNameExprToNameExpr(expr);
-                acc.addLast(sanitizedExpr.clone());
-                return findRootNodeViaScopeRec(scope, acc);
-            }).orElse(new RemoveRootNodeResult(Optional.of(expr), expr, acc.isEmpty() ? expr : acc.getLast()));
+            return exprWithScope.traverseScope()
+                    .map((Expression scope) -> findRootNodeViaScopeRec(scope, expr, result))
+                    .orElseGet(() -> {
+                        return result.foundRootNode(expr, parent);
+                    });
+
+        } else if (expr instanceof EnclosedExpr) {
+            return findRootNodeViaScopeRec(expr.asEnclosedExpr().getInner(), expr, result);
+        } else if (expr instanceof CastExpr) {
+            return findRootNodeViaScopeRec(expr.asCastExpr().getExpression(), expr, result);
+        } else if (expr instanceof ThisExpr) {
+            return result.foundRootNode(expr, parent);
         } else if (expr instanceof NameExpr) {
-            if(!acc.isEmpty() && acc.getLast() instanceof NodeWithOptionalScope<?>) {
-                ((NodeWithOptionalScope<?>) acc.getLast()).setScope(null);
-
-                for (ListIterator<Expression> iterator = acc.listIterator(); iterator.hasNext(); ) {
-                    Expression e = iterator.next();
-                    if(e instanceof NodeWithOptionalScope) {
-                        NodeWithOptionalScope<?> node = (NodeWithOptionalScope<?>)e;
-                        if(iterator.hasNext()) {
-                            node.setScope(acc.get(iterator.nextIndex()));
-                        }
-                    }
-                }
-
-                return new RemoveRootNodeResult(Optional.of(expr), acc.getFirst(), acc.getLast());
-            } else {
-                return new RemoveRootNodeResult(Optional.of(expr), expr, expr);
-            }
-
+            result.foundRootNode(expr, parent);
         }
 
-        return new RemoveRootNodeResult(empty(), expr, expr);
+        return result;
+    }
+
+    public static class FindRootNodeViaScopeResult {
+        private Optional<Expression> optionalRootNode = Optional.empty();
+        private Optional<Expression> optionalFirstChild = Optional.empty();
+        private Expression originalExpression;
+
+        public FindRootNodeViaScopeResult(Expression originalExpression) {
+            this.originalExpression = originalExpression;
+        }
+
+        public FindRootNodeViaScopeResult foundRootNode(Expression rootNode, Expression firstChild) {
+            this.optionalRootNode = Optional.of(rootNode);
+            this.optionalFirstChild = Optional.ofNullable(firstChild);
+            return this;
+        }
+
+        public RemoveRootNodeResult sanitizedExpressionWithRemovedRootResult() {
+            if(!optionalRootNode.isPresent() || !optionalFirstChild.isPresent()) {
+                return new RemoveRootNodeResult(of(originalExpression), originalExpression, originalExpression);
+            }
+
+            Expression firstChild = optionalFirstChild.get();
+
+            originalExpression.findFirst(Expression.class, e -> e.equals(firstChild)).ifPresent(this::removeScope);
+
+            Expression firstChildWithoutScope = removeScope(transformDrlNameExprToNameExpr(firstChild).clone());
+
+            return new RemoveRootNodeResult(optionalRootNode,
+                                            originalExpression,
+                                            firstChildWithoutScope);
+        }
+
+        private Expression removeScope(Expression firstChild) {
+            if (firstChild instanceof NodeWithOptionalScope<?>) {
+                ((NodeWithOptionalScope<?>) firstChild).setScope(null);
+                return firstChild;
+            } else if (firstChild instanceof NodeWithScope) {
+                ((NodeWithScope<?>) firstChild).setScope(null);
+                return firstChild;
+            } else {
+                return firstChild;
+            }
+        }
     }
 
     public static class RemoveRootNodeResult {
         private Optional<Expression> rootNode;
         private Expression withoutRootNode;
-        private Expression firstChild;
+        private Expression firstChildOfRootNode;
 
         public RemoveRootNodeResult(Optional<Expression> rootNode, Expression withoutRootNode, Expression firstChild) {
             this.rootNode = rootNode;
             this.withoutRootNode = withoutRootNode;
-            this.firstChild = firstChild;
+            this.firstChildOfRootNode = firstChild;
         }
 
         public Optional<Expression> getRootNode() {
@@ -446,8 +476,8 @@ public class DrlxParseUtil {
             return withoutRootNode;
         }
 
-        public Expression getFirstChild() {
-            return firstChild;
+        public Expression getFirstChildOfRootNode() {
+            return firstChildOfRootNode;
         }
 
         @Override
@@ -455,7 +485,7 @@ public class DrlxParseUtil {
             return "RemoveRootNodeResult{" +
                     "rootNode=" + rootNode.map(PrintUtil::printConstraint) +
                     ", withoutRootNode=" + PrintUtil.printConstraint(withoutRootNode) +
-                    ", firstChild=" + PrintUtil.printConstraint(firstChild) +
+                    ", firstChild=" + PrintUtil.printConstraint(firstChildOfRootNode) +
                     '}';
         }
 
@@ -470,12 +500,12 @@ public class DrlxParseUtil {
             RemoveRootNodeResult that = (RemoveRootNodeResult) o;
             return Objects.equals(rootNode.map(PrintUtil::printConstraint), that.rootNode.map(PrintUtil::printConstraint)) &&
                     Objects.equals(PrintUtil.printConstraint(withoutRootNode), PrintUtil.printConstraint(that.withoutRootNode)) &&
-                    Objects.equals(PrintUtil.printConstraint(firstChild), PrintUtil.printConstraint(that.firstChild));
+                    Objects.equals(PrintUtil.printConstraint(firstChildOfRootNode), PrintUtil.printConstraint(that.firstChildOfRootNode));
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(rootNode, withoutRootNode, firstChild);
+            return Objects.hash(rootNode, withoutRootNode, firstChildOfRootNode);
         }
     }
 
@@ -646,7 +676,7 @@ public class DrlxParseUtil {
 
         final Boolean result = predicate.test(expr);
         if(Boolean.TRUE.equals(result)) {
-            return Optional.of(expr);
+            return of(expr);
         } else if (expr instanceof NodeWithTraversableScope) {
             final NodeWithTraversableScope exprWithScope = (NodeWithTraversableScope) expr;
 
@@ -778,7 +808,7 @@ public class DrlxParseUtil {
         if (collect.isEmpty()) {
             return empty();
         } else {
-            return Optional.of(collect.get(collect.size() - 1));
+            return of(collect.get(collect.size() - 1));
         }
     }
 
@@ -808,7 +838,7 @@ public class DrlxParseUtil {
         for(String b : allBindings) {
             Boolean notExisting = duplicates.add(b);
             if(Boolean.FALSE.equals(notExisting)) {
-                return Optional.of(new InvalidExpressionErrorResult(String.format("Duplicate declaration for variable '%s' in the rule '%s'", b, ruleName)));
+                return of(new InvalidExpressionErrorResult(String.format("Duplicate declaration for variable '%s' in the rule '%s'", b, ruleName)));
             }
         }
         return empty();
@@ -866,7 +896,7 @@ public class DrlxParseUtil {
 
     public static Optional<java.lang.reflect.Type> safeResolveType(TypeResolver typeResolver, String typeName) {
         try {
-            return Optional.of(typeResolver.resolveType(typeName));
+            return of(typeResolver.resolveType(typeName));
         } catch (ClassNotFoundException e) {
             return Optional.empty();
         }
