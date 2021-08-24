@@ -435,24 +435,25 @@ public class DrlxParseUtil {
 
             Expression firstChild = optionalFirstChild.get();
 
-            originalExpression.findFirst(Expression.class, e -> e.equals(firstChild)).ifPresent(this::removeScope);
+            Expression withoutRootNode = transformDrlNameExprToNameExpr(originalExpression)
+                    .clone();
 
-            Expression firstChildWithoutScope = removeScope(transformDrlNameExprToNameExpr(firstChild).clone());
+            withoutRootNode.findFirst(Expression.class, e -> e.toString().equals(firstChild.toString()))
+                    .ifPresent(this::removeScope);
+
+            Expression firstChildWithoutScope = transformDrlNameExprToNameExpr(firstChild).clone();
+            removeScope(firstChildWithoutScope);
 
             return new RemoveRootNodeResult(optionalRootNode,
-                                            originalExpression,
+                                            withoutRootNode,
                                             firstChildWithoutScope);
         }
 
-        private Expression removeScope(Expression firstChild) {
+        private void removeScope(Expression firstChild) {
             if (firstChild instanceof NodeWithOptionalScope<?>) {
                 ((NodeWithOptionalScope<?>) firstChild).setScope(null);
-                return firstChild;
             } else if (firstChild instanceof NodeWithScope) {
                 ((NodeWithScope<?>) firstChild).setScope(null);
-                return firstChild;
-            } else {
-                return firstChild;
             }
         }
     }
