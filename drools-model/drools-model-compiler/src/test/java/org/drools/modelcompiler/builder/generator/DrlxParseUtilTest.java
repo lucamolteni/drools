@@ -112,11 +112,20 @@ public class DrlxParseUtilTest {
 
     @Test
     public void removeRootNodeTest() {
+        // Todo add test with casting
         assertEquals(new RemoveRootNodeResult(of(expr("sum")), expr("sum"), expr("sum")), findRemoveRootNodeViaScope(expr("sum")));
         assertEquals(new RemoveRootNodeResult(of(expr("$a")), expr("getAge()"), expr("getAge()")), findRemoveRootNodeViaScope(expr("$a.getAge()")));
         assertEquals(new RemoveRootNodeResult(of(expr("$c")), expr("convert($length)"), expr("convert($length)")), findRemoveRootNodeViaScope(expr("$c.convert($length)")));
         assertEquals(new RemoveRootNodeResult(of(expr("$data")), expr("getValues().get(0)"), expr("getValues()")), findRemoveRootNodeViaScope(expr("$data.getValues().get(0)")));
         assertEquals(new RemoveRootNodeResult(of(expr("$data")), expr("getIndexes().getValues().get(0)"), expr("getIndexes()")), findRemoveRootNodeViaScope(expr("$data.getIndexes().getValues().get(0)")));
+
+        assertEquals(new RemoveRootNodeResult(of(expr("expr(\"exprId\", (java.lang.Object _this) -> id)")), expr("expr(\"exprId\", (java.lang.Object _this) -> id)"), expr("expr(\"exprId\", (java.lang.Object _this) -> id)")),
+                     findRemoveRootNodeViaScope(expr("expr(\"exprId\", (java.lang.Object _this) -> id)")));
+
+
+        assertEquals(new RemoveRootNodeResult(of(expr("$p")), expr("setName($p.getName() + \"30\")"), expr("setName($p.getName() + \"30\")")),
+                     findRemoveRootNodeViaScope(expr("($p).setName($p.getName() + \"30\")")));
+
     }
 
     private Expression expr(String $a) {

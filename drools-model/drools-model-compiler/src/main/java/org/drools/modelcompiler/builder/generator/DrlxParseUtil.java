@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EmptyStackException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -330,7 +331,7 @@ public class DrlxParseUtil {
             if(rootNode.get() instanceof ThisExpr) {
                 rootNode.get().replace(scope);
             } else if (rootNode.get() instanceof NodeWithOptionalScope<?>) {
-                ((NodeWithOptionalScope) rootNode.get()).setScope(scope);
+                ((NodeWithOptionalScope<?>) rootNode.get()).setScope(scope);
             }
             return expr;
         } else {
@@ -371,12 +372,14 @@ public class DrlxParseUtil {
     }
 
     public static RemoveRootNodeResult findRemoveRootNodeViaScope(Expression expr) {
-        return findRootNodeViaScopeRec(expr, null, new FindRootNodeViaScopeResult(expr))
-                .sanitizedExpressionWithRemovedRootResult();
+        // idea: when using a side effect method clone the expression before
+        Expression clonedExpression = transformDrlNameExprToNameExpr(expr).clone();
+        return findRootNodeViaScopeRec(clonedExpression, new FindRootNodeViaScopeResult(clonedExpression))
+                .newExpressionWithRemovedRootResult();
     }
 
     public static Optional<Expression> findRootNodeViaScope(Expression expr) {
-        return findRootNodeViaScopeRec(expr, null, new FindRootNodeViaScopeResult(expr)).optionalRootNode;
+        return findRootNodeViaScopeRec(expr, new FindRootNodeViaScopeResult(expr)).optionalRootNode;
     }
 
     public static RemoveRootNodeResult removeRootNode(Expression expr) {
@@ -384,77 +387,122 @@ public class DrlxParseUtil {
     }
 
     private static FindRootNodeViaScopeResult findRootNodeViaScopeRec(Expression expr,
-                                                                      Expression parent,
                                                                       FindRootNodeViaScopeResult result) {
-
-        if (expr.isArrayAccessExpr()) { // can this be removed?
-            throw new RuntimeException("This doesn't work on arrayAccessExpr convert them to a method call");
+        if(expr instanceof NodeWithOptionalScope<?> && !((NodeWithOptionalScope<?>) expr).getScope().isPresent()) {
+            result.foundRootNode(expr);
+            return result;
         }
 
-        if (expr instanceof NodeWithTraversableScope) {
-            final NodeWithTraversableScope exprWithScope = (NodeWithTraversableScope) expr;
-
-            return exprWithScope.traverseScope()
-                    .map((Expression scope) -> findRootNodeViaScopeRec(scope, expr, result))
-                    .orElseGet(() -> {
-                        return result.foundRootNode(expr, parent);
-                    });
-
-        } else if (expr instanceof EnclosedExpr) {
-            return findRootNodeViaScopeRec(expr.asEnclosedExpr().getInner(), expr, result);
-        } else if (expr instanceof CastExpr) {
-            return findRootNodeViaScopeRec(expr.asCastExpr().getExpression(), expr, result);
-        } else if (expr instanceof ThisExpr) {
-            return result.foundRootNode(expr, parent);
-        } else if (expr instanceof NameExpr) {
-            result.foundRootNode(expr, parent);
+        try {
+            expr.stream(Node.TreeTraversal.POSTORDER)
+                    .filter(e -> e instanceof Expression)
+                    .map(e -> (Expression) e)
+                    .findFirst()
+                    .ifPresent(result::foundRootNode);
+        } catch (EmptyStackException e) {
+            // JP throws ex if stream is empty
         }
-
         return result;
+
+//
+//        if (expr.isArrayAccessExpr()) { // can this be removed?
+//            throw new RuntimeException("This doesn't work on arrayAccessExpr convert them to a method call");
+//        }
+//
+//        if (expr instanceof NodeWithTraversableScope) {
+//            final NodeWithTraversableScope exprWithScope = (NodeWithTraversableScope) expr;
+//
+//            return exprWithScope.traverseScope()
+//                    .map((Expression scope) -> findRootNodeViaScopeRec(scope, result))
+//                    .orElseGet(() -> result.foundRootNode(expr));
+//
+//        } else if (expr instanceof EnclosedExpr) {
+//            return findRootNodeViaScopeRec(expr.asEnclosedExpr().getInner(), result);
+//        } else if (expr instanceof CastExpr) {
+//            return findRootNodeViaScopeRec(expr.asCastExpr().getExpression(), result);
+//        } else if (expr instanceof ThisExpr) {
+//            return result.foundRootNode(expr);
+//        } else if (expr instanceof NameExpr) {
+//            result.foundRootNode(expr);
+//        }
+//
+//        return result;
     }
 
     public static class FindRootNodeViaScopeResult {
         private Optional<Expression> optionalRootNode = Optional.empty();
-        private Optional<Expression> optionalFirstChild = Optional.empty();
         private Expression originalExpression;
 
         public FindRootNodeViaScopeResult(Expression originalExpression) {
             this.originalExpression = originalExpression;
         }
 
-        public FindRootNodeViaScopeResult foundRootNode(Expression rootNode, Expression firstChild) {
+        public FindRootNodeViaScopeResult foundRootNode(Expression rootNode) {
             this.optionalRootNode = Optional.of(rootNode);
-            this.optionalFirstChild = Optional.ofNullable(firstChild);
             return this;
         }
 
-        public RemoveRootNodeResult sanitizedExpressionWithRemovedRootResult() {
-            if(!optionalRootNode.isPresent() || !optionalFirstChild.isPresent()) {
+        /*
+            Creates new expressions, i.e. given
+            `"$data.getValues().get(0)"`
+            It will return
+                `$data` as root
+                `getValues().get(0)` as new expression without the root
+                `getValues()` which is a new expression that is identical to the one having the root as a scope
+         */
+        public RemoveRootNodeResult newExpressionWithRemovedRootResult() {
+            if(!optionalRootNode.isPresent()) {
                 return new RemoveRootNodeResult(of(originalExpression), originalExpression, originalExpression);
             }
+            Expression rootNode = optionalRootNode.get();
 
+            Optional<Expression> optionalFirstChild = rootNode.findAncestor(Expression.class, parent -> {
+                return hasScope(parent, rootNode);
+            });
+            if(!optionalFirstChild.isPresent()) {
+                return new RemoveRootNodeResult(optionalRootNode, rootNode, rootNode);
+            }
             Expression firstChild = optionalFirstChild.get();
 
-            Expression withoutRootNode = transformDrlNameExprToNameExpr(originalExpression)
-                    .clone();
+            if(rootNode.getParentNode().filter(p -> p instanceof EnclosedExpr).isPresent()) {
+                rootNode.getParentNode().ifPresent(Node::remove);
+            } else {
+                rootNode.remove();
+            }
 
-            withoutRootNode.findFirst(Expression.class, e -> e.toString().equals(firstChild.toString()))
-                    .ifPresent(this::removeScope);
-
-            Expression firstChildWithoutScope = transformDrlNameExprToNameExpr(firstChild).clone();
-            removeScope(firstChildWithoutScope);
+            Expression firstChildClone = firstChild.clone();
+            removeScope(firstChildClone);
 
             return new RemoveRootNodeResult(optionalRootNode,
-                                            withoutRootNode,
-                                            firstChildWithoutScope);
+                                            originalExpression,
+                                            firstChildClone);
         }
+    }
 
-        private void removeScope(Expression firstChild) {
-            if (firstChild instanceof NodeWithOptionalScope<?>) {
-                ((NodeWithOptionalScope<?>) firstChild).setScope(null);
-            } else if (firstChild instanceof NodeWithScope) {
-                ((NodeWithScope<?>) firstChild).setScope(null);
-            }
+    public static void removeScope(Expression firstChild) {
+        if (firstChild instanceof NodeWithOptionalScope<?>) {
+            ((NodeWithOptionalScope<?>) firstChild).setScope(null);
+        } else if (firstChild instanceof NodeWithScope) {
+            ((NodeWithScope<?>) firstChild).setScope(null);
+        }
+    }
+
+    public static boolean hasScope(Expression expression, Expression scope) {
+        if (expression instanceof NodeWithOptionalScope<?>) {
+            return ((NodeWithOptionalScope<?>) expression).getScope().filter(
+                    scope1 -> isEqualToConsideringEnclosedExpressions(scope1, scope)
+            ).isPresent();
+        } else if (expression instanceof NodeWithScope) {
+            return isEqualToConsideringEnclosedExpressions(((NodeWithScope<?>) expression).getScope(), scope);
+        }
+        return false;
+    }
+
+    public static boolean isEqualToConsideringEnclosedExpressions(Expression possiblyEnclosedExpression, Expression expression) {
+        if(possiblyEnclosedExpression.isEnclosedExpr()) {
+            return possiblyEnclosedExpression.asEnclosedExpr().getInner().equals(expression);
+        } else {
+            return possiblyEnclosedExpression.equals(expression);
         }
     }
 
