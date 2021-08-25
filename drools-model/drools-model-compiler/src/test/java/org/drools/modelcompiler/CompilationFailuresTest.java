@@ -167,7 +167,7 @@ public class CompilationFailuresTest extends BaseModelTest {
         assertEquals(1, results.getMessages().get(0).getLine());
     }
 
-
+    // TODO luca aggiungi test con argomento
     @Test
     public void testVariableInsideBinding() {
         String str =

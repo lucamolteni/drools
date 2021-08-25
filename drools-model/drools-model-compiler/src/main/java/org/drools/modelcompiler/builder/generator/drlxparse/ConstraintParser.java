@@ -196,6 +196,7 @@ public class ConstraintParser {
     private Optional<DrlxParseFail> validateVariable(Expression drlxExpr, boolean hasBind) {
         // Variables are allowed in `from` and `eval` constraints
         if (!skipVariableValidation && drlxExpr instanceof MethodCallExpr && hasBind) {
+            // TODO usa ogni name expr
             return DrlxParseUtil.findRootNodeViaScope(drlxExpr).flatMap(s -> {
                 String rootNode = s.toString();
                 if(context.hasDeclaration(rootNode)) { // Root node is a variable
