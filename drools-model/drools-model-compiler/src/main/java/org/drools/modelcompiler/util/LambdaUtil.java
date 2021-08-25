@@ -38,7 +38,7 @@ public class LambdaUtil {
         NodeWithOptionalScope<?> newExpr = (NodeWithOptionalScope<?>) removeRootNodeResult.getFirstChildOfRootNode();
 
         newExpr.setScope(l1ExprStmt.getExpression());
-        l1.setBody(new ExpressionStmt(removeRootNodeResult.getWithoutRootNode()));
+        l1.setBody(new ExpressionStmt((Expression) newExpr));
         return l1;
     }
 }
