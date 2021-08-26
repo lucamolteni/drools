@@ -41,7 +41,7 @@ import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExplicitConstructorInvocationStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
-import com.github.javaparser.printer.PrettyPrinterConfiguration;
+import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration;
 import org.drools.mvel.parser.printer.ConstraintPrintVisitor;
 
 import static com.github.javaparser.Problem.PROBLEM_BY_BEGIN_POSITION;
@@ -70,10 +70,10 @@ public final class MvelParser {
     private static ParserConfiguration staticConfiguration = new ParserConfiguration();
 
     static {
-        PrettyPrinterConfiguration prettyPrinterConfiguration = new PrettyPrinterConfiguration();
+        DefaultPrinterConfiguration prettyPrinterConfiguration = new DefaultPrinterConfiguration();
         // This is to support toString() on new Nodes in this parser
-        prettyPrinterConfiguration.setVisitorFactory(ConstraintPrintVisitor::new);
-        Node.setToStringPrettyPrinterConfiguration(prettyPrinterConfiguration);
+//        prettyPrinterConfiguration.setVisitorFactory(ConstraintPrintVisitor::new);
+//        Node.setToStringPrettyPrinterConfiguration(prettyPrinterConfiguration);
     }
 
     /**

@@ -18,7 +18,7 @@
 package org.drools.mvel.parser.printer;
 
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.printer.PrettyPrinterConfiguration;
+import com.github.javaparser.printer.configuration.PrettyPrinterConfiguration;
 
 public class PrintUtil {
 
