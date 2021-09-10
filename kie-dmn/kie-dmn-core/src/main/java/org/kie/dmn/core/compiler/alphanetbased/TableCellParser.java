@@ -64,11 +64,14 @@ public class TableCellParser {
                     tableCells.initialiseOutputColumnsCollection(row.getOutputEntry().size());
                     List<LiteralExpression> outputEntry = row.getOutputEntry();
                     for (int outputColumnIndex = 0; outputColumnIndex < outputEntry.size(); outputColumnIndex++) {
+
+                        TableIndex outputColumnTableIndex = tableIndex.outputTableIndex(outputColumnIndex);
+
                         LiteralExpression outputExpression = outputEntry.get(outputColumnIndex);
                         String outputRawText = outputExpression.getText();
-                        TableIndex outputColumnTableIndex = tableIndex.outputTableIndex(outputColumnIndex);
-                        // TODO DT-ANC can multiple output columns have null names? If so what to put in here?
+
                         String outputColumnName = Optional.ofNullable(decisionTable.getOutput().get(outputColumnIndex).getName()).orElse("");
+
                         TableCell outputCell = tableCellFactory.createOutputCell(outputColumnTableIndex, outputRawText, outputColumnName, columnType);
                         tableCells.addOutputCell(outputCell);
                     }
