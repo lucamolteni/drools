@@ -140,10 +140,15 @@ public class TableCells {
 
         for (int rowIndex = 0; rowIndex < numRows; rowIndex++) {
 
-            AlphaNode previousAlphaNode = null;
+            AlphaNode lastAlphaNodeCreated = null;
             for (int columnIndex = 0; columnIndex < numColumns; columnIndex++) {
                 TableCell tableCell = cells[rowIndex][columnIndex];
-                previousAlphaNode = tableCell.createAlphaNode(alphaNetworkCreation, alphaNetworkBuilderContext, previousAlphaNode);
+                lastAlphaNodeCreated = tableCell.createAlphaNode(alphaNetworkCreation, alphaNetworkBuilderContext, lastAlphaNodeCreated);
+            }
+
+            for (int outputColumnIndex = 0; outputColumnIndex < numOutputColumns; outputColumnIndex++) {
+                TableCell tableOutputCell = outputCells[rowIndex][outputColumnIndex];
+                tableOutputCell.addOutputNode(alphaNetworkCreation, lastAlphaNodeCreated);
             }
 
         }

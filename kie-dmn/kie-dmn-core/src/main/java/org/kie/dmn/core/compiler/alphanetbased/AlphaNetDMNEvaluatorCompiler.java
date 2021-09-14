@@ -85,19 +85,14 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         DMNReteGenerator dmnReteGenerator = new DMNReteGenerator();
         ObjectTypeNode firstObjectTypeNodeOfRete = dmnReteGenerator.createRete(decisionTable, tableCells, decisionTableName);
 
-        System.out.println("Rete 1");
-        ReteDumper.dumpRete((Rete) firstObjectTypeNodeOfRete.getParentObjectSource().getParentObjectSource());
-
 
         // We need the RETE to create the ANC
-        dmnCompiledAlphaNetwork.initRete();
-        ObjectTypeNode firstObjectTypeNodeFromSources = dmnCompiledAlphaNetwork.getObjectTypeNode();
-        System.out.println("Rete 2");
-        ReteDumper.dumpRete((Rete) firstObjectTypeNodeFromSources.getParentObjectSource().getParentObjectSource());
+//        dmnCompiledAlphaNetwork.initRete();
+//        ObjectTypeNode firstObjectTypeNodeFromSources = dmnCompiledAlphaNetwork.getObjectTypeNode();
 
 
         // Generate the ANC
-        ObjectTypeNodeCompiler objectTypeNodeCompiler = new ObjectTypeNodeCompiler(firstObjectTypeNodeFromSources);
+        ObjectTypeNodeCompiler objectTypeNodeCompiler = new ObjectTypeNodeCompiler(firstObjectTypeNodeOfRete);
         CompiledNetworkSource compiledNetworkSource = objectTypeNodeCompiler.generateSource();
         generatedSources.dumpGeneratedAlphaNetwork(compiledNetworkSource);
 

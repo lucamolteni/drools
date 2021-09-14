@@ -241,6 +241,7 @@ public class TableCell {
             alphaNode = alphaNetworkCreation.shareAlphaNode(candidateAlphaNode);
         }
 
+
         return alphaNode;
     }
 
@@ -284,6 +285,10 @@ public class TableCell {
                                                                          methodReference)
         );
         creationStatements.addStatement(resultSinkMethodCallExpr);
+    }
+
+    public void addOutputNode(AlphaNetworkCreation alphaNetworkCreation, AlphaNode lastAlphaNode) {
+        alphaNetworkCreation.addResultSink(lastAlphaNode, tableIndex.rowIndex(), this.columnName, null );
     }
 
     public MethodReferenceExpr createFeelOutputExpression(ClassOrInterfaceDeclaration alphaNetworkCreationClass,

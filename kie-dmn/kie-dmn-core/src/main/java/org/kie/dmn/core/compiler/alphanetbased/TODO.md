@@ -1,12 +1,18 @@
-Istanziare rete network chiamando i metodi di creazione delle RETE durante la generazione
-Far restituire Alpha Node e metodo Java
+## TODO
+
+Istanziare i rule terminal node per far finire la valutazione
 Creare nuova interfaccia per result che non dipenda da ObjectSink
 Inline creazione constraint
-Cambiare creazione output
+Cambiare creazione output (l'output (In questo caso resultCollectorAlphaSink) non ha bisogno di InternalFactHandle factHandle, PropagationContext propagationContext, InternalWorkingMemory workingMemory)
 Aggiungere il metodo di inizializzazione ad ANC
 Parametrizzare ANC in modo da avere un costruttore senza setNetworkNodeReference
 Disabilita generazione di propagateModifyObject
-Spostare 
+Rimuovi codice generato che crea la RETE
+
+## Fatto
+
+Istanziare rete network chiamando i metodi di creazione delle RETE durante la generazione
+Spostare
 
     private boolean evaluateAllTests(PropertyEvaluator propertyEvaluator, CompiledFEELUnaryTests instance, int index, String traceString) {
         return instance.getUnaryTests().stream().anyMatch(t -> {
@@ -29,5 +35,3 @@ Esempio creazione ANC
         resultCollectorAlphaSink11 = alphaNetworkCreation.resultCollector(0, "", context -> R1C1FeelExpression.getInstance().apply(context));
     }
 
-
-l'output (In questo caso resultCollectorAlphaSink) non ha bisogno di InternalFactHandle factHandle, PropagationContext propagationContext, InternalWorkingMemory workingMemory
