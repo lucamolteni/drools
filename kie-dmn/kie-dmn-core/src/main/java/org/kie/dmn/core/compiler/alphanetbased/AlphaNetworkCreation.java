@@ -18,7 +18,6 @@ package org.kie.dmn.core.compiler.alphanetbased;
 
 import java.util.UUID;
 
-import org.drools.ancompiler.InlineableAlphaNode;
 import org.drools.core.reteoo.AlphaNode;
 import org.drools.core.reteoo.ObjectSource;
 import org.drools.core.reteoo.builder.BuildUtils;
@@ -38,7 +37,7 @@ public class AlphaNetworkCreation {
         this.ctx = ctx;
     }
 
-    private int getNextId() {
+    public int getNextId() {
         return ctx.buildContext.getNextId();
     }
 
@@ -76,9 +75,19 @@ public class AlphaNetworkCreation {
                 .createAlphaNode(getNextId(), source,
                                  ctx.buildContext);
 
-        InlineableAlphaNode sharedAlphaNode = buildUtils.attachNode(ctx.buildContext, candidateAlphaNode);
-        System.out.println(String.format("Created Alpha Node id: %s - %s", sharedAlphaNode.getId(), id));
-        return sharedAlphaNode;
+        InlineableAlphaNode alphaNode = buildUtils.attachNode(ctx.buildContext, candidateAlphaNode);
+        System.out.println(String.format("Created Alpha Node id: %s - %s", alphaNode.getId(), id));
+        return alphaNode;
+    }
+
+    /**
+     * IMPORTANT: remember to use the FEEL expression as an Identifier for the same constraint
+     * <p>
+     * Prefix: column name + value
+     */
+    // The Alpha Node will be used to generate the ANC and the LambdaConstraint will be inlined using the Alpha Node Id as a reference
+    public InlineableAlphaNode shareAlphaNode(InlineableAlphaNode candidateAlphaNode) {
+        return buildUtils.attachNode(ctx.buildContext, candidateAlphaNode);
     }
 
     public static <I> AlphaIndexImpl<PropertyEvaluator, I> createIndex(Class<I> indexedClass, Function1<PropertyEvaluator, I> leftExtractor, I rightValue) {

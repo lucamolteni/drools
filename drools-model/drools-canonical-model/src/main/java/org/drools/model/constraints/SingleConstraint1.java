@@ -20,6 +20,7 @@ package org.drools.model.constraints;
 import org.drools.model.Variable;
 import org.drools.model.functions.LambdaPrinter;
 import org.drools.model.functions.Predicate1;
+import org.drools.model.functions.PredicateInformation;
 import org.drools.model.functions.PredicateN;
 import org.drools.model.impl.ModelComponent;
 import org.drools.model.view.Expr1ViewItemImpl;
@@ -39,6 +40,15 @@ public class SingleConstraint1<A> extends AbstractSingleConstraint {
         super(exprId, predicate.predicateInformation());
         this.variable = variable;
         this.predicate = predicate;
+    }
+
+    /** This is useful to generate a constraint that doesn't need to be evaluated but needs to be shared
+     * TODO DT-ANC better comment
+     */
+    public SingleConstraint1(String exprId, PredicateInformation predicateInformation) {
+        super(exprId, predicateInformation);
+        this.variable = null;
+        this.predicate = null;
     }
 
     public SingleConstraint1(Expr1ViewItemImpl<A> expr) {

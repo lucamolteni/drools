@@ -24,6 +24,9 @@ import java.util.Map;
 import org.drools.ancompiler.CompiledNetwork;
 import org.drools.ancompiler.CompiledNetworkSource;
 import org.drools.ancompiler.ObjectTypeNodeCompiler;
+import org.drools.core.reteoo.ObjectTypeNode;
+import org.drools.core.reteoo.Rete;
+import org.drools.core.reteoo.ReteDumper;
 import org.kie.dmn.core.api.DMNExpressionEvaluator;
 import org.kie.dmn.core.ast.DMNBaseNode;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
@@ -78,11 +81,23 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(generatedSources.getAllGeneratedSources(), this.getClass().getClassLoader());
         DMNCompiledAlphaNetwork dmnCompiledAlphaNetwork = generatedSources.newInstanceOfAlphaNetwork(compiledClasses);
 
+
+        DMNReteGenerator dmnReteGenerator = new DMNReteGenerator();
+        ObjectTypeNode firstObjectTypeNodeOfRete = dmnReteGenerator.createRete(decisionTable, tableCells, decisionTableName);
+
+        System.out.println("Rete 1");
+        ReteDumper.dumpRete((Rete) firstObjectTypeNodeOfRete.getParentObjectSource().getParentObjectSource());
+
+
         // We need the RETE to create the ANC
         dmnCompiledAlphaNetwork.initRete();
+        ObjectTypeNode firstObjectTypeNodeFromSources = dmnCompiledAlphaNetwork.getObjectTypeNode();
+        System.out.println("Rete 2");
+        ReteDumper.dumpRete((Rete) firstObjectTypeNodeFromSources.getParentObjectSource().getParentObjectSource());
+
 
         // Generate the ANC
-        ObjectTypeNodeCompiler objectTypeNodeCompiler = new ObjectTypeNodeCompiler(dmnCompiledAlphaNetwork.getObjectTypeNode());
+        ObjectTypeNodeCompiler objectTypeNodeCompiler = new ObjectTypeNodeCompiler(firstObjectTypeNodeFromSources);
         CompiledNetworkSource compiledNetworkSource = objectTypeNodeCompiler.generateSource();
         generatedSources.dumpGeneratedAlphaNetwork(compiledNetworkSource);
 

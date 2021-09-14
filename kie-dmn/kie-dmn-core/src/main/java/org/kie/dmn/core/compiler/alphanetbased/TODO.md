@@ -24,7 +24,7 @@ nella ANC invece che in ogni classe di test
 Esempio creazione ANC
 
     private boolean setNetworkNode0(org.drools.core.common.NetworkNode node) {
-        lambdaConstraint4 = alphaNetworkCreation.createConstraint("Age_62_6118", p -> evaluateAllTests(p, UnaryTestR1C1.getInstance(), 0, "trace"), null).getLambdaConstraint();
+        lambdaConstraint4 = ~~alphaNetworkCreation.createConstraint("Age_62_6118", p -> evaluateAllTests(p, UnaryTestR1C1.getInstance(), 0, "trace"), null).getLambdaConstraint();~~
 
         resultCollectorAlphaSink11 = alphaNetworkCreation.resultCollector(0, "", context -> R1C1FeelExpression.getInstance().apply(context));
     }

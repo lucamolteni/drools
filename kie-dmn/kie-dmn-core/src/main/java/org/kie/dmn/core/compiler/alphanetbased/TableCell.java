@@ -123,6 +123,16 @@ public class TableCell {
         return indexName;
     }
 
+    private Index createIndex() {
+        if (type.equals(BuiltInType.NUMBER)) {
+            return AlphaNetworkCreation.createIndex(BigDecimal.class, x -> (BigDecimal) x.getValue(tableIndex.columnIndex()), null);
+        } else if (type.equals(BuiltInType.STRING)) {
+            return AlphaNetworkCreation.createIndex(String.class, x -> (String) x.getValue(tableIndex.columnIndex()), null);
+        } else {
+            throw new UnsupportedOperationException("Unknown Index Type");
+        }
+    }
+
     private Expression createIndexMethodExpression() {
         if (type.equals(BuiltInType.NUMBER)) {
             return createBigDecimalIndex();
@@ -198,6 +208,40 @@ public class TableCell {
         stmt.addStatement(expr);
 
         return alphaNodeName;
+    }
+
+    public AlphaNode createAlphaNode(AlphaNetworkCreation alphaNetworkCreation, AlphaNetworkBuilderContext alphaNetworkBuilderContext, AlphaNode previousAlphaNode) {
+
+        // This is used for Alpha Sharing. It needs to have the column name to avoid collisions with same test in other cells
+        String constraintIdentifier = CodegenStringUtil.escapeIdentifier(columnName + input);
+
+        AlphaNode alphaNode;
+        if (tableIndex.isFirstColumn()) {
+            Index index = createIndex();
+            InlineableAlphaNode candidateAlphaNode = InlineableAlphaNode.createBuilder()
+                    .withConstraint(constraintIdentifier, null, index, alphaNetworkBuilderContext.variable, alphaNetworkBuilderContext.declaration)
+                    .withFeelConstraint(classNameWithPackage, tableIndex.columnIndex(), "trace String")
+                    .createAlphaNode(alphaNetworkCreation.getNextId(),
+                                     alphaNetworkBuilderContext.otn,
+                                     alphaNetworkBuilderContext.buildContext);
+
+            alphaNode = alphaNetworkCreation.shareAlphaNode(candidateAlphaNode);
+        } else {
+            if(previousAlphaNode == null) {
+                throw new RuntimeException("Need a previous Alpha Node");
+            }
+
+            InlineableAlphaNode candidateAlphaNode = InlineableAlphaNode.createBuilder()
+                    .withConstraint(constraintIdentifier, null, null, alphaNetworkBuilderContext.variable, alphaNetworkBuilderContext.declaration)
+                    .withFeelConstraint(classNameWithPackage, tableIndex.columnIndex(), "trace String")
+                    .createAlphaNode(alphaNetworkCreation.getNextId(),
+                                     previousAlphaNode,
+                                     alphaNetworkBuilderContext.buildContext);
+
+            alphaNode = alphaNetworkCreation.shareAlphaNode(candidateAlphaNode);
+        }
+
+        return alphaNode;
     }
 
     private NameExpr alphaNodeCreationName() {

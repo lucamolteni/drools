@@ -25,6 +25,8 @@ import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.ConstructorDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import org.drools.core.reteoo.AlphaNode;
+import org.drools.core.reteoo.ObjectTypeNode;
 
 import static org.kie.dmn.feel.codegen.feel11.CodegenStringUtil.findMethodTemplate;
 import static org.kie.dmn.feel.codegen.feel11.CodegenStringUtil.parseJavaClassTemplateFromResources;
@@ -131,6 +133,21 @@ public class TableCells {
             alphaNetworkStatements.addStatement(StaticJavaParser.parseExpression(newAlphaNetworkClass));
 
         }
+    }
+
+    public ObjectTypeNode createRete(AlphaNetworkBuilderContext alphaNetworkBuilderContext) {
+        AlphaNetworkCreation alphaNetworkCreation = new AlphaNetworkCreation(alphaNetworkBuilderContext);
+
+        for (int rowIndex = 0; rowIndex < numRows; rowIndex++) {
+
+            AlphaNode previousAlphaNode = null;
+            for (int columnIndex = 0; columnIndex < numColumns; columnIndex++) {
+                TableCell tableCell = cells[rowIndex][columnIndex];
+                previousAlphaNode = tableCell.createAlphaNode(alphaNetworkCreation, alphaNetworkBuilderContext, previousAlphaNode);
+            }
+
+        }
+        return alphaNetworkBuilderContext.otn;
     }
 
     public void addColumnValidationStatements(BlockStmt validationStatements, GeneratedSources allGeneratedSources) {
