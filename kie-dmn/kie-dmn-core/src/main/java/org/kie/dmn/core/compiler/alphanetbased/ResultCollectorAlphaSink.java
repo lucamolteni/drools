@@ -16,6 +16,9 @@
 
 package org.kie.dmn.core.compiler.alphanetbased;
 
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import org.drools.ancompiler.Inlineable;
+import org.drools.ancompiler.ResultCollectorSink;
 import org.drools.core.common.InternalFactHandle;
 import org.drools.core.common.InternalWorkingMemory;
 import org.drools.core.reteoo.LeftInputAdapterNode;
@@ -27,7 +30,8 @@ import org.drools.model.functions.Function1;
 import org.drools.model.functions.Predicate1;
 import org.kie.dmn.feel.lang.EvaluationContext;
 
-public class ResultCollectorAlphaSink extends LeftInputAdapterNode {
+public class ResultCollectorAlphaSink extends LeftInputAdapterNode implements ResultCollectorSink,
+                                                                              Inlineable {
 
     private final int row;
     private final String columnName;
@@ -60,5 +64,15 @@ public class ResultCollectorAlphaSink extends LeftInputAdapterNode {
     @Override
     public void byPassModifyToBetaNode(InternalFactHandle factHandle, ModifyPreviousTuples modifyPreviousTuples, PropagationContext context, InternalWorkingMemory workingMemory) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public MethodCallExpr createJavaMethod() {
+        return null;
+    }
+
+    @Override
+    public void collectObject() {
+
     }
 }
