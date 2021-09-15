@@ -112,7 +112,7 @@ public class InlineFieldReferenceInitHandler {
 
         MethodDeclaration switchMethod = new MethodDeclaration(nodeList(Modifier.privateModifier()),
                                                                setFieldNode,
-                                                               PrimitiveType.booleanType(),
+                                                               new VoidType(),
                                                                nodeParameter()
         );
 

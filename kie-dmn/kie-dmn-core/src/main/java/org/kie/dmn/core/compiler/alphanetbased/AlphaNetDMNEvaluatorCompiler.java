@@ -21,6 +21,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.FieldDeclaration;
+import com.github.javaparser.ast.body.VariableDeclarator;
 import org.drools.ancompiler.CompiledNetwork;
 import org.drools.ancompiler.CompiledNetworkSource;
 import org.drools.ancompiler.ObjectTypeNodeCompiler;
@@ -42,6 +46,7 @@ import org.kie.memorycompiler.KieMemoryCompiler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+// TODO DT-ANC rename as it's too similar do DMNAlphaNetworkCompiler
 public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
 
     static final Logger logger = LoggerFactory.getLogger(AlphaNetDMNEvaluatorCompiler.class);
@@ -77,10 +82,6 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         DMNAlphaNetworkCompiler dmnAlphaNetworkCompiler = new DMNAlphaNetworkCompiler();
         GeneratedSources generatedSources = dmnAlphaNetworkCompiler.generateSourceCode(decisionTable, tableCells, decisionTableName, allGeneratedSources);
 
-        // Instantiate Alpha Network
-        Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(generatedSources.getAllGeneratedSources(), this.getClass().getClassLoader());
-        DMNCompiledAlphaNetwork dmnCompiledAlphaNetwork = generatedSources.newInstanceOfAlphaNetwork(compiledClasses);
-
 
         DMNReteGenerator dmnReteGenerator = new DMNReteGenerator();
         ObjectTypeNode firstObjectTypeNodeOfRete = dmnReteGenerator.createRete(decisionTable, tableCells, decisionTableName);
@@ -93,15 +94,24 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
 
         // Generate the ANC TODO DT-ANC remove boolean
         ObjectTypeNodeCompiler objectTypeNodeCompiler = new ObjectTypeNodeCompiler(firstObjectTypeNodeOfRete, true);
+        VariableDeclarator variableDeclarator = new VariableDeclarator(StaticJavaParser.parseType(AlphaNetworkBuilderContext.class.getCanonicalName()), "ctx");
+        objectTypeNodeCompiler.addAdditionalFields(new FieldDeclaration(NodeList.nodeList(), NodeList.nodeList(variableDeclarator)));
         CompiledNetworkSource compiledNetworkSource = objectTypeNodeCompiler.generateSource();
         generatedSources.dumpGeneratedAlphaNetwork(compiledNetworkSource);
 
         // Second compilation, this time for the generated ANC sources
-        Map<String, Class<?>> compiledANC = KieMemoryCompiler.compile(Collections.singletonMap(
-                compiledNetworkSource.getName(), compiledNetworkSource.getSource()), this.getRootClassLoader());
+//        Map<String, Class<?>> compiledANC = KieMemoryCompiler.compile(Collections.singletonMap(
+//                compiledNetworkSource.getName(), compiledNetworkSource.getSource()), this.getRootClassLoader());
 
-        Class<?> aClass = compiledANC.get(compiledNetworkSource.getName());
+        generatedSources.addNewSourceClass(compiledNetworkSource.getName(), compiledNetworkSource.getSource());
+
+        // Compile everything
+        Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(generatedSources.getAllGeneratedSources(), this.getClass().getClassLoader());
+        DMNCompiledAlphaNetwork dmnCompiledAlphaNetwork = generatedSources.newInstanceOfAlphaNetwork(compiledClasses);
+
+        Class<?> aClass = compiledClasses.get(compiledNetworkSource.getName());
         CompiledNetwork compiledAlphaNetwork = compiledNetworkSource.createInstanceAndSet(aClass);
+        compiledAlphaNetwork.init(new AlphaNetworkBuilderContext(new ResultCollector()));
         dmnCompiledAlphaNetwork.setCompiledAlphaNetwork(compiledAlphaNetwork);
 
         // FeelDecisionTable is used at runtime to evaluate Hit Policy / Output values

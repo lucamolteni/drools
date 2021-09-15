@@ -18,12 +18,26 @@ package org.drools.ancompiler;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Modifier;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.FieldDeclaration;
+import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.body.Parameter;
+import com.github.javaparser.ast.body.VariableDeclarator;
+import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.type.Type;
+import com.github.javaparser.ast.type.VoidType;
 import org.drools.core.InitialFact;
 import org.drools.core.base.ClassObjectType;
 import org.drools.core.reteoo.ObjectTypeNode;
@@ -31,6 +45,9 @@ import org.drools.core.reteoo.Rete;
 import org.drools.core.util.index.AlphaRangeIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.github.javaparser.StaticJavaParser.parseClassOrInterfaceType;
+import static com.github.javaparser.StaticJavaParser.parseType;
 
 public class ObjectTypeNodeCompiler {
 
@@ -59,6 +76,10 @@ public class ObjectTypeNodeCompiler {
     // TODO DT-ANC avoid using a boolean
     private boolean shouldInline;
 
+    /* In case additional fields are needed, will be initialised in order in initAdditionalFields */
+    private List<FieldDeclaration> additionalFields = new ArrayList<>();
+
+
     public ObjectTypeNodeCompiler(ObjectTypeNode objectTypeNode) {
         this(objectTypeNode, false);
     }
@@ -77,6 +98,10 @@ public class ObjectTypeNodeCompiler {
                 , otnHash);
     }
 
+    public void addAdditionalFields(FieldDeclaration additionalFieldDeclarations) {
+        this.additionalFields.add(additionalFieldDeclarations);
+    }
+
     public CompiledNetworkSource generateSource() {
         createClassDeclaration();
 
@@ -93,6 +118,8 @@ public class ObjectTypeNodeCompiler {
             logger.warn("Alpha Network Compiler with multiple Indexable Constraints is not supported, reverting to non hashed-ANC. This might be slower ");
             parser.setTraverseHashedAlphaNodes(false);
         }
+
+        createAdditionalFields(builder);
 
         // create declarations
         DeclarationsHandler declarations = new DeclarationsHandler(builder);
@@ -146,6 +173,34 @@ public class ObjectTypeNodeCompiler {
                 getSourceName(),
                 objectTypeNode,
                 rangeIndexDeclarationMap);
+    }
+
+    // TODO DT-ANC move this outside?
+    private void createAdditionalFields(StringBuilder builder) {
+        for(FieldDeclaration fd : additionalFields) {
+            builder.append(fd.toString());
+        }
+
+        MethodDeclaration initMethod = new MethodDeclaration();
+        initMethod.setModifiers(NodeList.nodeList(Modifier.publicModifier()));
+        initMethod.setType(new VoidType());
+        initMethod.setName("init");
+
+        Parameter args = new Parameter(parseType("Object"), "args");
+        args.setVarArgs(true);
+        initMethod.setParameters(NodeList.nodeList(args));
+
+        BlockStmt initMethodStatements = new BlockStmt();
+        for (int i = 0, additionalFieldsSize = additionalFields.size(); i < additionalFieldsSize; i++) {
+            FieldDeclaration fd = additionalFields.get(i);
+            VariableDeclarator fieldType = fd.getVariables().iterator().next();
+            String fieldInitFromVarargs = String.format("%s = (%s)%s;", fieldType.getName(), fieldType.getType(), String.format("args[%d]", i));
+            Statement initStatement = StaticJavaParser.parseStatement(fieldInitFromVarargs);
+            initMethodStatements.addStatement(initStatement);
+        }
+        initMethod.setBody(initMethodStatements);
+
+        builder.append(initMethod);
     }
 
     /**

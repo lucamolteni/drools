@@ -100,9 +100,10 @@ public abstract class CompiledNetwork implements ObjectSinkPropagator {
     public final void setObjectTypeNode(final ObjectTypeNode objectTypeNode) {
         this.objectTypeNode = objectTypeNode;
 
-        NodeReferenceSetter setter = new NodeReferenceSetter();
-        ObjectTypeNodeParser parser = new ObjectTypeNodeParser(objectTypeNode);
-        parser.accept(setter);
+        // TODO DT-ANC no need for this if inlining - parametrise this
+//        NodeReferenceSetter setter = new NodeReferenceSetter();
+//        ObjectTypeNodeParser parser = new ObjectTypeNodeParser(objectTypeNode);
+//        parser.accept(setter);
     }
 
     public void setNetwork(ObjectTypeNode objectTypeNode) {
@@ -210,4 +211,6 @@ public abstract class CompiledNetwork implements ObjectSinkPropagator {
     public void doUnlinkRiaNode(InternalWorkingMemory wm) {
         originalSinkPropagator.doUnlinkRiaNode(wm);
     }
+
+    public abstract void init(Object... args);
 }

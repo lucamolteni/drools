@@ -77,8 +77,7 @@ public class InlineableAlphaNode extends AlphaNode implements ANCInlineable {
 
         public Builder withFeelConstraint(String feelConstraintTest, int index, String traceString) {
             // i.e. InlineableAlphaNode.Builder
-            // .createConstraint("Age_62_6118", p -> evaluateAllTests(p, UnaryTestR1C1.getInstance(), 0, "trace"), null)
-            // ctx.otn, "Age_62_6118", this::testR1C1, indexR1C1
+            // .createConstraint("Age_62_6118", p -> evaluateAllTests(p, UnaryTestR1C1.getInstance(), 0, "trace"), null, ctx.variable, ctx.declaration)
 
             methodCallExpr = new MethodCallExpr(new NameExpr(Builder.class.getCanonicalName()), "createConstraint");
 
@@ -97,8 +96,11 @@ public class InlineableAlphaNode extends AlphaNode implements ANCInlineable {
             // index lambda
             methodCallExpr.addArgument(new NullLiteralExpr());
 
+            // variable
+            methodCallExpr.addArgument(new NameExpr("ctx.variable"));
 
-
+            // declaration
+            methodCallExpr.addArgument(new NameExpr("ctx.declaration"));
 
 
             return this;
