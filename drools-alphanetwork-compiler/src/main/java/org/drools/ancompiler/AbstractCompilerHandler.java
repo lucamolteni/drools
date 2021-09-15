@@ -44,7 +44,14 @@ abstract class AbstractCompilerHandler extends NetworkHandlerAdaptor {
 
     protected static Class<?> getVariableType(Sink sink) {
 
+        if(sinkIsResultCollector(sink)) {
+            return ResultCollectorSink.class;
+        }
         return sink.getClass();
+    }
+
+    protected static boolean sinkIsResultCollector(Sink sink) {
+        return sink instanceof ResultCollectorSink;
     }
 
     protected static String getVariableName(AlphaNode alphaNode) {

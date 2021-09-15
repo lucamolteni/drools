@@ -2,6 +2,7 @@
 
 Istanziare i rule terminal node per far finire la valutazione
 Rimetti il dummy alpha node
+Rimuovi da ANC     private org.drools.core.rule.ContextEntry contextEntry4;
 Creare nuova interfaccia per result che non dipenda da ObjectSink
 Inline creazione constraint
 Cambiare creazione output (l'output (In questo caso resultCollectorAlphaSink) non ha bisogno di InternalFactHandle factHandle, PropagationContext propagationContext, InternalWorkingMemory workingMemory)
