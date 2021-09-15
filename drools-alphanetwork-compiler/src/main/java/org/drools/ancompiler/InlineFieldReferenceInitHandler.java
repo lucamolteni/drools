@@ -25,6 +25,7 @@ import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.BooleanLiteralExpr;
+import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.SimpleName;
@@ -53,12 +54,11 @@ import static org.drools.ancompiler.AbstractCompilerHandler.getVariableType;
 public class InlineFieldReferenceInitHandler {
 
     private static final String PARAM_TYPE = NetworkNode.class.getName();
-    private static final String METHOD_NAME = "setNetworkNodeReference";
-    private static final String PARAM_NAME = "node";
+    private static final String METHOD_NAME = "initNodes";
 
     private static final String statementCall = "        " +
             " {" +
-            "   setNetworkNodeN(node);\n" +
+            "   initNodeN();\n" +
             "}";
 
     private final List<NetworkNode> nodes;
@@ -72,10 +72,9 @@ public class InlineFieldReferenceInitHandler {
         List<MethodDeclaration> allMethods = new ArrayList<>();
 
         MethodDeclaration methodDeclaration = new MethodDeclaration(
-                nodeList(Modifier.protectedModifier()),
-                METHOD_NAME,
+                nodeList(Modifier.publicModifier()),
                 new VoidType(),
-                nodeParameter()
+                METHOD_NAME
         );
 
         allMethods.add(methodDeclaration);
@@ -95,25 +94,20 @@ public class InlineFieldReferenceInitHandler {
         }
     }
 
-    private NodeList<Parameter> nodeParameter() {
-        return nodeList(new Parameter(parseType(PARAM_TYPE), "node"));
-    }
-
     private MethodDeclaration generateSwitchForSubNodes(int partitionIndex,
                                                         List<NetworkNode> subNodes,
                                                         BlockStmt setNetworkNodeReferenceBody) {
-        String setFieldNode = "setNetworkNode" + partitionIndex;
+        String setFieldNode = "initNodeN" + partitionIndex;
 
         BlockStmt setFieldStatementCall = StaticJavaParser.parseBlock(statementCall);
-        setFieldStatementCall.findAll(MethodCallExpr.class, mc -> mc.getNameAsString().equals("setNetworkNodeN"))
-                .forEach(n -> n.setName(new SimpleName("setNetworkNode" + partitionIndex)));
+        setFieldStatementCall.findAll(MethodCallExpr.class, mc -> mc.getNameAsString().equals("initNodeN"))
+                .forEach(n -> n.setName(new SimpleName("initNodeN" + partitionIndex)));
 
         setFieldStatementCall.getStatements().forEach(setNetworkNodeReferenceBody::addStatement);
 
-        MethodDeclaration switchMethod = new MethodDeclaration(nodeList(Modifier.privateModifier()),
-                                                               setFieldNode,
+        MethodDeclaration switchMethod = new MethodDeclaration(nodeList(Modifier.publicModifier()),
                                                                new VoidType(),
-                                                               nodeParameter()
+                                                               setFieldNode
         );
 
         BlockStmt statements = switchMethod.getBody().orElseThrow(() -> new RuntimeException("No"));
@@ -128,7 +122,7 @@ public class InlineFieldReferenceInitHandler {
             String assignStatementString;
             if(n instanceof ANCInlineable) {
                 // TODO DT-ANC avoid toString() and reparse it
-                MethodCallExpr javaMethod = ((ANCInlineable) n).createJavaMethod();
+                Expression javaMethod = ((ANCInlineable) n).createJavaMethod();
 
                 String variableName;
                 if(n instanceof AlphaNode) {
@@ -139,33 +133,12 @@ public class InlineFieldReferenceInitHandler {
 
                 assignStatementString = String.format("%s = %s;", variableName, javaMethod);
             } else if (n instanceof AlphaNode) {
-                assignStatementString = getVariableAssignmentStatementAlphaNode((AlphaNode) n);
+                assignStatementString = "";
             } else {
-                assignStatementString = getVariableAssignmentStatement(n);
+                assignStatementString = "";
             }
             Statement assignStmt = parseStatement(assignStatementString);
             statements.addStatement(assignStmt);
         }
-    }
-
-    private static String getVariableAssignmentStatement(NetworkNode sink) {
-        Class<?> variableType = getVariableType((Sink) sink);
-        String assignmentStatement;
-
-        // for non alphas, we just need to cast to the right variable type
-        assignmentStatement = getVariableName((Sink) sink) + " = (" + variableType.getCanonicalName() + ")" + InlineFieldReferenceInitHandler.PARAM_NAME + ";";
-
-        return assignmentStatement;
-    }
-
-    private static String getVariableAssignmentStatementAlphaNode(AlphaNode alphaNode) {
-        Class<?> variableType = getVariableType(alphaNode);
-        String assignmentStatement;
-
-        // we need the constraint for an alpha node assignment, so generate a cast, plus the method call to get
-        // the constraint
-        assignmentStatement = String.format("%s = (%s) ((%s)%s).getConstraint();", getVariableName(alphaNode), variableType.getName(), AlphaNode.class.getName(), InlineFieldReferenceInitHandler.PARAM_NAME);
-
-        return assignmentStatement;
     }
 }

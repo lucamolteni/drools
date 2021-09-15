@@ -56,7 +56,7 @@ public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetwork {
 
         Index index3 = createIndex(String.class, x -> (String) x.getValue(0), "dummy");
         AlphaNode alphaDummy = alphaNetworkCreation.createAlphaNode(builderContext.otn, x -> false, index3);
-        alphaNetworkCreation.addResultSink(alphaDummy, 0, "dummy", p -> true);
+        alphaNetworkCreation.addResultSink(alphaDummy, 0, "dummy", p -> true, "");
     }
 
     @Override
@@ -98,6 +98,8 @@ public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetwork {
     public Object evaluate(EvaluationContext evaluationContext, DecisionTable decisionTable) {
         // Clean previous results
         resultCollector.clearResults();
+
+        compiledNetwork.initNodes();
 
         // Fire rete network
         compiledNetwork.propagateAssertObject(new DefaultFactHandle(getOrCreatePropertyEvaluator(evaluationContext)), null, null);

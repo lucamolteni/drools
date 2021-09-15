@@ -50,14 +50,19 @@ public class AlphaNetworkCreation {
         return createAlphaNode(source, UUID.randomUUID().toString(), predicate, null);
     }
 
-    public <T extends Class<?>> void  addResultSink(ObjectSource source, int row, String columnName, Function1<EvaluationContext, Object> outputEvaluationFunction) {
+    public <T extends Class<?>> void  addResultSink(ObjectSource source,
+                                                    int row,
+                                                    String columnName,
+                                                    Function1<EvaluationContext, Object> outputEvaluationFunction,
+                                                    String outputEvaluationClass) {
         ResultCollectorAlphaSink objectSink = new ResultCollectorAlphaSink(getNextId(),
                                                                            source,
                                                                            ctx.buildContext,
                                                                            row,
                                                                            columnName,
                                                                            ctx.resultCollector,
-                                                                           outputEvaluationFunction
+                                                                           outputEvaluationFunction,
+                                                                           outputEvaluationClass
         );
         source.addObjectSink(objectSink);
     }

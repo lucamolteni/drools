@@ -282,13 +282,14 @@ public class TableCell {
                                                                          new NameExpr(lastAlphaNodeName),
                                                                          new IntegerLiteralExpr(tableIndex.rowIndex()),
                                                                          new StringLiteralExpr(this.columnName),
-                                                                         methodReference)
+                                                                         methodReference,
+                                                                         new StringLiteralExpr(classNameWithPackage))
         );
         creationStatements.addStatement(resultSinkMethodCallExpr);
     }
 
     public void addOutputNode(AlphaNetworkCreation alphaNetworkCreation, AlphaNode lastAlphaNode) {
-        alphaNetworkCreation.addResultSink(lastAlphaNode, tableIndex.rowIndex(), this.columnName, null );
+        alphaNetworkCreation.addResultSink(lastAlphaNode, tableIndex.rowIndex(), this.columnName, null, classNameWithPackage);
     }
 
     public MethodReferenceExpr createFeelOutputExpression(ClassOrInterfaceDeclaration alphaNetworkCreationClass,

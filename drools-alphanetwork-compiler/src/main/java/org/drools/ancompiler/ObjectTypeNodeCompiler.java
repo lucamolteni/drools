@@ -26,7 +26,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.github.javaparser.StaticJavaParser;
-import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.FieldDeclaration;
@@ -35,8 +34,6 @@ import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.type.VoidType;
 import org.drools.core.InitialFact;
 import org.drools.core.base.ClassObjectType;
@@ -46,7 +43,6 @@ import org.drools.core.util.index.AlphaRangeIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.github.javaparser.StaticJavaParser.parseClassOrInterfaceType;
 import static com.github.javaparser.StaticJavaParser.parseType;
 
 public class ObjectTypeNodeCompiler {
@@ -139,6 +135,7 @@ public class ObjectTypeNodeCompiler {
 
         // TODO DT-ANC avoid using a boolean
         if(shouldInline) {
+            addEmptySetNetworkReference(builder);
             InlineFieldReferenceInitHandler partitionedSwitch = new InlineFieldReferenceInitHandler(nodeCollectors.getNodes());
             partitionedSwitch.emitCode(builder);
         } else {
@@ -173,6 +170,13 @@ public class ObjectTypeNodeCompiler {
                 getSourceName(),
                 objectTypeNode,
                 rangeIndexDeclarationMap);
+    }
+
+    private void addEmptySetNetworkReference(StringBuilder builder) {
+        builder.append("   @Override\n" +
+                               "    protected void setNetworkNodeReference(org.drools.core.common.NetworkNode networkNode) {\n" +
+                               "        \n" +
+                               "    }");
     }
 
     // TODO DT-ANC move this outside?
