@@ -1,15 +1,16 @@
 ## TODO
 
+Trova un metodo per aggiungere campi arbitrari alla ANC
+Inline creazione constraint
+Inline output
 Istanziare i rule terminal node per far finire la valutazione
 Rimetti il dummy alpha node
-Rimuovi da ANC     private org.drools.core.rule.ContextEntry contextEntry4;
-Creare nuova interfaccia per result che non dipenda da ObjectSink
-Inline creazione constraint
-Cambiare creazione output (l'output (In questo caso resultCollectorAlphaSink) non ha bisogno di InternalFactHandle factHandle, PropagationContext propagationContext, InternalWorkingMemory workingMemory)
-Aggiungere il metodo di inizializzazione ad ANC
+Aggiungi gli indici al constraint
+Rimuovi da ANC private org.drools.core.rule.ContextEntry contextEntry4;
 Parametrizzare ANC in modo da avere un costruttore senza setNetworkNodeReference
 Disabilita generazione di propagateModifyObject
 Rimuovi codice generato che crea la RETE
+Aggiungere il metodo di inizializzazione ad ANC
 
 ## Fatto
 
@@ -37,3 +38,5 @@ Esempio creazione ANC
         resultCollectorAlphaSink11 = alphaNetworkCreation.resultCollector(0, "", context -> R1C1FeelExpression.getInstance().apply(context));
     }
 
+Creare nuova interfaccia per result che non dipenda da ObjectSink
+Cambiare creazione output (l'output (In questo caso resultCollectorAlphaSink) non ha bisogno di InternalFactHandle factHandle, PropagationContext propagationContext, InternalWorkingMemory workingMemory)

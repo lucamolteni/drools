@@ -56,7 +56,15 @@ public class ObjectTypeNodeCompiler {
 
     private static final Logger logger = LoggerFactory.getLogger(ObjectTypeNodeCompiler.class);
 
+    // TODO DT-ANC avoid using a boolean
+    private boolean shouldInline;
+
     public ObjectTypeNodeCompiler(ObjectTypeNode objectTypeNode) {
+        this(objectTypeNode, false);
+    }
+
+    public ObjectTypeNodeCompiler(ObjectTypeNode objectTypeNode, boolean shouldInline) {
+        this.shouldInline = shouldInline;
         this.objectTypeNode = objectTypeNode;
 
         ClassObjectType classObjectType = (ClassObjectType) objectTypeNode.getObjectType();
@@ -101,8 +109,15 @@ public class ObjectTypeNodeCompiler {
         NodeCollectorHandler nodeCollectors = new NodeCollectorHandler();
         parser.accept(nodeCollectors);
 
-        SetNodeReferenceHandler partitionedSwitch = new SetNodeReferenceHandler(nodeCollectors.getNodes());
-        partitionedSwitch.emitCode(builder);
+
+        // TODO DT-ANC avoid using a boolean
+        if(shouldInline) {
+            InlineFieldReferenceInitHandler partitionedSwitch = new InlineFieldReferenceInitHandler(nodeCollectors.getNodes());
+            partitionedSwitch.emitCode(builder);
+        } else {
+            SetNodeReferenceHandler partitionedSwitch = new SetNodeReferenceHandler(nodeCollectors.getNodes());
+            partitionedSwitch.emitCode(builder);
+        }
 
         // create assert method
         AssertHandler assertHandler = new AssertHandler(className, !hashedAlphaDeclarations.isEmpty());

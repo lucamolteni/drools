@@ -1,10 +1,13 @@
 package org.kie.dmn.core.compiler.alphanetbased;
 
+import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.LambdaExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.NullLiteralExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import org.drools.ancompiler.ANCInlineable;
 import org.drools.core.reteoo.AlphaNode;
@@ -34,30 +37,35 @@ public class InlineableAlphaNode extends AlphaNode implements ANCInlineable {
     }
 
     public static class Builder {
+
         LambdaConstraint constraint;
         MethodCallExpr methodCallExpr;
         String id;
 
         public <T> Builder withConstraint(
-                                        String id,
-                                      Predicate1<T> predicate, // TODO DT-ANC this is bound to be removed
-                                      Index index,
-                                      Variable<T> variable,
-                                      Declaration declaration) {
+                String id,
+                Predicate1<T> predicate, // TODO DT-ANC this is bound to be removed
+                Index index,
+                Variable<T> variable,
+                Declaration declaration) {
             constraint = createConstraint(id, predicate, index, variable, declaration);
             this.id = id;
             return this;
         }
-        public static <T extends Object> LambdaConstraint createConstraint(String id,
-                                                                    Predicate1<T> predicate,
-                                                                    Index index,
-                                                                    Variable<T> variable,
-                                                                    Declaration declaration) {
+
+        public static <T extends Object> LambdaConstraint createConstraint(
+                String id,
+                Predicate1<T> predicate,
+                Index index,
+                Variable<T> variable,
+                Declaration declaration
+        ) {
             // TODO DT-ANC need these twos to keep the two code paths otherwise only the second
             SingleConstraint1<T> constraint;
-            if(predicate != null) {
+            if (predicate != null) {
                 constraint = new SingleConstraint1<T>(id, variable, predicate);
             } else {
+                // TODO DT-ANC predicate information
                 PredicateInformation predicateInformation = PredicateInformation.EMPTY_PREDICATE_INFORMATION;
                 constraint = new SingleConstraint1<T>(id, predicateInformation);
             }
@@ -70,33 +78,42 @@ public class InlineableAlphaNode extends AlphaNode implements ANCInlineable {
         public Builder withFeelConstraint(String feelConstraintTest, int index, String traceString) {
             // i.e. InlineableAlphaNode.Builder
             // .createConstraint("Age_62_6118", p -> evaluateAllTests(p, UnaryTestR1C1.getInstance(), 0, "trace"), null)
+            // ctx.otn, "Age_62_6118", this::testR1C1, indexR1C1
 
             methodCallExpr = new MethodCallExpr(new NameExpr(Builder.class.getCanonicalName()), "createConstraint");
 
+            // p
             methodCallExpr.addArgument(new StringLiteralExpr(id));
 
-            Parameter parameter = new Parameter();
-            parameter.setName("p");
+            // lambda
+            Parameter parameter = new Parameter(StaticJavaParser.parseType(PropertyEvaluator.class.getCanonicalName()), "p");
             MethodCallExpr evaluateAllTests = new MethodCallExpr(new NameExpr(TestEvaluator.class.getCanonicalName()), "evaluateAllTests");
+            evaluateAllTests.addArgument(new NameExpr("p"));
             evaluateAllTests.addArgument(new MethodCallExpr(new NameExpr(feelConstraintTest), "getInstance"));
             evaluateAllTests.addArgument(new IntegerLiteralExpr(index));
             evaluateAllTests.addArgument(new StringLiteralExpr(traceString));
-            methodCallExpr.addArgument(new LambdaExpr(parameter, evaluateAllTests));
+            methodCallExpr.addArgument(new LambdaExpr(NodeList.nodeList(parameter), evaluateAllTests));
+
+            // index lambda
+            methodCallExpr.addArgument(new NullLiteralExpr());
+
+
+
+
 
             return this;
         }
 
-
         public InlineableAlphaNode createAlphaNode(int id, ObjectSource objectSource, BuildContext context) {
             return new InlineableAlphaNode(id, constraint, objectSource, context, methodCallExpr);
         }
-
     }
 
     private InlineableAlphaNode(int id, AlphaNodeFieldConstraint constraint, ObjectSource objectSource, BuildContext context, MethodCallExpr methodCallExpr) {
         super(id, constraint, objectSource, context);
         this.methodCallExpr = methodCallExpr;
     }
+
     @Override
     public MethodCallExpr createJavaMethod() {
         return methodCallExpr;

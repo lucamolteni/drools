@@ -87,12 +87,12 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
 
 
         // We need the RETE to create the ANC
-        dmnCompiledAlphaNetwork.initRete();
+//        dmnCompiledAlphaNetwork.initRete();
 //        ObjectTypeNode firstObjectTypeNodeFromSources = dmnCompiledAlphaNetwork.getObjectTypeNode();
 
 
-        // Generate the ANC
-        ObjectTypeNodeCompiler objectTypeNodeCompiler = new ObjectTypeNodeCompiler(firstObjectTypeNodeOfRete);
+        // Generate the ANC TODO DT-ANC remove boolean
+        ObjectTypeNodeCompiler objectTypeNodeCompiler = new ObjectTypeNodeCompiler(firstObjectTypeNodeOfRete, true);
         CompiledNetworkSource compiledNetworkSource = objectTypeNodeCompiler.generateSource();
         generatedSources.dumpGeneratedAlphaNetwork(compiledNetworkSource);
 
