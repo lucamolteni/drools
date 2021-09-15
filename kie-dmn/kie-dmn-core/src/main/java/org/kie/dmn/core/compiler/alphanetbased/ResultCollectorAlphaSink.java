@@ -17,7 +17,7 @@
 package org.kie.dmn.core.compiler.alphanetbased;
 
 import com.github.javaparser.ast.expr.MethodCallExpr;
-import org.drools.ancompiler.CompiledANCResult;
+import org.drools.ancompiler.ANCInlineable;
 import org.drools.ancompiler.ResultCollectorSink;
 import org.drools.core.common.InternalFactHandle;
 import org.drools.core.common.InternalWorkingMemory;
@@ -30,7 +30,7 @@ import org.drools.model.functions.Function1;
 import org.kie.dmn.feel.lang.EvaluationContext;
 
 public class ResultCollectorAlphaSink extends LeftInputAdapterNode implements ResultCollectorSink,
-                                                                              CompiledANCResult {
+                                                                              ANCInlineable {
 
     private final int row;
     private final String columnName;

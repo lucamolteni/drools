@@ -6,7 +6,7 @@ import com.github.javaparser.ast.expr.LambdaExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
-import org.drools.ancompiler.CompiledANCResult;
+import org.drools.ancompiler.ANCInlineable;
 import org.drools.core.reteoo.AlphaNode;
 import org.drools.core.reteoo.ObjectSource;
 import org.drools.core.reteoo.builder.BuildContext;
@@ -22,7 +22,7 @@ import org.drools.modelcompiler.constraints.ConstraintEvaluator;
 import org.drools.modelcompiler.constraints.LambdaConstraint;
 import org.kie.dmn.core.compiler.alphanetbased.evaluator.TestEvaluator;
 
-public class InlineableAlphaNode extends AlphaNode implements CompiledANCResult {
+public class InlineableAlphaNode extends AlphaNode implements ANCInlineable {
 
     private MethodCallExpr methodCallExpr;
 
