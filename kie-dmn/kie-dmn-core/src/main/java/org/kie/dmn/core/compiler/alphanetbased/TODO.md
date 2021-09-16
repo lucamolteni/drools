@@ -1,12 +1,15 @@
 ## TODO
 
-Rimuovi codice generato che crea la RETE
+Rivedi Interfaccia DMNCompiledAlphaNetworkEvaluator (meno metodi?)
+Rinomina DMNCompiledAlphaNetworkEvaluator
+Rivedi / separa i contesti
 Sistema il test della DT grossa
 Aggiungi gli indici al constraint
 Disabilita generazione di propagateModifyObject
 
 ## Fatto
 
+Rimuovi codice generato che crea la RETE
 Creare nuova interfaccia per result che non dipenda da ObjectSink
 Cambiare creazione output (l'output (In questo caso resultCollectorAlphaSink) non ha bisogno di InternalFactHandle factHandle, PropagationContext propagationContext, InternalWorkingMemory workingMemory)
 Inline creazione constraint

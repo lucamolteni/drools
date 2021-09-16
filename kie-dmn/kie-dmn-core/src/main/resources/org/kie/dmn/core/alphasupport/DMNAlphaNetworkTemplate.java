@@ -48,18 +48,6 @@ public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetworkEvaluator
     protected PropertyEvaluator propertyEvaluator;
 
     @Override
-    public void initRete() {
-        // Alpha network creation statements
-        {
-
-        }
-
-        Index index3 = createIndex(String.class, x -> (String) x.getValue(0), "dummy");
-        AlphaNode alphaDummy = alphaNetworkCreation.createAlphaNode(builderContext.otn, x -> false, index3);
-        alphaNetworkCreation.addResultSink(alphaDummy, 0, "dummy", p -> true, "");
-    }
-
-    @Override
     public void setCompiledNetwork(CompiledNetwork compiledAlphaNetwork) {
         this.compiledNetwork = compiledAlphaNetwork;
     }

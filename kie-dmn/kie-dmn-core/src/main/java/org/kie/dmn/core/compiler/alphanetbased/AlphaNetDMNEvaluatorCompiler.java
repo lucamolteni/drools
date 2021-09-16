@@ -79,15 +79,8 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         DMNAlphaNetworkCompiler dmnAlphaNetworkCompiler = new DMNAlphaNetworkCompiler();
         GeneratedSources generatedSources = dmnAlphaNetworkCompiler.generateSourceCode(decisionTable, tableCells, decisionTableName, allGeneratedSources);
 
-
         DMNReteGenerator dmnReteGenerator = new DMNReteGenerator();
         ObjectTypeNode firstObjectTypeNodeOfRete = dmnReteGenerator.createRete(decisionTable, tableCells, decisionTableName);
-
-
-        // We need the RETE to create the ANC
-//        dmnCompiledAlphaNetwork.initRete();
-//        ObjectTypeNode firstObjectTypeNodeFromSources = dmnCompiledAlphaNetwork.getObjectTypeNode();
-
 
         // Generate the ANC TODO DT-ANC remove boolean
         ObjectTypeNodeCompiler objectTypeNodeCompiler = new ObjectTypeNodeCompiler(firstObjectTypeNodeOfRete, true);
@@ -98,16 +91,12 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         CompiledNetworkSource compiledNetworkSource = objectTypeNodeCompiler.generateSource();
         generatedSources.dumpGeneratedAlphaNetwork(compiledNetworkSource);
 
-        // Second compilation, this time for the generated ANC sources
-//        Map<String, Class<?>> compiledANC = KieMemoryCompiler.compile(Collections.singletonMap(
-//                compiledNetworkSource.getName(), compiledNetworkSource.getSource()), this.getRootClassLoader());
-
         generatedSources.addNewSourceClass(compiledNetworkSource.getName(), compiledNetworkSource.getSource());
 
         // Compile everything
         Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(generatedSources.getAllGeneratedSources(), this.getClass().getClassLoader());
-        DMNCompiledAlphaNetworkEvaluator dmnCompiledAlphaNetworkEvaluator = generatedSources.newInstanceOfAlphaNetwork(compiledClasses);
 
+        DMNCompiledAlphaNetworkEvaluator dmnCompiledAlphaNetworkEvaluator = generatedSources.newInstanceOfAlphaNetwork(compiledClasses);
         Class<?> aClass = compiledClasses.get(compiledNetworkSource.getName());
         CompiledNetwork compiledAlphaNetwork = compiledNetworkSource.createInstanceAndSet(aClass);
         dmnCompiledAlphaNetworkEvaluator.setCompiledNetwork(compiledAlphaNetwork);
