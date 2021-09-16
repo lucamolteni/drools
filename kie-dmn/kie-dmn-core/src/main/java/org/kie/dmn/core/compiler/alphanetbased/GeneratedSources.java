@@ -126,9 +126,11 @@ public class GeneratedSources {
                 final String tempDirPackage = tempDirWithPrefix.getName(8).toString();
 
                 String javaSource = compiledNetworkSource.getSource();
-                String withUniquePackageANC = javaSource.replace("package " + ANC_PACKAGE, "package " + tempDirPackage + "." + ANC_PACKAGE);
+                javaSource = javaSource.replace("package " + ANC_PACKAGE, "package " + tempDirPackage + "." + ANC_PACKAGE);
+                javaSource = javaSource.replace(ALPHANETWORK_STATIC_PACKAGE, tempDirPackage + "." + ALPHANETWORK_STATIC_PACKAGE);
 
-                Files.write(path, withUniquePackageANC.getBytes(StandardCharsets.UTF_8));
+
+                Files.write(path, javaSource.getBytes(StandardCharsets.UTF_8));
             } catch (IOException e) {
                 e.printStackTrace();
             }
