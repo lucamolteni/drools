@@ -39,6 +39,8 @@ import org.kie.dmn.feel.lang.CompilerContext;
 import org.kie.dmn.feel.lang.Type;
 import org.kie.dmn.feel.lang.types.BuiltInType;
 import org.kie.dmn.model.api.UnaryTests;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.github.javaparser.StaticJavaParser.parseExpression;
 import static com.github.javaparser.StaticJavaParser.parseType;
@@ -47,12 +49,15 @@ import static org.kie.dmn.feel.codegen.feel11.CodegenStringUtil.replaceSimpleNam
 
 public class TableCell {
 
+    private static Logger logger = LoggerFactory.getLogger(TableCell.class);
+
     private final String input;
     private final DMNFEELHelper feel;
     private final CompilerContext compilerContext;
     private final TableIndex tableIndex;
     private final String columnName;
     private final Type type;
+    private final String constraintIdentifier;
 
     private String className;
     private String classNameWithPackage;
@@ -98,8 +103,15 @@ public class TableCell {
         this.columnName = columnName;
         this.input = input;
         this.type = columnType;
-        this.className = tableIndex.appendTableIndexSuffix("UnaryTest");
-        this.classNameWithPackage = ALPHANETWORK_STATIC_PACKAGE + "." + className;
+
+        // We don't want to share alpha nodes between two columns
+        this.constraintIdentifier = CodegenStringUtil.escapeIdentifier(columnName + input);
+
+        // FEEL expression among columns are the same
+        String feelExpressionIdentifier = CodegenStringUtil.escapeIdentifier(input);
+
+        this.className = feelExpressionIdentifier;
+        this.classNameWithPackage = ALPHANETWORK_STATIC_PACKAGE + "." + this.className;
     }
 
     private String addIndex(BlockStmt stmt) {
@@ -164,7 +176,6 @@ public class TableCell {
     public AlphaNode createAlphaNode(AlphaNetworkCreation alphaNetworkCreation, ReteBuilderContext reteBuilderContext, AlphaNode previousAlphaNode) {
 
         // This is used for Alpha Sharing. It needs to have the column name to avoid collisions with same test in other cells
-        String constraintIdentifier = CodegenStringUtil.escapeIdentifier(columnName + input);
 
         InlineableAlphaNode candidateAlphaNode;
         if (tableIndex.isFirstColumn()) {
@@ -196,9 +207,13 @@ public class TableCell {
         return new NameExpr("alphaNetworkCreation");
     }
 
-    public void compileUnaryTestAndAddTo(Map<String, String> allClasses) {
-        UnaryTestClass unaryTestClass = new UnaryTestClass(input, feel, compilerContext, type);
-        unaryTestClass.compileUnaryTestAndAddTo(allClasses, className, classNameWithPackage, ALPHANETWORK_STATIC_PACKAGE);
+    public void crateUnaryTestAndAddTo(Map<String, String> allClasses) {
+        if(!allClasses.containsKey(classNameWithPackage)) {
+            UnaryTestClass unaryTestClass = new UnaryTestClass(input, feel, compilerContext, type);
+            unaryTestClass.compileUnaryTestAndAddTo(allClasses, className, classNameWithPackage, ALPHANETWORK_STATIC_PACKAGE);
+        } else {
+            logger.debug("FEEL Expression {} already generated: {} avoiding generating input", input, className);
+        }
     }
 
     public void compiledFeelExpressionAndAddTo(Map<String, String> allGeneratedClasses) {
@@ -225,6 +240,8 @@ public class TableCell {
     public void addToOutputCells(TableCell[][] outputCells) {
         outputCells[tableIndex.rowIndex()][tableIndex.columnIndex()] = this;
     }
+
+
 }
 
 

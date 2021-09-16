@@ -72,7 +72,7 @@ public class TableCells {
         Map<String, String> allGeneratedTestClasses = new HashMap<>();
         for (int rowIndex = 0; rowIndex < numRows; rowIndex++) {
             for (int columnIndex = 0; columnIndex < numColumns; columnIndex++) {
-                cells[rowIndex][columnIndex].compileUnaryTestAndAddTo(allGeneratedTestClasses);
+                cells[rowIndex][columnIndex].crateUnaryTestAndAddTo(allGeneratedTestClasses);
             }
 
             // Generate output cells
