@@ -1,6 +1,5 @@
 ## TODO
 
-Rivedi / separa i contesti
 Predicate information su constraint e Commenti
 Non fare compilare UnaryTest di nodi sharati
 Rinomina DMNCompiledAlphaNetworkEvaluator
@@ -10,6 +9,7 @@ Disabilita generazione di propagateModifyObject
 
 ## Fatto
 
+Rivedi / separa i contesti
 Rivedi Interfaccia DMNCompiledAlphaNetworkEvaluator (meno metodi?)
 Rimuovi codice generato che crea la RETE
 Creare nuova interfaccia per result che non dipenda da ObjectSink

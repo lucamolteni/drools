@@ -24,6 +24,7 @@ import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
+import org.drools.ancompiler.ANCConfiguration;
 import org.drools.ancompiler.CompiledNetwork;
 import org.drools.ancompiler.CompiledNetworkSource;
 import org.drools.ancompiler.ObjectTypeNodeCompiler;
@@ -82,12 +83,8 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         DMNReteGenerator dmnReteGenerator = new DMNReteGenerator();
         ObjectTypeNode firstObjectTypeNodeOfRete = dmnReteGenerator.createRete(decisionTable, tableCells, decisionTableName);
 
-        // Generate the ANC TODO DT-ANC remove boolean
-        ObjectTypeNodeCompiler objectTypeNodeCompiler = new ObjectTypeNodeCompiler(firstObjectTypeNodeOfRete, true);
-        objectTypeNodeCompiler.setDisableContextEntry(true);
-        objectTypeNodeCompiler.setPrettyPrint(true);
-        VariableDeclarator variableDeclarator = new VariableDeclarator(StaticJavaParser.parseType(AlphaNetworkEvaluationContext.class.getCanonicalName()), "ctx");
-        objectTypeNodeCompiler.addAdditionalFields(new FieldDeclaration(NodeList.nodeList(), NodeList.nodeList(variableDeclarator)));
+        // Generate the ANC
+        ObjectTypeNodeCompiler objectTypeNodeCompiler = createAlphaNetworkCompiler(firstObjectTypeNodeOfRete);
         CompiledNetworkSource compiledNetworkSource = objectTypeNodeCompiler.generateSource();
         generatedSources.dumpGeneratedAlphaNetwork(compiledNetworkSource);
 
@@ -112,5 +109,16 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         FeelDecisionTable feelDecisionTable = new FeelDecisionTable(decisionTableName, outputs, feelHelper, variableTypes, dmnModelImpl.getTypeRegistry().unknown());
 
         return new AlphaNetDMNExpressionEvaluator(dmnCompiledAlphaNetworkEvaluator, feelHelper, decisionTableName, feelDecisionTable, dmnBaseNode, resultCollector);
+    }
+
+    private ObjectTypeNodeCompiler createAlphaNetworkCompiler(ObjectTypeNode firstObjectTypeNodeOfRete) {
+        ANCConfiguration ancConfiguration = new ANCConfiguration();
+        ancConfiguration.setDisableContextEntry(true);
+        ancConfiguration.setPrettyPrint(true);
+        ancConfiguration.setEnableModifyObject(false);
+        ObjectTypeNodeCompiler objectTypeNodeCompiler = new ObjectTypeNodeCompiler(ancConfiguration, firstObjectTypeNodeOfRete, true);
+        VariableDeclarator variableDeclarator = new VariableDeclarator(StaticJavaParser.parseType(AlphaNetworkEvaluationContext.class.getCanonicalName()), "ctx");
+        objectTypeNodeCompiler.addAdditionalFields(new FieldDeclaration(NodeList.nodeList(), NodeList.nodeList(variableDeclarator)));
+        return objectTypeNodeCompiler;
     }
 }

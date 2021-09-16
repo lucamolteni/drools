@@ -74,28 +74,16 @@ public class ObjectTypeNodeCompiler {
     // TODO DT-ANC avoid using a boolean
     private boolean shouldInline;
 
-    // TODO configuration?
-    private boolean prettyPrint = false;
-
-    public void setPrettyPrint(boolean prettyPrint) {
-        this.prettyPrint = prettyPrint;
-    }
-
-    private boolean disableContextEntry = false;
-
-    public void setDisableContextEntry(boolean disableContextEntry) {
-        this.disableContextEntry = disableContextEntry;
-    }
-
     /* In case additional fields are needed, will be initialised in order in initAdditionalFields */
     private List<FieldDeclaration> additionalFields = new ArrayList<>();
-
+    private ANCConfiguration ancConfiguration;
 
     public ObjectTypeNodeCompiler(ObjectTypeNode objectTypeNode) {
-        this(objectTypeNode, false);
+        this(new ANCConfiguration(), objectTypeNode, false);
     }
 
-    public ObjectTypeNodeCompiler(ObjectTypeNode objectTypeNode, boolean shouldInline) {
+    public ObjectTypeNodeCompiler(ANCConfiguration ancConfiguration, ObjectTypeNode objectTypeNode, boolean shouldInline) {
+        this.ancConfiguration = ancConfiguration;
         this.shouldInline = shouldInline;
         this.objectTypeNode = objectTypeNode;
 
@@ -133,7 +121,7 @@ public class ObjectTypeNodeCompiler {
         createAdditionalFields(builder);
 
         // create declarations
-        DeclarationsHandler declarations = new DeclarationsHandler(builder, disableContextEntry);
+        DeclarationsHandler declarations = new DeclarationsHandler(builder, ancConfiguration.getDisableContextEntry());
         parser.accept(declarations);
 
         // we need the hashed declarations when creating the constructor
@@ -164,8 +152,11 @@ public class ObjectTypeNodeCompiler {
         builder.append(assertHandler.emitCode());
 
         ModifyHandler modifyHandler = new ModifyHandler(className, !hashedAlphaDeclarations.isEmpty());
-        parser.accept(modifyHandler);
+        if (ancConfiguration.isEnableModifyObject()) {
+            parser.accept(modifyHandler);
+        }
         builder.append(modifyHandler.emitCode());
+
 
         DelegateMethodsHandler delegateMethodsHandler = new DelegateMethodsHandler(builder);
         parser.accept(delegateMethodsHandler);
@@ -175,7 +166,7 @@ public class ObjectTypeNodeCompiler {
 
         String sourceCode = builder.toString();
 
-        if(prettyPrint) {
+        if(ancConfiguration.isPrettyPrint()) {
             sourceCode = new PrettyPrinter().print(parse(sourceCode));
         }
 
