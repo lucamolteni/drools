@@ -91,6 +91,8 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
 
         // Generate the ANC TODO DT-ANC remove boolean
         ObjectTypeNodeCompiler objectTypeNodeCompiler = new ObjectTypeNodeCompiler(firstObjectTypeNodeOfRete, true);
+        objectTypeNodeCompiler.setDisableContextEntry(true);
+        objectTypeNodeCompiler.setPrettyPrint(true);
         VariableDeclarator variableDeclarator = new VariableDeclarator(StaticJavaParser.parseType(AlphaNetworkBuilderContext.class.getCanonicalName()), "ctx");
         objectTypeNodeCompiler.addAdditionalFields(new FieldDeclaration(NodeList.nodeList(), NodeList.nodeList(variableDeclarator)));
         CompiledNetworkSource compiledNetworkSource = objectTypeNodeCompiler.generateSource();

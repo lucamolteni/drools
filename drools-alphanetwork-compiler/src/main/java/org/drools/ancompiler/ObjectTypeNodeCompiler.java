@@ -75,10 +75,16 @@ public class ObjectTypeNodeCompiler {
     private boolean shouldInline;
 
     // TODO configuration?
-    private boolean prettyPrint = true;
+    private boolean prettyPrint = false;
 
     public void setPrettyPrint(boolean prettyPrint) {
         this.prettyPrint = prettyPrint;
+    }
+
+    private boolean disableContextEntry = false;
+
+    public void setDisableContextEntry(boolean disableContextEntry) {
+        this.disableContextEntry = disableContextEntry;
     }
 
     /* In case additional fields are needed, will be initialised in order in initAdditionalFields */
@@ -127,7 +133,7 @@ public class ObjectTypeNodeCompiler {
         createAdditionalFields(builder);
 
         // create declarations
-        DeclarationsHandler declarations = new DeclarationsHandler(builder);
+        DeclarationsHandler declarations = new DeclarationsHandler(builder, disableContextEntry);
         parser.accept(declarations);
 
         // we need the hashed declarations when creating the constructor
