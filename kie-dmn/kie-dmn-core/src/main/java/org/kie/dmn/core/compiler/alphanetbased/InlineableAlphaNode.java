@@ -44,6 +44,11 @@ public class InlineableAlphaNode extends AlphaNode implements ANCInlineable {
         MethodCallExpr methodCallExpr;
         String id;
 
+        /**
+         * IMPORTANT: remember to use the FEEL expression as an Identifier for the same constraint
+         * <p>
+         * Prefix: column name + value
+         */
         public <T> Builder withConstraint(
                 String id,
                 Predicate1<T> predicate, // TODO DT-ANC this is bound to be removed

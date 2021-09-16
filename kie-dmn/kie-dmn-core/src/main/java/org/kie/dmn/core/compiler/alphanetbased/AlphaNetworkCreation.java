@@ -16,80 +16,43 @@
 
 package org.kie.dmn.core.compiler.alphanetbased;
 
-import java.util.UUID;
-
-import org.drools.core.reteoo.AlphaNode;
 import org.drools.core.reteoo.ObjectSource;
+import org.drools.core.reteoo.builder.BuildContext;
 import org.drools.core.reteoo.builder.BuildUtils;
 import org.drools.model.Index;
 import org.drools.model.functions.Function1;
-import org.drools.model.functions.Predicate1;
 import org.drools.model.index.AlphaIndexImpl;
-import org.kie.dmn.feel.lang.EvaluationContext;
 
 public class AlphaNetworkCreation {
 
     private static final BuildUtils buildUtils = new BuildUtils();
 
-    private final AlphaNetworkBuilderContext ctx;
+    private final BuildContext buildContext;
 
-    public AlphaNetworkCreation(AlphaNetworkBuilderContext ctx) {
-        this.ctx = ctx;
+    public AlphaNetworkCreation(BuildContext buildContext) {
+        this.buildContext = buildContext;
     }
 
     public int getNextId() {
-        return ctx.buildContext.getNextId();
-    }
-
-    public AlphaNode createAlphaNode(ObjectSource source, String id, Predicate1<PropertyEvaluator> predicate) {
-        return createAlphaNode(source, id, predicate, null);
-    }
-
-    @Deprecated
-    public AlphaNode createAlphaNode(ObjectSource source, Predicate1<PropertyEvaluator> predicate, Index index) {
-        return createAlphaNode(source, UUID.randomUUID().toString(), predicate, null);
+        return buildContext.getNextId();
     }
 
     public <T extends Class<?>> void  addResultSink(ObjectSource source,
                                                     int row,
                                                     String columnName,
-                                                    Function1<EvaluationContext, Object> outputEvaluationFunction,
                                                     String outputEvaluationClass) {
         ResultCollectorAlphaSink objectSink = new ResultCollectorAlphaSink(getNextId(),
                                                                            source,
-                                                                           ctx.buildContext,
+                                                                           buildContext,
                                                                            row,
                                                                            columnName,
-                                                                           ctx.resultCollector,
-                                                                           outputEvaluationFunction,
                                                                            outputEvaluationClass
         );
         source.addObjectSink(objectSink);
     }
 
-
-    /**
-     * IMPORTANT: remember to use the FEEL expression as an Identifier for the same constraint
-     * <p>
-     * Prefix: column name + value
-     */
-    public InlineableAlphaNode createAlphaNode(ObjectSource source, String id, Predicate1<PropertyEvaluator> predicate, Index index) {
-        InlineableAlphaNode candidateAlphaNode = InlineableAlphaNode.createBuilder()
-                .withConstraint(id, predicate, index, ctx.variable, ctx.declaration)
-                .createAlphaNode(getNextId(), source,
-                                 ctx.buildContext);
-
-        return buildUtils.attachNode(ctx.buildContext, candidateAlphaNode);
-    }
-
-    /**
-     * IMPORTANT: remember to use the FEEL expression as an Identifier for the same constraint
-     * <p>
-     * Prefix: column name + value
-     */
-    // The Alpha Node will be used to generate the ANC and the LambdaConstraint will be inlined using the Alpha Node Id as a reference
     public InlineableAlphaNode shareAlphaNode(InlineableAlphaNode candidateAlphaNode) {
-        return buildUtils.attachNode(ctx.buildContext, candidateAlphaNode);
+        return buildUtils.attachNode(buildContext, candidateAlphaNode);
     }
 
     public static <I> AlphaIndexImpl<PropertyEvaluator, I> createIndex(Class<I> indexedClass, Function1<PropertyEvaluator, I> leftExtractor, I rightValue) {

@@ -15,7 +15,7 @@
  */
 package org.kie.dmn.core.alphasupport;
 
-import org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkBuilderContext;
+import org.kie.dmn.core.compiler.alphanetbased.ReteBuilderContext;
 import org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCreation;
 import org.kie.dmn.core.compiler.alphanetbased.PropertyEvaluator;
 import org.slf4j.Logger;
@@ -28,8 +28,8 @@ public class AlphaNodeCreationTemplate {
 
     private AlphaNetworkCreation alphaNetworkCreation;
 
-    public AlphaNodeCreationTemplate(AlphaNetworkBuilderContext ctx) {
-        alphaNetworkCreation = new AlphaNetworkCreation(ctx);
+    public AlphaNodeCreationTemplate(ReteBuilderContext ctx) {
+        alphaNetworkCreation = new AlphaNetworkCreation(ctx.buildContext);
     }
 
     // There will be one of this for each column

@@ -47,15 +47,13 @@ public class ResultCollectorAlphaSink extends LeftInputAdapterNode implements Re
                                     BuildContext context,
                                     int row,
                                     String columnName,
-                                    ResultCollector resultCollector,
-                                    Function1<EvaluationContext, Object> outputEvaluationFunction,
                                     String outputClass) {
         super(id, source, context);
         this.row = row;
         this.columnName = columnName;
-        this.resultCollector = resultCollector;
-        this.outputEvaluationFunction = outputEvaluationFunction;
         this.outputClass = outputClass;
+        this.outputEvaluationFunction = null; // only used at runtime
+        resultCollector = null; // only used at runtime
     }
 
 

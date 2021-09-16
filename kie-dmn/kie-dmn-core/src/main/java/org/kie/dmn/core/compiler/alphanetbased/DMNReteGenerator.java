@@ -5,10 +5,10 @@ import org.kie.dmn.model.api.DecisionTable;
 
 public class DMNReteGenerator {
 
-    AlphaNetworkBuilderContext alphaNetworkBuilderContext = new AlphaNetworkBuilderContext(null);
+    ReteBuilderContext reteBuilderContext = new ReteBuilderContext();
 
     public ObjectTypeNode createRete(DecisionTable decisionTable, TableCells tableCells, String decisionTableName) {
-        return tableCells.createRete(alphaNetworkBuilderContext);
+        return tableCells.createRete(reteBuilderContext);
 
     }
 }

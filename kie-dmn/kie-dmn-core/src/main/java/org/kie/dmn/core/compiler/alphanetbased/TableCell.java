@@ -161,7 +161,7 @@ public class TableCell {
         return input.startsWith("\"") && input.endsWith("\"");
     }
 
-    public AlphaNode createAlphaNode(AlphaNetworkCreation alphaNetworkCreation, AlphaNetworkBuilderContext alphaNetworkBuilderContext, AlphaNode previousAlphaNode) {
+    public AlphaNode createAlphaNode(AlphaNetworkCreation alphaNetworkCreation, ReteBuilderContext reteBuilderContext, AlphaNode previousAlphaNode) {
 
         // This is used for Alpha Sharing. It needs to have the column name to avoid collisions with same test in other cells
         String constraintIdentifier = CodegenStringUtil.escapeIdentifier(columnName + input);
@@ -170,11 +170,11 @@ public class TableCell {
         if (tableIndex.isFirstColumn()) {
             Index index = createIndex();
             InlineableAlphaNode candidateAlphaNode = InlineableAlphaNode.createBuilder()
-                    .withConstraint(constraintIdentifier, null, index, alphaNetworkBuilderContext.variable, alphaNetworkBuilderContext.declaration)
+                    .withConstraint(constraintIdentifier, null, index, reteBuilderContext.variable, reteBuilderContext.declaration)
                     .withFeelConstraint(classNameWithPackage, tableIndex.columnIndex(), "trace String")
                     .createAlphaNode(alphaNetworkCreation.getNextId(),
-                                     alphaNetworkBuilderContext.otn,
-                                     alphaNetworkBuilderContext.buildContext);
+                                     reteBuilderContext.otn,
+                                     reteBuilderContext.buildContext);
 
             alphaNode = alphaNetworkCreation.shareAlphaNode(candidateAlphaNode);
         } else {
@@ -183,11 +183,11 @@ public class TableCell {
             }
 
             InlineableAlphaNode candidateAlphaNode = InlineableAlphaNode.createBuilder()
-                    .withConstraint(constraintIdentifier, null, null, alphaNetworkBuilderContext.variable, alphaNetworkBuilderContext.declaration)
+                    .withConstraint(constraintIdentifier, null, null, reteBuilderContext.variable, reteBuilderContext.declaration)
                     .withFeelConstraint(classNameWithPackage, tableIndex.columnIndex(), "trace String")
                     .createAlphaNode(alphaNetworkCreation.getNextId(),
                                      previousAlphaNode,
-                                     alphaNetworkBuilderContext.buildContext);
+                                     reteBuilderContext.buildContext);
 
             alphaNode = alphaNetworkCreation.shareAlphaNode(candidateAlphaNode);
         }
@@ -219,7 +219,7 @@ public class TableCell {
     }
 
     public void addOutputNode(AlphaNetworkCreation alphaNetworkCreation, AlphaNode lastAlphaNode) {
-        alphaNetworkCreation.addResultSink(lastAlphaNode, tableIndex.rowIndex(), this.columnName, null, classNameWithPackage);
+        alphaNetworkCreation.addResultSink(lastAlphaNode, tableIndex.rowIndex(), this.columnName, classNameWithPackage);
     }
 
     public void addToCells(TableCell[][] cells) {

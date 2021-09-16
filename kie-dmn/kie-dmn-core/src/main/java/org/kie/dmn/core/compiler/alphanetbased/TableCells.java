@@ -83,15 +83,15 @@ public class TableCells {
         return allGeneratedTestClasses;
     }
 
-    public ObjectTypeNode createRete(AlphaNetworkBuilderContext alphaNetworkBuilderContext) {
-        AlphaNetworkCreation alphaNetworkCreation = new AlphaNetworkCreation(alphaNetworkBuilderContext);
+    public ObjectTypeNode createRete(ReteBuilderContext reteBuilderContext) {
+        AlphaNetworkCreation alphaNetworkCreation = new AlphaNetworkCreation(reteBuilderContext.buildContext);
 
         for (int rowIndex = 0; rowIndex < numRows; rowIndex++) {
 
             AlphaNode lastAlphaNodeCreated = null;
             for (int columnIndex = 0; columnIndex < numColumns; columnIndex++) {
                 TableCell tableCell = cells[rowIndex][columnIndex];
-                lastAlphaNodeCreated = tableCell.createAlphaNode(alphaNetworkCreation, alphaNetworkBuilderContext, lastAlphaNodeCreated);
+                lastAlphaNodeCreated = tableCell.createAlphaNode(alphaNetworkCreation, reteBuilderContext, lastAlphaNodeCreated);
             }
 
             for (int outputColumnIndex = 0; outputColumnIndex < numOutputColumns; outputColumnIndex++) {
@@ -100,7 +100,7 @@ public class TableCells {
             }
 
         }
-        return alphaNetworkBuilderContext.otn;
+        return reteBuilderContext.otn;
     }
 
     public void addColumnValidationStatements(BlockStmt validationStatements, GeneratedSources allGeneratedSources) {
