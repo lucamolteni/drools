@@ -35,6 +35,7 @@ import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.type.VoidType;
+import com.github.javaparser.printer.PrettyPrinter;
 import org.drools.core.InitialFact;
 import org.drools.core.base.ClassObjectType;
 import org.drools.core.reteoo.ObjectTypeNode;
@@ -43,6 +44,7 @@ import org.drools.core.util.index.AlphaRangeIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.github.javaparser.StaticJavaParser.parse;
 import static com.github.javaparser.StaticJavaParser.parseType;
 
 public class ObjectTypeNodeCompiler {
@@ -71,6 +73,13 @@ public class ObjectTypeNodeCompiler {
 
     // TODO DT-ANC avoid using a boolean
     private boolean shouldInline;
+
+    // TODO configuration?
+    private boolean prettyPrint = true;
+
+    public void setPrettyPrint(boolean prettyPrint) {
+        this.prettyPrint = prettyPrint;
+    }
 
     /* In case additional fields are needed, will be initialised in order in initAdditionalFields */
     private List<FieldDeclaration> additionalFields = new ArrayList<>();
@@ -159,6 +168,11 @@ public class ObjectTypeNodeCompiler {
         builder.append("}").append(NEWLINE);
 
         String sourceCode = builder.toString();
+
+        if(prettyPrint) {
+            sourceCode = new PrettyPrinter().print(parse(sourceCode));
+        }
+
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Generated Compiled Alpha Network %s", sourceCode));
         }
