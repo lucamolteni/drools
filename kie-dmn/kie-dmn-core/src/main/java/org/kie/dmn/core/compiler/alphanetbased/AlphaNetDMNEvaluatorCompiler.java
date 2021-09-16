@@ -86,9 +86,10 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         // Generate the ANC
         ObjectTypeNodeCompiler objectTypeNodeCompiler = createAlphaNetworkCompiler(firstObjectTypeNodeOfRete);
         CompiledNetworkSource compiledNetworkSource = objectTypeNodeCompiler.generateSource();
-        generatedSources.dumpGeneratedAlphaNetwork(compiledNetworkSource);
-
         generatedSources.addNewSourceClass(compiledNetworkSource.getName(), compiledNetworkSource.getSource());
+
+        // Look at target/generated-sources
+        generatedSources.dumpGeneratedClasses();
 
         // Compile everything
         Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(generatedSources.getAllGeneratedSources(), this.getClass().getClassLoader());

@@ -103,10 +103,11 @@ public class GeneratedSources {
                     final String tempDirPackage = tempDirWithPrefix.getName(8).toString();
                     String javaSource = kv.getValue();
 
-                    // each run will have its own package
-                    String withUniquePackageDMN = javaSource.replace(ALPHANETWORK_STATIC_PACKAGE, tempDirPackage + "." + ALPHANETWORK_STATIC_PACKAGE);
+                    javaSource = javaSource.replace("package " + ANC_PACKAGE, "package " + tempDirPackage + "." + ANC_PACKAGE);
+                    javaSource = javaSource.replace(ALPHANETWORK_STATIC_PACKAGE, tempDirPackage + "." + ALPHANETWORK_STATIC_PACKAGE);
 
-                    Files.write(path, withUniquePackageDMN.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
+
+                    Files.write(path, javaSource.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
                 }
                 if (logger.isDebugEnabled()) {
                     logger.debug("Dumped files to: \n\n{}\n", tempDirWithPrefix);
@@ -115,29 +116,6 @@ public class GeneratedSources {
                 optionalDumpFolder = of(tempDirWithPrefix);
             } catch (IOException e) {
                 throw new RuntimeException(e);
-            }
-        }
-    }
-
-    public void dumpGeneratedAlphaNetwork(CompiledNetworkSource compiledNetworkSource) {
-        if (DUMP_GENERATED_CLASSES) {
-            try {
-                Path tempDirWithPrefix = this.optionalDumpFolder.orElseThrow(RuntimeException::new);
-
-                Path path = tempDirWithPrefix.resolve(compiledNetworkSource.getName().replace(".", "/") + ".java");
-
-                Files.createDirectories(path.getParent());
-
-                final String tempDirPackage = tempDirWithPrefix.getName(8).toString();
-
-                String javaSource = compiledNetworkSource.getSource();
-                javaSource = javaSource.replace("package " + ANC_PACKAGE, "package " + tempDirPackage + "." + ANC_PACKAGE);
-                javaSource = javaSource.replace(ALPHANETWORK_STATIC_PACKAGE, tempDirPackage + "." + ALPHANETWORK_STATIC_PACKAGE);
-
-
-                Files.write(path, javaSource.getBytes(StandardCharsets.UTF_8));
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
     }

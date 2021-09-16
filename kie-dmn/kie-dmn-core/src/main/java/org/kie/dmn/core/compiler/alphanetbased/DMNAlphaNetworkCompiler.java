@@ -72,7 +72,6 @@ public class DMNAlphaNetworkCompiler {
         allGeneratedSources.addNewAlphaNetworkClass(alphaNetworkClassWithPackage, template.toString());
 
         allGeneratedSources.logGeneratedClasses();
-        allGeneratedSources.dumpGeneratedClasses();
 
         return allGeneratedSources;
     }
