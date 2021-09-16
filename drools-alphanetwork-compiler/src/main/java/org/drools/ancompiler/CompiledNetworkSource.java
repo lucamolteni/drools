@@ -64,8 +64,8 @@ public class CompiledNetworkSource {
 
     public CompiledNetwork createInstanceAndSet(Class<?> compiledNetworkClass) {
         CompiledNetwork compiledNetwork = newCompiledNetworkInstance(compiledNetworkClass);
-        compiledNetwork.setNetwork(objectTypeNode);
-        logger.debug("Updating {} with instance of class: {}",
+        compiledNetwork.setStartingObjectTypeNode(objectTypeNode);
+        logger.debug("Setting {} as starting node of: {}",
                      objectTypeNode,
                      compiledNetworkClass.getName());
 

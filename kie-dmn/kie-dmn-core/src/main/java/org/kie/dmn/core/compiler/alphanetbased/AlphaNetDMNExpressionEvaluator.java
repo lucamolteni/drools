@@ -16,7 +16,6 @@
 
 package org.kie.dmn.core.compiler.alphanetbased;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -30,8 +29,6 @@ import org.kie.dmn.core.ast.DMNBaseNode;
 import org.kie.dmn.core.ast.DMNDTExpressionEvaluator;
 import org.kie.dmn.core.ast.EvaluatorResultImpl;
 import org.kie.dmn.core.compiler.DMNFEELHelper;
-import org.kie.dmn.core.compiler.execmodelbased.DTableModel;
-import org.kie.dmn.core.compiler.execmodelbased.DecisionTableEvaluator;
 import org.kie.dmn.core.impl.DMNResultImpl;
 import org.kie.dmn.core.impl.DMNRuntimeEventManagerUtils;
 import org.kie.dmn.core.impl.DMNRuntimeImpl;
@@ -48,13 +45,13 @@ public class AlphaNetDMNExpressionEvaluator implements DMNExpressionEvaluator {
 
     private static Logger logger = LoggerFactory.getLogger(AlphaNetDMNExpressionEvaluator.class);
 
-    private final DMNCompiledAlphaNetwork compiledNetwork;
+    private final DMNCompiledAlphaNetworkEvaluator compiledNetwork;
     private final DMNFEELHelper feel;
     private final String decisionTableName;
     private final FeelDecisionTable feelDecisionTable;
     private final DMNBaseNode node;
 
-    public AlphaNetDMNExpressionEvaluator(DMNCompiledAlphaNetwork compiledNetwork,
+    public AlphaNetDMNExpressionEvaluator(DMNCompiledAlphaNetworkEvaluator compiledNetwork,
                                           DMNFEELHelper feel,
                                           String decisionTableName,
                                           FeelDecisionTable feelDecisionTable,

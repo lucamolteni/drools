@@ -16,7 +16,6 @@
 
 package org.kie.dmn.core.compiler.alphanetbased;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,8 +28,6 @@ import org.drools.ancompiler.CompiledNetwork;
 import org.drools.ancompiler.CompiledNetworkSource;
 import org.drools.ancompiler.ObjectTypeNodeCompiler;
 import org.drools.core.reteoo.ObjectTypeNode;
-import org.drools.core.reteoo.Rete;
-import org.drools.core.reteoo.ReteDumper;
 import org.kie.dmn.core.api.DMNExpressionEvaluator;
 import org.kie.dmn.core.ast.DMNBaseNode;
 import org.kie.dmn.core.compiler.DMNCompilerContext;
@@ -107,12 +104,12 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
 
         // Compile everything
         Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(generatedSources.getAllGeneratedSources(), this.getClass().getClassLoader());
-        DMNCompiledAlphaNetwork dmnCompiledAlphaNetwork = generatedSources.newInstanceOfAlphaNetwork(compiledClasses);
+        DMNCompiledAlphaNetworkEvaluator dmnCompiledAlphaNetworkEvaluator = generatedSources.newInstanceOfAlphaNetwork(compiledClasses);
 
         Class<?> aClass = compiledClasses.get(compiledNetworkSource.getName());
         CompiledNetwork compiledAlphaNetwork = compiledNetworkSource.createInstanceAndSet(aClass);
         compiledAlphaNetwork.init(new AlphaNetworkBuilderContext(new ResultCollector()));
-        dmnCompiledAlphaNetwork.setCompiledAlphaNetwork(compiledAlphaNetwork);
+        dmnCompiledAlphaNetworkEvaluator.setCompiledNetwork(compiledAlphaNetwork);
 
         // FeelDecisionTable is used at runtime to evaluate Hit Policy / Output values
         // TODO DT-ANC probably need to have all the types in here
@@ -122,6 +119,6 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
 
         FeelDecisionTable feelDecisionTable = new FeelDecisionTable(decisionTableName, outputs, feelHelper, variableTypes, dmnModelImpl.getTypeRegistry().unknown());
 
-        return new AlphaNetDMNExpressionEvaluator(dmnCompiledAlphaNetwork, feelHelper, decisionTableName, feelDecisionTable, dmnBaseNode);
+        return new AlphaNetDMNExpressionEvaluator(dmnCompiledAlphaNetworkEvaluator, feelHelper, decisionTableName, feelDecisionTable, dmnBaseNode);
     }
 }

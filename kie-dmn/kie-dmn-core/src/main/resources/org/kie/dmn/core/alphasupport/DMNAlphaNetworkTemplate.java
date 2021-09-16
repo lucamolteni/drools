@@ -24,7 +24,7 @@ import org.drools.core.reteoo.ObjectTypeNode;
 import org.drools.model.Index;
 import org.kie.dmn.api.feel.runtime.events.FEELEvent;
 import org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCreation;
-import org.kie.dmn.core.compiler.alphanetbased.DMNCompiledAlphaNetwork;
+import org.kie.dmn.core.compiler.alphanetbased.DMNCompiledAlphaNetworkEvaluator;
 import org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkBuilderContext;
 import org.kie.dmn.core.compiler.alphanetbased.ResultCollector;
 import org.kie.dmn.feel.lang.EvaluationContext;
@@ -35,7 +35,7 @@ import org.kie.dmn.feel.runtime.decisiontables.HitPolicy;
 import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCreation.createIndex;
 
 // All implementations are used only for templating purposes and should never be called
-public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetwork {
+public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetworkEvaluator {
 
     protected final ResultCollector resultCollector = new ResultCollector();
     protected CompiledNetwork compiledNetwork;
@@ -60,7 +60,7 @@ public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetwork {
     }
 
     @Override
-    public void setCompiledAlphaNetwork(CompiledNetwork compiledAlphaNetwork) {
+    public void setCompiledNetwork(CompiledNetwork compiledAlphaNetwork) {
         this.compiledNetwork = compiledAlphaNetwork;
     }
 

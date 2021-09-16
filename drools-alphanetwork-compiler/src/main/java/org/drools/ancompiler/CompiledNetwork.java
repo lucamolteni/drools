@@ -106,7 +106,9 @@ public abstract class CompiledNetwork implements ObjectSinkPropagator {
 //        parser.accept(setter);
     }
 
-    public void setNetwork(ObjectTypeNode objectTypeNode) {
+    // Sets the starting node for the evaluation of the compiled Alpha Network
+    // both in the CompiledNetwork and the ObjectTypeNode itself
+    public void setStartingObjectTypeNode(ObjectTypeNode objectTypeNode) {
         setObjectTypeNode(objectTypeNode);
         setOriginalSinkPropagator(objectTypeNode.getObjectSinkPropagator());
         objectTypeNode.setObjectSinkPropagator(this);

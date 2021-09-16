@@ -58,7 +58,7 @@ public class GeneratedSources {
         this.alphaNetworkClassName = alphaNetworkClassWithPackage;
     }
 
-    public DMNCompiledAlphaNetwork newInstanceOfAlphaNetwork(Map<String, Class<?>> compiledClasses) {
+    public DMNCompiledAlphaNetworkEvaluator newInstanceOfAlphaNetwork(Map<String, Class<?>> compiledClasses) {
         Class<?> inputSetClass = compiledClasses.get(alphaNetworkClassName);
         Object inputSetInstance;
         try {
@@ -66,7 +66,7 @@ public class GeneratedSources {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        return (DMNCompiledAlphaNetwork) inputSetInstance;
+        return (DMNCompiledAlphaNetworkEvaluator) inputSetInstance;
     }
 
     public Map<String, String> getAllGeneratedSources() {
