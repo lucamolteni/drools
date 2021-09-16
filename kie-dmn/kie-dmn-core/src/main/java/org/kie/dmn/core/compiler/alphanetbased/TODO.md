@@ -1,14 +1,15 @@
 ## TODO
 
-Predicate information su constraint e Commenti
 Non fare compilare UnaryTest di nodi sharati
+Predicate information su constraint e Commenti
 Rinomina DMNCompiledAlphaNetworkEvaluator
 Sistema il test della DT grossa
 Aggiungi gli indici al constraint
-Disabilita generazione di propagateModifyObject
+Trace string
 
 ## Fatto
 
+Disabilita generazione di propagateModifyObject
 Rivedi / separa i contesti
 Rivedi Interfaccia DMNCompiledAlphaNetworkEvaluator (meno metodi?)
 Rimuovi codice generato che crea la RETE

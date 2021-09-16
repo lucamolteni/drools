@@ -71,17 +71,17 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
 
         GeneratedSources allGeneratedSources = new GeneratedSources();
 
-        // Compile FEEL unary tests to Java source code with row,column index.
-        // i.e. second row third column will have the UnaryTestR2C3.java name
-        Map<String, String> feelTestClasses = tableCells.createFEELSourceClasses();
-        allGeneratedSources.putAllGeneratedFEELTestClasses(feelTestClasses);
-
         // Generate classes for DMNAlphaNetwork
         DMNAlphaNetworkCompiler dmnAlphaNetworkCompiler = new DMNAlphaNetworkCompiler();
         GeneratedSources generatedSources = dmnAlphaNetworkCompiler.generateSourceCode(decisionTable, tableCells, decisionTableName, allGeneratedSources);
 
-        DMNReteGenerator dmnReteGenerator = new DMNReteGenerator();
-        ObjectTypeNode firstObjectTypeNodeOfRete = dmnReteGenerator.createRete(decisionTable, tableCells, decisionTableName);
+        ReteBuilderContext reteBuilderContext = new ReteBuilderContext();
+        ObjectTypeNode firstObjectTypeNodeOfRete = tableCells.createRete(reteBuilderContext);
+
+        // Compile FEEL unary tests to Java source code with row,column index.
+        // i.e. second row third column will have the UnaryTestR2C3.java name
+        Map<String, String> feelTestClasses = tableCells.createFEELSourceClasses();
+        allGeneratedSources.putAllGeneratedFEELTestClasses(feelTestClasses);
 
         // Generate the ANC
         ObjectTypeNodeCompiler objectTypeNodeCompiler = createAlphaNetworkCompiler(firstObjectTypeNodeOfRete);
