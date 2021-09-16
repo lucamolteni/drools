@@ -19,8 +19,6 @@ package org.kie.dmn.core.compiler.alphanetbased;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
-import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import org.drools.ancompiler.ANCInlineable;
@@ -42,7 +40,7 @@ public class ResultCollectorAlphaSink extends LeftInputAdapterNode implements Re
     private final String columnName;
     private final ResultCollector resultCollector;
     private final Function1<EvaluationContext, Object> outputEvaluationFunction;
-    private String outputClass;
+    private final String outputClass;
 
     public ResultCollectorAlphaSink(int id,
                                     ObjectSource source,
@@ -70,6 +68,7 @@ public class ResultCollectorAlphaSink extends LeftInputAdapterNode implements Re
         this.columnName = columnName;
         this.resultCollector = resultCollector;
         this.outputEvaluationFunction = outputEvaluationFunction;
+        this.outputClass = ""; // used only at compilation time
     }
 
     @Override
@@ -94,7 +93,7 @@ public class ResultCollectorAlphaSink extends LeftInputAdapterNode implements Re
         objectCreationExpr.setType(StaticJavaParser.parseClassOrInterfaceType(this.getClass().getCanonicalName()));
         objectCreationExpr.addArgument(new IntegerLiteralExpr(row));
         objectCreationExpr.addArgument(new StringLiteralExpr(columnName));
-        objectCreationExpr.addArgument(new NameExpr("ctx.resultCollector"));
+        objectCreationExpr.addArgument(StaticJavaParser.parseExpression("ctx.getResultCollector()"));
 
         Expression lambdaExpr = StaticJavaParser.parseExpression(String.format("(org.kie.dmn.feel.lang.EvaluationContext x) -> %s.getInstance().apply(x)", outputClass));
         objectCreationExpr.addArgument(lambdaExpr);

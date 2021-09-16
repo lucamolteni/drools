@@ -18,39 +18,30 @@ package org.kie.dmn.core.alphasupport;
 import java.lang.Override;
 
 import org.drools.core.common.DefaultFactHandle;
-import org.drools.core.reteoo.AlphaNode;
 import org.drools.ancompiler.CompiledNetwork;
-import org.drools.core.reteoo.ObjectTypeNode;
-import org.drools.model.Index;
 import org.kie.dmn.api.feel.runtime.events.FEELEvent;
-import org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCreation;
 import org.kie.dmn.core.compiler.alphanetbased.DMNCompiledAlphaNetworkEvaluator;
-import org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkBuilderContext;
+import org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkEvaluationContext;
 import org.kie.dmn.core.compiler.alphanetbased.ResultCollector;
 import org.kie.dmn.feel.lang.EvaluationContext;
 import org.kie.dmn.core.compiler.alphanetbased.PropertyEvaluator;
 import org.kie.dmn.feel.runtime.decisiontables.DecisionTable;
 import org.kie.dmn.feel.runtime.decisiontables.HitPolicy;
 
-import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCreation.createIndex;
-
 // All implementations are used only for templating purposes and should never be called
 public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetworkEvaluator {
 
-    protected final ResultCollector resultCollector;
     protected final CompiledNetwork compiledNetwork;
-    protected final AlphaNetworkBuilderContext builderContext;
+    protected final AlphaNetworkEvaluationContext alphaNetworkEvaluationContext;
 
     private final HitPolicy hitPolicy = HitPolicy.fromString("HIT_POLICY_NAME");
 
     protected PropertyEvaluator propertyEvaluator;
 
     public DMNAlphaNetworkTemplate(CompiledNetwork compiledNetwork,
-                                   ResultCollector resultCollector,
-                                   AlphaNetworkBuilderContext builderContext) {
+                                   AlphaNetworkEvaluationContext alphaNetworkEvaluationContext) {
         this.compiledNetwork = compiledNetwork;
-        this.resultCollector = resultCollector;
-        this.builderContext = builderContext;
+        this.alphaNetworkEvaluationContext = alphaNetworkEvaluationContext;
     }
 
     public PropertyEvaluator getOrCreatePropertyEvaluator(EvaluationContext evaluationContext) {
@@ -82,10 +73,11 @@ public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetworkEvaluator
     public Object evaluate(EvaluationContext evaluationContext, DecisionTable decisionTable) {
 
         // Clean previous results
+        ResultCollector resultCollector = alphaNetworkEvaluationContext.getResultCollector();
         resultCollector.clearResults();
 
         // init CompiledNetwork with object needed for results,
-        compiledNetwork.init(builderContext);
+        compiledNetwork.init(alphaNetworkEvaluationContext);
 
         // create lambda constraints and results
         compiledNetwork.initConstraintsResults();

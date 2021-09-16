@@ -25,6 +25,8 @@ import org.drools.modelcompiler.constraints.ConstraintEvaluator;
 import org.drools.modelcompiler.constraints.LambdaConstraint;
 import org.kie.dmn.core.compiler.alphanetbased.evaluator.TestEvaluator;
 
+import static com.github.javaparser.StaticJavaParser.parseExpression;
+
 public class InlineableAlphaNode extends AlphaNode implements ANCInlineable {
 
     private MethodCallExpr methodCallExpr;
@@ -97,10 +99,10 @@ public class InlineableAlphaNode extends AlphaNode implements ANCInlineable {
             methodCallExpr.addArgument(new NullLiteralExpr());
 
             // variable
-            methodCallExpr.addArgument(new NameExpr("ctx.variable"));
+            methodCallExpr.addArgument(parseExpression("ctx.getVariable()"));
 
             // declaration
-            methodCallExpr.addArgument(new NameExpr("ctx.declaration"));
+            methodCallExpr.addArgument(parseExpression("ctx.getDeclaration()"));
 
 
             return this;

@@ -61,14 +61,13 @@ public class GeneratedSources {
 
     public DMNCompiledAlphaNetworkEvaluator newInstanceOfAlphaNetwork(Map<String, Class<?>> compiledClasses,
                                                                       CompiledNetwork compiledNetwork,
-                                                                      ResultCollector resultCollector,
-                                                                      AlphaNetworkBuilderContext alphaNetworkBuilderContext) {
+                                                                      AlphaNetworkEvaluationContext alphaNetworkEvaluationContext) {
         Class<?> inputSetClass = compiledClasses.get(alphaNetworkClassName);
         Object inputSetInstance;
         try {
             inputSetInstance = inputSetClass
-                    .getDeclaredConstructor(CompiledNetwork.class, ResultCollector.class, AlphaNetworkBuilderContext.class)
-                    .newInstance(compiledNetwork, resultCollector, alphaNetworkBuilderContext);
+                    .getDeclaredConstructor(CompiledNetwork.class, AlphaNetworkEvaluationContext.class)
+                    .newInstance(compiledNetwork, alphaNetworkEvaluationContext);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

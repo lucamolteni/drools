@@ -86,7 +86,7 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         ObjectTypeNodeCompiler objectTypeNodeCompiler = new ObjectTypeNodeCompiler(firstObjectTypeNodeOfRete, true);
         objectTypeNodeCompiler.setDisableContextEntry(true);
         objectTypeNodeCompiler.setPrettyPrint(true);
-        VariableDeclarator variableDeclarator = new VariableDeclarator(StaticJavaParser.parseType(AlphaNetworkBuilderContext.class.getCanonicalName()), "ctx");
+        VariableDeclarator variableDeclarator = new VariableDeclarator(StaticJavaParser.parseType(AlphaNetworkEvaluationContext.class.getCanonicalName()), "ctx");
         objectTypeNodeCompiler.addAdditionalFields(new FieldDeclaration(NodeList.nodeList(), NodeList.nodeList(variableDeclarator)));
         CompiledNetworkSource compiledNetworkSource = objectTypeNodeCompiler.generateSource();
         generatedSources.dumpGeneratedAlphaNetwork(compiledNetworkSource);
@@ -99,9 +99,9 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         Class<?> compiledNetworkClass = compiledClasses.get(compiledNetworkSource.getName());
         CompiledNetwork compiledAlphaNetwork = compiledNetworkSource.createInstanceAndSet(compiledNetworkClass);
         ResultCollector resultCollector = new ResultCollector();
-        AlphaNetworkBuilderContext builderContext = new AlphaNetworkBuilderContext(resultCollector);
+        AlphaNetworkEvaluationContext evaluationContext = new AlphaNetworkEvaluationContext(resultCollector);
         DMNCompiledAlphaNetworkEvaluator dmnCompiledAlphaNetworkEvaluator = generatedSources
-                .newInstanceOfAlphaNetwork(compiledClasses, compiledAlphaNetwork, resultCollector, builderContext);
+                .newInstanceOfAlphaNetwork(compiledClasses, compiledAlphaNetwork, evaluationContext);
 
         // FeelDecisionTable is used at runtime to evaluate Hit Policy / Output values
         // TODO DT-ANC probably need to have all the types in here
