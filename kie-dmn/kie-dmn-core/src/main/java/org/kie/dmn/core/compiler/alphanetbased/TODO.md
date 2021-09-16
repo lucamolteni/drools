@@ -1,14 +1,16 @@
 ## TODO
 
-Rivedi Interfaccia DMNCompiledAlphaNetworkEvaluator (meno metodi?)
-Rinomina DMNCompiledAlphaNetworkEvaluator
 Rivedi / separa i contesti
+Predicate information su constraint e Commenti
+Non fare compilare UnaryTest di nodi sharati
+Rinomina DMNCompiledAlphaNetworkEvaluator
 Sistema il test della DT grossa
 Aggiungi gli indici al constraint
 Disabilita generazione di propagateModifyObject
 
 ## Fatto
 
+Rivedi Interfaccia DMNCompiledAlphaNetworkEvaluator (meno metodi?)
 Rimuovi codice generato che crea la RETE
 Creare nuova interfaccia per result che non dipenda da ObjectSink
 Cambiare creazione output (l'output (In questo caso resultCollectorAlphaSink) non ha bisogno di InternalFactHandle factHandle, PropagationContext propagationContext, InternalWorkingMemory workingMemory)

@@ -25,14 +25,8 @@ import org.kie.dmn.feel.runtime.decisiontables.DecisionTable;
 // TODO DT-ANC change name as it's too similar to AlphaNetDMNExpressionEvaluator
 public interface DMNCompiledAlphaNetworkEvaluator {
 
-    void setCompiledNetwork(CompiledNetwork compiledAlphaNetwork);
-
-    ObjectTypeNode getObjectTypeNode();
-
     FEELEvent validate(EvaluationContext evaluationContext);
 
     Object evaluate(EvaluationContext evaluationContext, DecisionTable decisionTable);
-
-    ResultCollector getResultCollector();
 
 }

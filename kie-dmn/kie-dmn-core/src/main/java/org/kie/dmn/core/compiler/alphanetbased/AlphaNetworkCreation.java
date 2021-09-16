@@ -73,16 +73,13 @@ public class AlphaNetworkCreation {
      * <p>
      * Prefix: column name + value
      */
-    // The Alpha Node will be used to generate the ANC and the LambdaConstraint will be inlined using the Alpha Node Id as a reference
     public InlineableAlphaNode createAlphaNode(ObjectSource source, String id, Predicate1<PropertyEvaluator> predicate, Index index) {
         InlineableAlphaNode candidateAlphaNode = InlineableAlphaNode.createBuilder()
                 .withConstraint(id, predicate, index, ctx.variable, ctx.declaration)
                 .createAlphaNode(getNextId(), source,
                                  ctx.buildContext);
 
-        InlineableAlphaNode alphaNode = buildUtils.attachNode(ctx.buildContext, candidateAlphaNode);
-        System.out.println(String.format("Created Alpha Node id: %s - %s", alphaNode.getId(), id));
-        return alphaNode;
+        return buildUtils.attachNode(ctx.buildContext, candidateAlphaNode);
     }
 
     /**

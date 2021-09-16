@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import org.drools.ancompiler.CompiledNetwork;
 import org.drools.ancompiler.CompiledNetworkSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,11 +59,16 @@ public class GeneratedSources {
         this.alphaNetworkClassName = alphaNetworkClassWithPackage;
     }
 
-    public DMNCompiledAlphaNetworkEvaluator newInstanceOfAlphaNetwork(Map<String, Class<?>> compiledClasses) {
+    public DMNCompiledAlphaNetworkEvaluator newInstanceOfAlphaNetwork(Map<String, Class<?>> compiledClasses,
+                                                                      CompiledNetwork compiledNetwork,
+                                                                      ResultCollector resultCollector,
+                                                                      AlphaNetworkBuilderContext alphaNetworkBuilderContext) {
         Class<?> inputSetClass = compiledClasses.get(alphaNetworkClassName);
         Object inputSetInstance;
         try {
-            inputSetInstance = inputSetClass.getDeclaredConstructor().newInstance();
+            inputSetInstance = inputSetClass
+                    .getDeclaredConstructor(CompiledNetwork.class, ResultCollector.class, AlphaNetworkBuilderContext.class)
+                    .newInstance(compiledNetwork, resultCollector, alphaNetworkBuilderContext);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

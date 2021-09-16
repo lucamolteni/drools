@@ -46,6 +46,7 @@ public class AlphaNetDMNExpressionEvaluator implements DMNExpressionEvaluator {
     private static Logger logger = LoggerFactory.getLogger(AlphaNetDMNExpressionEvaluator.class);
 
     private final DMNCompiledAlphaNetworkEvaluator compiledNetwork;
+    private ResultCollector resultCollector;
     private final DMNFEELHelper feel;
     private final String decisionTableName;
     private final FeelDecisionTable feelDecisionTable;
@@ -55,19 +56,19 @@ public class AlphaNetDMNExpressionEvaluator implements DMNExpressionEvaluator {
                                           DMNFEELHelper feel,
                                           String decisionTableName,
                                           FeelDecisionTable feelDecisionTable,
-                                          DMNBaseNode node) {
+                                          DMNBaseNode node,
+                                          ResultCollector resultCollector) {
         this.feel = feel;
         this.decisionTableName = decisionTableName;
         this.feelDecisionTable = feelDecisionTable;
         this.node = node;
         this.compiledNetwork = compiledNetwork;
+        this.resultCollector = resultCollector;
     }
 
     @Override
     public EvaluatorResult evaluate(DMNRuntimeEventManager eventManager, DMNResult dmnResult) {
         DMNRuntimeEventManagerUtils.fireBeforeEvaluateDecisionTable(eventManager, node.getName(), decisionTableName, dmnResult);
-
-        ResultCollector resultCollector = compiledNetwork.getResultCollector();
 
         EvaluationContext evalCtx = createEvaluationContext(resultCollector.getEvents(), eventManager, dmnResult);
         evalCtx.enterFrame();

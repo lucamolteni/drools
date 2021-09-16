@@ -37,24 +37,20 @@ import static org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkCreation.creat
 // All implementations are used only for templating purposes and should never be called
 public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetworkEvaluator {
 
-    protected final ResultCollector resultCollector = new ResultCollector();
-    protected CompiledNetwork compiledNetwork;
-
-    protected final AlphaNetworkBuilderContext builderContext = new AlphaNetworkBuilderContext(resultCollector);
-    protected final AlphaNetworkCreation alphaNetworkCreation = new AlphaNetworkCreation(builderContext);
+    protected final ResultCollector resultCollector;
+    protected final CompiledNetwork compiledNetwork;
+    protected final AlphaNetworkBuilderContext builderContext;
 
     private final HitPolicy hitPolicy = HitPolicy.fromString("HIT_POLICY_NAME");
 
     protected PropertyEvaluator propertyEvaluator;
 
-    @Override
-    public void setCompiledNetwork(CompiledNetwork compiledAlphaNetwork) {
-        this.compiledNetwork = compiledAlphaNetwork;
-    }
-
-    @Override
-    public ObjectTypeNode getObjectTypeNode() {
-        return builderContext.otn;
+    public DMNAlphaNetworkTemplate(CompiledNetwork compiledNetwork,
+                                   ResultCollector resultCollector,
+                                   AlphaNetworkBuilderContext builderContext) {
+        this.compiledNetwork = compiledNetwork;
+        this.resultCollector = resultCollector;
+        this.builderContext = builderContext;
     }
 
     public PropertyEvaluator getOrCreatePropertyEvaluator(EvaluationContext evaluationContext) {
@@ -85,7 +81,6 @@ public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetworkEvaluator
     @Override
     public Object evaluate(EvaluationContext evaluationContext, DecisionTable decisionTable) {
 
-
         // Clean previous results
         resultCollector.clearResults();
 
@@ -102,10 +97,5 @@ public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetworkEvaluator
         Object result = resultCollector.applyHitPolicy(evaluationContext, hitPolicy, decisionTable);
 
         return result;
-    }
-
-    @Override
-    public ResultCollector getResultCollector() {
-        return resultCollector;
     }
 }

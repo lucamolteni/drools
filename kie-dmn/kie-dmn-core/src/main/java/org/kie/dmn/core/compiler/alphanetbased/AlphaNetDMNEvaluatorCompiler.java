@@ -96,10 +96,12 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         // Compile everything
         Map<String, Class<?>> compiledClasses = KieMemoryCompiler.compile(generatedSources.getAllGeneratedSources(), this.getClass().getClassLoader());
 
-        DMNCompiledAlphaNetworkEvaluator dmnCompiledAlphaNetworkEvaluator = generatedSources.newInstanceOfAlphaNetwork(compiledClasses);
-        Class<?> aClass = compiledClasses.get(compiledNetworkSource.getName());
-        CompiledNetwork compiledAlphaNetwork = compiledNetworkSource.createInstanceAndSet(aClass);
-        dmnCompiledAlphaNetworkEvaluator.setCompiledNetwork(compiledAlphaNetwork);
+        Class<?> compiledNetworkClass = compiledClasses.get(compiledNetworkSource.getName());
+        CompiledNetwork compiledAlphaNetwork = compiledNetworkSource.createInstanceAndSet(compiledNetworkClass);
+        ResultCollector resultCollector = new ResultCollector();
+        AlphaNetworkBuilderContext builderContext = new AlphaNetworkBuilderContext(resultCollector);
+        DMNCompiledAlphaNetworkEvaluator dmnCompiledAlphaNetworkEvaluator = generatedSources
+                .newInstanceOfAlphaNetwork(compiledClasses, compiledAlphaNetwork, resultCollector, builderContext);
 
         // FeelDecisionTable is used at runtime to evaluate Hit Policy / Output values
         // TODO DT-ANC probably need to have all the types in here
@@ -109,6 +111,6 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
 
         FeelDecisionTable feelDecisionTable = new FeelDecisionTable(decisionTableName, outputs, feelHelper, variableTypes, dmnModelImpl.getTypeRegistry().unknown());
 
-        return new AlphaNetDMNExpressionEvaluator(dmnCompiledAlphaNetworkEvaluator, feelHelper, decisionTableName, feelDecisionTable, dmnBaseNode);
+        return new AlphaNetDMNExpressionEvaluator(dmnCompiledAlphaNetworkEvaluator, feelHelper, decisionTableName, feelDecisionTable, dmnBaseNode, resultCollector);
     }
 }
