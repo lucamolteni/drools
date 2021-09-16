@@ -104,6 +104,6 @@ public class ResultCollectorAlphaSink extends LeftInputAdapterNode implements Re
 
     @Override
     public void collectObject() {
-
+        resultCollector.addResult(row, columnName, outputEvaluationFunction);
     }
 }

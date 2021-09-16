@@ -36,6 +36,7 @@ public class AlphaNetworkBuilderContext {
     public Declaration declaration;
     public ObjectTypeNode otn;
 
+    // TODO DT-ANC maybe split? Not sure the same variables are needed at comiple time and evaluation time
     public ResultCollector resultCollector;
 
     public AlphaNetworkBuilderContext(ResultCollector resultCollector) {

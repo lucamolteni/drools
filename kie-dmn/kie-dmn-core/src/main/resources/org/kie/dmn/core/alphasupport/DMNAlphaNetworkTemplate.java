@@ -96,10 +96,16 @@ public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetworkEvaluator
 
     @Override
     public Object evaluate(EvaluationContext evaluationContext, DecisionTable decisionTable) {
+
+
         // Clean previous results
         resultCollector.clearResults();
 
-        compiledNetwork.initNodes();
+        // init CompiledNetwork with object needed for results,
+        compiledNetwork.init(builderContext);
+
+        // create lambda constraints and results
+        compiledNetwork.initConstraintsResults();
 
         // Fire rete network
         compiledNetwork.propagateAssertObject(new DefaultFactHandle(getOrCreatePropertyEvaluator(evaluationContext)), null, null);

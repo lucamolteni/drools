@@ -133,7 +133,7 @@ public abstract class CompiledNetwork implements ObjectSinkPropagator {
      */
     protected abstract void setNetworkNodeReference(NetworkNode networkNode);
 
-    public abstract void initNodes();
+    public abstract void initConstraintsResults();
 
     public NetworkHandlerAdaptor createNodeReferenceSetter() {
         return new NodeReferenceSetter();

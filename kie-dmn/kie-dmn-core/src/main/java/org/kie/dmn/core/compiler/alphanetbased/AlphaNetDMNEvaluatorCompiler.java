@@ -108,7 +108,6 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
 
         Class<?> aClass = compiledClasses.get(compiledNetworkSource.getName());
         CompiledNetwork compiledAlphaNetwork = compiledNetworkSource.createInstanceAndSet(aClass);
-        compiledAlphaNetwork.init(new AlphaNetworkBuilderContext(new ResultCollector()));
         dmnCompiledAlphaNetworkEvaluator.setCompiledNetwork(compiledAlphaNetwork);
 
         // FeelDecisionTable is used at runtime to evaluate Hit Policy / Output values

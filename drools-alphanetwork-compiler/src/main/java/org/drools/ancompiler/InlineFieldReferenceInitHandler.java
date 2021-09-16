@@ -21,31 +21,20 @@ import java.util.List;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.Modifier;
-import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.body.Parameter;
-import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.SimpleName;
 import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
-import com.github.javaparser.ast.stmt.SwitchEntry;
-import com.github.javaparser.ast.stmt.SwitchStmt;
-import com.github.javaparser.ast.type.PrimitiveType;
 import com.github.javaparser.ast.type.VoidType;
 import org.drools.core.common.NetworkNode;
 import org.drools.core.reteoo.AlphaNode;
 import org.drools.core.reteoo.Sink;
 
-import static com.github.javaparser.StaticJavaParser.parseExpression;
 import static com.github.javaparser.StaticJavaParser.parseStatement;
-import static com.github.javaparser.StaticJavaParser.parseType;
 import static com.github.javaparser.ast.NodeList.nodeList;
 import static org.drools.ancompiler.AbstractCompilerHandler.getVariableName;
-import static org.drools.ancompiler.AbstractCompilerHandler.getVariableType;
 
 /**
  * This handler is used to inline the creation of a constraint and a ResultCollectorSink
@@ -53,8 +42,7 @@ import static org.drools.ancompiler.AbstractCompilerHandler.getVariableType;
  */
 public class InlineFieldReferenceInitHandler {
 
-    private static final String PARAM_TYPE = NetworkNode.class.getName();
-    private static final String METHOD_NAME = "initNodes";
+    private static final String METHOD_NAME = "initConstraintsResults";
 
     private static final String statementCall = "        " +
             " {" +
