@@ -80,10 +80,7 @@ public class TableCell {
         }
 
         public TableCell createOutputCell(TableIndex tableIndex, String input, String columnName, Type columnType) {
-            TableCell outputCell = new TableCell(feel, compilerContext, tableIndex, input, columnName, columnType);
-            outputCell.className = tableIndex.appendOutputSuffix("");
-            outputCell.classNameWithPackage = ALPHANETWORK_STATIC_PACKAGE + "." + outputCell.className;
-            return outputCell;
+            return new TableCell(feel, compilerContext, tableIndex, input, columnName, columnType);
         }
 
         public ColumnDefinition createColumnDefinition(int columnIndex, String decisionTableName, String columnName, UnaryTests inputValues, Type type) {
@@ -187,7 +184,7 @@ public class TableCell {
                                      reteBuilderContext.otn,
                                      reteBuilderContext.buildContext);
         } else {
-            if(previousAlphaNode == null) {
+            if (previousAlphaNode == null) {
                 throw new RuntimeException("Need a previous Alpha Node");
             }
 
@@ -197,7 +194,6 @@ public class TableCell {
                     .createAlphaNode(alphaNetworkCreation.getNextId(),
                                      previousAlphaNode,
                                      reteBuilderContext.buildContext);
-
         }
 
         return alphaNetworkCreation.shareAlphaNode(candidateAlphaNode);
@@ -208,15 +204,21 @@ public class TableCell {
     }
 
     public void crateUnaryTestAndAddTo(Map<String, String> allClasses) {
-        if(!allClasses.containsKey(classNameWithPackage)) {
-            UnaryTestClass unaryTestClass = new UnaryTestClass(input, feel, compilerContext, type);
-            unaryTestClass.compileUnaryTestAndAddTo(allClasses, className, classNameWithPackage, ALPHANETWORK_STATIC_PACKAGE);
-        } else {
-            logger.debug("FEEL Expression {} already generated: {} avoiding generating input", input, className);
+        if (allClasses.containsKey(classNameWithPackage)) {
+            logger.debug("FEEL Unary Test {} already generated: {} avoiding generating", input, className);
+            return;
         }
+
+        UnaryTestClass unaryTestClass = new UnaryTestClass(input, feel, compilerContext, type);
+        unaryTestClass.compileUnaryTestAndAddTo(allClasses, className, classNameWithPackage, ALPHANETWORK_STATIC_PACKAGE);
     }
 
     public void compiledFeelExpressionAndAddTo(Map<String, String> allGeneratedClasses) {
+        if (allGeneratedClasses.containsKey(classNameWithPackage)) {
+            logger.debug("FEEL Expression {} already generated: {} avoiding generating", input, className);
+            return;
+        }
+
         CompilationUnit sourceCode = feel.generateFeelExpressionCompilationUnit(
                 input,
                 compilerContext);
@@ -240,8 +242,6 @@ public class TableCell {
     public void addToOutputCells(TableCell[][] outputCells) {
         outputCells[tableIndex.rowIndex()][tableIndex.columnIndex()] = this;
     }
-
-
 }
 
 
