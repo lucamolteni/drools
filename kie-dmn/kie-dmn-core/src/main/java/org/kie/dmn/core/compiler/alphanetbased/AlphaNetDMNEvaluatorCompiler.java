@@ -79,7 +79,6 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         ObjectTypeNode firstObjectTypeNodeOfRete = tableCells.createRete(reteBuilderContext);
 
         // Compile FEEL unary tests to Java source code with row,column index.
-        // i.e. second row third column will have the UnaryTestR2C3.java name
         Map<String, String> feelTestClasses = tableCells.createFEELSourceClasses();
         allGeneratedSources.putAllGeneratedFEELTestClasses(feelTestClasses);
 

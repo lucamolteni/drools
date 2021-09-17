@@ -8,7 +8,10 @@ import org.slf4j.LoggerFactory;
 public class TestEvaluator {
     static Logger logger = LoggerFactory.getLogger(TestEvaluator.class);
 
-    public static boolean evaluateAllTests(PropertyEvaluator propertyEvaluator, CompiledFEELUnaryTests instance, int index, String traceString) {
+    public static boolean evaluateAllTests(PropertyEvaluator propertyEvaluator,
+                                           CompiledFEELUnaryTests instance,
+                                           int index,
+                                           String traceString) {
         return instance.getUnaryTests().stream().anyMatch(t -> {
             Object value = propertyEvaluator.getValue(index);
             Boolean result = t.apply(propertyEvaluator.getEvaluationContext(), value);

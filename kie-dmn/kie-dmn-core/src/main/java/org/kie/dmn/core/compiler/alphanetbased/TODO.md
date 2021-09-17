@@ -1,14 +1,15 @@
 ## TODO
 
-Non fare compilare UnaryTest di nodi sharati
+Sistema il test della DT grossa
+Metti i test FEEL in un metodo statico invece che di istanza (così eviti il singleton)
 Predicate information su constraint e Commenti
 Rinomina DMNCompiledAlphaNetworkEvaluator
-Sistema il test della DT grossa
 Aggiungi gli indici al constraint
 Trace string
 
 ## Fatto
 
+Non fare compilare UnaryTest di nodi sharati
 Disabilita generazione di propagateModifyObject
 Rivedi / separa i contesti
 Rivedi Interfaccia DMNCompiledAlphaNetworkEvaluator (meno metodi?)
