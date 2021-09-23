@@ -104,6 +104,7 @@ public class GeneratedSources {
                     String javaSource = kv.getValue();
 
                     javaSource = javaSource.replace("package " + ANC_PACKAGE, "package " + tempDirPackage + "." + ANC_PACKAGE);
+                    javaSource = javaSource.replace("= " + ANC_PACKAGE, "= " + tempDirPackage + "." + ANC_PACKAGE);
                     javaSource = javaSource.replace(ALPHANETWORK_STATIC_PACKAGE, tempDirPackage + "." + ALPHANETWORK_STATIC_PACKAGE);
 
 

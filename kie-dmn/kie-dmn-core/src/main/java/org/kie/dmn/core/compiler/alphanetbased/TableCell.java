@@ -63,6 +63,8 @@ public class TableCell {
     private String classNameWithPackage;
 
     private static final String CREATE_INDEX_NODE_METHOD = "createIndex";
+
+    // TODO DT-ANC support specific package
     public static final String ALPHANETWORK_STATIC_PACKAGE = "org.kie.dmn.core.alphasupport";
 
     public static class TableCellFactory {

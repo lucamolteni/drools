@@ -17,24 +17,37 @@
 package org.drools.ancompiler;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.PackageDeclaration;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.SimpleName;
 import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.stmt.ReturnStmt;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.VoidType;
 import org.drools.core.common.NetworkNode;
 import org.drools.core.reteoo.AlphaNode;
 import org.drools.core.reteoo.Sink;
+import org.drools.modelcompiler.constraints.LambdaConstraint;
 
 import static com.github.javaparser.StaticJavaParser.parseStatement;
 import static com.github.javaparser.ast.NodeList.nodeList;
 import static org.drools.ancompiler.AbstractCompilerHandler.getVariableName;
+import static org.drools.core.util.StringUtils.ucFirst;
 
 /**
  * This handler is used to inline the creation of a constraint and a ResultCollectorSink
@@ -50,9 +63,18 @@ public class InlineFieldReferenceInitHandler {
             "}";
 
     private final List<NetworkNode> nodes;
+    private List<FieldDeclaration> additionalFields;
 
-    public InlineFieldReferenceInitHandler(List<NetworkNode> nodes) {
+    public InlineFieldReferenceInitHandler(List<NetworkNode> nodes,
+                                           List<FieldDeclaration> additionalFields) {
         this.nodes = nodes;
+        this.additionalFields = additionalFields;
+    }
+
+    private final Map<Integer, CompilationUnit> partitionedNodeInitialisationClasses = new HashMap<>();
+
+    public Collection<CompilationUnit> getPartitionedNodeInitialisationClasses() {
+        return partitionedNodeInitialisationClasses.values();
     }
 
     public void emitCode(StringBuilder builder) {
@@ -71,8 +93,8 @@ public class InlineFieldReferenceInitHandler {
         List<List<NetworkNode>> partitionedNodes = ListUtils.partition(nodes, 20);
 
         for (int i = 0; i < partitionedNodes.size(); i++) {
-            List<NetworkNode> subNodes = partitionedNodes.get(i);
-            MethodDeclaration m = generateSwitchForSubNodes(i, subNodes, setNetworkNodeReference);
+            List<NetworkNode> nodesInPartition = partitionedNodes.get(i);
+            MethodDeclaration m = generateInitMethodForPartition(i, nodesInPartition, setNetworkNodeReference);
             allMethods.add(m);
         }
 
@@ -82,51 +104,84 @@ public class InlineFieldReferenceInitHandler {
         }
     }
 
-    private MethodDeclaration generateSwitchForSubNodes(int partitionIndex,
-                                                        List<NetworkNode> subNodes,
-                                                        BlockStmt setNetworkNodeReferenceBody) {
-        String setFieldNode = "initNodeN" + partitionIndex;
+    private MethodDeclaration generateInitMethodForPartition(int partitionIndex,
+                                                             List<NetworkNode> nodeInPartition,
+                                                             BlockStmt setNetworkNodeReferenceBody) {
+        String initWithIndex = "initNode" + partitionIndex;
+
+        CompilationUnit initialisationCompilationUnit = new CompilationUnit();
+        initialisationCompilationUnit.setPackageDeclaration(ObjectTypeNodeCompiler.PACKAGE_NAME);
+        initialisationCompilationUnit.addClass(ucFirst(initWithIndex));
+        partitionedNodeInitialisationClasses.put(partitionIndex, initialisationCompilationUnit);
 
         BlockStmt setFieldStatementCall = StaticJavaParser.parseBlock(statementCall);
         setFieldStatementCall.findAll(MethodCallExpr.class, mc -> mc.getNameAsString().equals("initNodeN"))
-                .forEach(n -> n.setName(new SimpleName("initNodeN" + partitionIndex)));
+                .forEach(n -> n.setName(new SimpleName(initWithIndex)));
 
         setFieldStatementCall.getStatements().forEach(setNetworkNodeReferenceBody::addStatement);
 
-        MethodDeclaration switchMethod = new MethodDeclaration(nodeList(Modifier.publicModifier()),
-                                                               new VoidType(),
-                                                               setFieldNode
+        MethodDeclaration initMethodWithIndex = new MethodDeclaration(nodeList(Modifier.publicModifier()),
+                                                                      new VoidType(),
+                                                                      initWithIndex
         );
 
-        BlockStmt statements = switchMethod.getBody().orElseThrow(() -> new RuntimeException("No"));
-        generateSetterBody(statements, subNodes);
+        BlockStmt initBlockPerPartition = initMethodWithIndex.getBody().orElseThrow(() -> new RuntimeException("No"));
+        generateInitBody(initBlockPerPartition, nodeInPartition, partitionIndex);
 
-        return switchMethod;
+        return initMethodWithIndex;
     }
 
-    private void generateSetterBody(BlockStmt statements, List<NetworkNode> subNodes) {
-        for (NetworkNode n : subNodes) {
+    private void generateInitBody(BlockStmt initBodyPerPartition,
+                                  List<NetworkNode> subNodes,
+                                  int partitionIndex) {
 
-            String assignStatementString;
-            if(n instanceof ANCInlineable) {
-                // TODO DT-ANC avoid toString() and reparse it
-                Expression javaMethod = ((ANCInlineable) n).createJavaMethod();
+        CompilationUnit partitionedCompilationUnit = partitionedNodeInitialisationClasses.get(partitionIndex);
+        PackageDeclaration partitionedClassPackage = (PackageDeclaration) partitionedCompilationUnit.getChildNodes().get(0);
+        ClassOrInterfaceDeclaration partitionedClass = (ClassOrInterfaceDeclaration) partitionedCompilationUnit.getChildNodes().get(1);
+
+        for (NetworkNode n : subNodes) {
+            if (n instanceof ANCInlineable) {
 
                 String variableName;
-                if(n instanceof AlphaNode) {
+                final ClassOrInterfaceType initMethodReturnType;
+                if (n instanceof AlphaNode) {
                     variableName = getVariableName((AlphaNode) n);
+                    initMethodReturnType = StaticJavaParser.parseClassOrInterfaceType(LambdaConstraint.class.getCanonicalName());
                 } else {
-                    variableName = getVariableName((Sink)n);
+                    variableName = getVariableName((Sink) n);
+                    initMethodReturnType = StaticJavaParser.parseClassOrInterfaceType(ResultCollectorSink.class.getCanonicalName());
                 }
 
-                assignStatementString = String.format("%s = %s;", variableName, javaMethod);
-            } else if (n instanceof AlphaNode) {
-                assignStatementString = "";
-            } else {
-                assignStatementString = "";
+                String initMethodName = String.format("init%s", variableName);
+
+                // We'll need to partition the lambda creation as with too many the compiler crashes
+                // We'll move it to a separated class
+                MethodDeclaration initMethod = new MethodDeclaration(nodeList(Modifier.publicModifier(), Modifier.staticModifier()),
+                                                                     initMethodName,
+                                                                     initMethodReturnType,
+                                                                     parametersFromAdditionalFields());
+                Expression initExpressionForNode = ((ANCInlineable) n).createJavaMethod();
+
+                partitionedClass.addMember(initMethod);
+
+                BlockStmt initMethodBlock = new BlockStmt();
+                initMethodBlock.addStatement(new ReturnStmt(initExpressionForNode));
+                initMethod.setBody(initMethodBlock);
+
+                String callInitMethodAndAssignToFieldString = String.format("%s = %s.%s.%s(ctx);",
+                                                                            variableName,
+                                                                            partitionedClassPackage.getNameAsString(),
+                                                                            partitionedClass.getNameAsString(),
+                                                                            initMethodName);
+                initBodyPerPartition.addStatement(parseStatement(callInitMethodAndAssignToFieldString));
             }
-            Statement assignStmt = parseStatement(assignStatementString);
-            statements.addStatement(assignStmt);
         }
+    }
+
+    private NodeList<Parameter> parametersFromAdditionalFields() {
+        List<Parameter> parameters = additionalFields.stream()
+                .map(f -> new Parameter(f.getCommonType(), f.getVariables().get(0).toString()))
+                .collect(Collectors.toList());
+        return nodeList(parameters);
     }
 }

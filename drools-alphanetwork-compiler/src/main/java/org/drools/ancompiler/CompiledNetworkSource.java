@@ -16,8 +16,10 @@
 
 package org.drools.ancompiler;
 
+import java.util.Collection;
 import java.util.Map;
 
+import com.github.javaparser.ast.CompilationUnit;
 import org.drools.core.reteoo.ObjectTypeNode;
 import org.drools.core.rule.IndexableConstraint;
 import org.drools.core.spi.InternalReadAccessor;
@@ -35,19 +37,22 @@ public class CompiledNetworkSource {
     private final String sourceName;
     private final ObjectTypeNode objectTypeNode;
     private final Map<String, AlphaRangeIndex> rangeIndexDeclarationMap;
+    private Collection<CompilationUnit> initClasses;
 
     public CompiledNetworkSource(String source,
                                  IndexableConstraint indexableConstraint,
                                  String name,
                                  String sourceName,
                                  ObjectTypeNode objectTypeNode,
-                                 Map<String, AlphaRangeIndex> rangeIndexDeclarationMap) {
+                                 Map<String, AlphaRangeIndex> rangeIndexDeclarationMap,
+                                 Collection<CompilationUnit> initClasses) {
         this.source = source;
         this.indexableConstraint = indexableConstraint;
         this.name = name;
         this.sourceName = sourceName;
         this.objectTypeNode = objectTypeNode;
         this.rangeIndexDeclarationMap = rangeIndexDeclarationMap;
+        this.initClasses = initClasses;
     }
 
     public String getSource() {
@@ -60,6 +65,10 @@ public class CompiledNetworkSource {
 
     public String getSourceName() {
         return sourceName;
+    }
+
+    public Collection<CompilationUnit> getInitClasses() {
+        return initClasses;
     }
 
     public CompiledNetwork createInstanceAndSet(Class<?> compiledNetworkClass) {

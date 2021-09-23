@@ -21,7 +21,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import org.drools.ancompiler.ANCConfiguration;
@@ -86,6 +88,12 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
         ObjectTypeNodeCompiler objectTypeNodeCompiler = createAlphaNetworkCompiler(firstObjectTypeNodeOfRete);
         CompiledNetworkSource compiledNetworkSource = objectTypeNodeCompiler.generateSource();
         generatedSources.addNewSourceClass(compiledNetworkSource.getName(), compiledNetworkSource.getSource());
+
+        for(CompilationUnit ch : compiledNetworkSource.getInitClasses()) {
+            ClassOrInterfaceDeclaration classOrInterfaceDeclaration = (ClassOrInterfaceDeclaration) ch.getChildNodes().get(1);
+            String classNameWithPackage = ch.getPackageDeclaration().get().getNameAsString() + "." + classOrInterfaceDeclaration.getNameAsString();
+            generatedSources.addNewSourceClass(classNameWithPackage, ch.toString());
+        }
 
         // Look at target/generated-sources
         generatedSources.dumpGeneratedClasses();

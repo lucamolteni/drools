@@ -26,6 +26,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.FieldDeclaration;
@@ -50,7 +51,7 @@ import static com.github.javaparser.StaticJavaParser.parseType;
 public class ObjectTypeNodeCompiler {
 
     private static final String NEWLINE = "\n";
-    private static final String PACKAGE_NAME = "org.drools.ancompiler";
+    public static final String PACKAGE_NAME = "org.drools.ancompiler";
     private static final String BINARY_PACKAGE_NAME = PACKAGE_NAME.replace('.', '/');
     /**
      * This field hold the fully qualified class name that the {@link ObjectTypeNode} is representing.
@@ -137,13 +138,16 @@ public class ObjectTypeNodeCompiler {
 
 
         // TODO DT-ANC avoid using a boolean
+        final Collection<CompilationUnit> initClasses;
         if(shouldInline) {
             addEmptySetNetworkReference(builder);
-            InlineFieldReferenceInitHandler partitionedSwitch = new InlineFieldReferenceInitHandler(nodeCollectors.getNodes());
-            partitionedSwitch.emitCode(builder);
+            InlineFieldReferenceInitHandler inlineFieldReferenceInitHandler = new InlineFieldReferenceInitHandler(nodeCollectors.getNodes(), additionalFields);
+            inlineFieldReferenceInitHandler.emitCode(builder);
+            initClasses = inlineFieldReferenceInitHandler.getPartitionedNodeInitialisationClasses();
         } else {
             SetNodeReferenceHandler partitionedSwitch = new SetNodeReferenceHandler(nodeCollectors.getNodes());
             partitionedSwitch.emitCode(builder);
+            initClasses = null;
         }
 
         // create assert method
@@ -180,7 +184,8 @@ public class ObjectTypeNodeCompiler {
                 getName(),
                 getSourceName(),
                 objectTypeNode,
-                rangeIndexDeclarationMap);
+                rangeIndexDeclarationMap,
+                initClasses);
     }
 
     private void addEmptySetNetworkReference(StringBuilder builder) {
