@@ -102,7 +102,7 @@ public class ObjectTypeNodeCompiler {
         this.additionalFields.add(additionalFieldDeclarations);
     }
 
-    public CompiledNetworkSource generateSource() {
+    public CompiledNetworkSources generateSource() {
         createClassDeclaration();
 
         ObjectTypeNodeParser parser = new ObjectTypeNodeParser(objectTypeNode);
@@ -178,7 +178,7 @@ public class ObjectTypeNodeCompiler {
             logger.debug(String.format("Generated Compiled Alpha Network %s", sourceCode));
         }
 
-        return new CompiledNetworkSource(
+        return new CompiledNetworkSources(
                 sourceCode,
                 parser.getIndexableConstraint(),
                 getName(),
@@ -320,7 +320,7 @@ public class ObjectTypeNodeCompiler {
         return PACKAGE_NAME;
     }
 
-    public static List<CompiledNetworkSource> compiledNetworkSources(Rete rete) {
+    public static List<CompiledNetworkSources> compiledNetworkSources(Rete rete) {
         return objectTypeNodeCompiler(rete)
                 .stream()
                 .map(ObjectTypeNodeCompiler::generateSource)
@@ -346,11 +346,11 @@ public class ObjectTypeNodeCompiler {
                 && !(f.getObjectSinkPropagator() instanceof CompiledNetwork); // DROOLS-6336 Avoid generating an ANC from an ANC, it won't work anyway
     }
 
-    public static Map<String, CompiledNetworkSource> compiledNetworkSourceMap(Rete rete) {
-        List<CompiledNetworkSource> compiledNetworkSources = ObjectTypeNodeCompiler.compiledNetworkSources(rete);
+    public static Map<String, CompiledNetworkSources> compiledNetworkSourceMap(Rete rete) {
+        List<CompiledNetworkSources> compiledNetworkSources = ObjectTypeNodeCompiler.compiledNetworkSources(rete);
         return compiledNetworkSources
                 .stream()
-                .collect(Collectors.toMap(CompiledNetworkSource::getName, Function.identity()));
+                .collect(Collectors.toMap(CompiledNetworkSources::getName, Function.identity()));
     }
 
     public static Map<ObjectTypeNode, String> otnWithClassName(Rete rete) {

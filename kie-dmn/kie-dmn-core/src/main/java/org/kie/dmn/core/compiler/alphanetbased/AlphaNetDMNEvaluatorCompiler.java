@@ -28,7 +28,7 @@ import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import org.drools.ancompiler.ANCConfiguration;
 import org.drools.ancompiler.CompiledNetwork;
-import org.drools.ancompiler.CompiledNetworkSource;
+import org.drools.ancompiler.CompiledNetworkSources;
 import org.drools.ancompiler.ObjectTypeNodeCompiler;
 import org.drools.core.reteoo.ObjectTypeNode;
 import org.kie.dmn.core.api.DMNExpressionEvaluator;
@@ -86,14 +86,8 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
 
         // Generate the ANC
         ObjectTypeNodeCompiler objectTypeNodeCompiler = createAlphaNetworkCompiler(firstObjectTypeNodeOfRete);
-        CompiledNetworkSource compiledNetworkSource = objectTypeNodeCompiler.generateSource();
-        generatedSources.addNewSourceClass(compiledNetworkSource.getName(), compiledNetworkSource.getSource());
-
-        for(CompilationUnit ch : compiledNetworkSource.getInitClasses()) {
-            ClassOrInterfaceDeclaration classOrInterfaceDeclaration = (ClassOrInterfaceDeclaration) ch.getChildNodes().get(1);
-            String classNameWithPackage = ch.getPackageDeclaration().get().getNameAsString() + "." + classOrInterfaceDeclaration.getNameAsString();
-            generatedSources.addNewSourceClass(classNameWithPackage, ch.toString());
-        }
+        CompiledNetworkSources compiledNetworkSource = objectTypeNodeCompiler.generateSource();
+        generatedSources.addNewSourceClasses(compiledNetworkSource.getAllGeneratedSources());
 
         // Look at target/generated-sources
         generatedSources.dumpGeneratedClasses();

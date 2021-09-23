@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.drools.ancompiler.CompiledNetwork;
-import org.drools.ancompiler.CompiledNetworkSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,15 +42,18 @@ public class GeneratedSources {
     private static final Logger logger = LoggerFactory.getLogger(GeneratedSources.class);
 
     // This is only for debugging purposes and should NEVER be enabled in production
-    private static final boolean DUMP_GENERATED_CLASSES = true;
+    private static final boolean DUMP_GENERATED_CLASSES = false;
 
     private final Map<String, String> allGeneratedSources = new HashMap<>();
 
     private String alphaNetworkClassName = null;
-    private Optional<Path> optionalDumpFolder = Optional.empty();
 
     public void addNewSourceClass(String classNameWithPackage, String classSourceCode) {
         allGeneratedSources.put(classNameWithPackage, classSourceCode);
+    }
+
+    public void addNewSourceClasses(Map<String, String> sourceClasses) {
+        allGeneratedSources.putAll(sourceClasses);
     }
 
     public void addNewAlphaNetworkClass(String alphaNetworkClassWithPackage, String toString) {
@@ -114,7 +116,6 @@ public class GeneratedSources {
                     logger.debug("Dumped files to: \n\n{}\n", tempDirWithPrefix);
                 }
 
-                optionalDumpFolder = of(tempDirWithPrefix);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
