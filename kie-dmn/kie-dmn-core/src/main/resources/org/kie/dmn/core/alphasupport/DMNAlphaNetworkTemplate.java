@@ -22,7 +22,7 @@ import org.drools.ancompiler.CompiledNetwork;
 import org.kie.dmn.api.feel.runtime.events.FEELEvent;
 import org.kie.dmn.core.compiler.alphanetbased.DMNAlphaNetworkEvaluator;
 import org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkEvaluationContext;
-import org.kie.dmn.core.compiler.alphanetbased.ResultCollector;
+import org.kie.dmn.core.compiler.alphanetbased.Results;
 import org.kie.dmn.feel.lang.EvaluationContext;
 import org.kie.dmn.core.compiler.alphanetbased.PropertyEvaluator;
 import org.kie.dmn.feel.runtime.decisiontables.DecisionTable;
@@ -73,8 +73,8 @@ public class DMNAlphaNetworkTemplate implements DMNAlphaNetworkEvaluator {
     public Object evaluate(EvaluationContext evaluationContext, DecisionTable decisionTable) {
 
         // Clean previous results
-        ResultCollector resultCollector = alphaNetworkEvaluationContext.getResultCollector();
-        resultCollector.clearResults();
+        Results results = alphaNetworkEvaluationContext.getResultCollector();
+        results.clearResults();
 
         // init CompiledNetwork with object needed for results,
         compiledNetwork.init(alphaNetworkEvaluationContext);
@@ -86,7 +86,7 @@ public class DMNAlphaNetworkTemplate implements DMNAlphaNetworkEvaluator {
         compiledNetwork.propagateAssertObject(new DefaultFactHandle(getOrCreatePropertyEvaluator(evaluationContext)), null, null);
 
         // Find result with Hit Policy applied
-        Object result = resultCollector.applyHitPolicy(evaluationContext, hitPolicy, decisionTable);
+        Object result = results.applyHitPolicy(evaluationContext, hitPolicy, decisionTable);
 
         return result;
     }

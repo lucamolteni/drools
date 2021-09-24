@@ -95,8 +95,8 @@ public class DMNAlphaNetworkEvaluatorCompiler extends DMNEvaluatorCompiler {
 
         Class<?> compiledNetworkClass = compiledClasses.get(compiledNetworkSource.getName());
         CompiledNetwork compiledAlphaNetwork = compiledNetworkSource.createInstanceAndSet(compiledNetworkClass);
-        ResultCollector resultCollector = new ResultCollector();
-        AlphaNetworkEvaluationContext evaluationContext = new AlphaNetworkEvaluationContext(resultCollector);
+        Results results = new Results();
+        AlphaNetworkEvaluationContext evaluationContext = new AlphaNetworkEvaluationContext(results);
         DMNAlphaNetworkEvaluator dmnCompiledAlphaNetworkEvaluator = generatedSources
                 .newInstanceOfAlphaNetwork(compiledClasses, compiledAlphaNetwork, evaluationContext);
 
@@ -108,7 +108,7 @@ public class DMNAlphaNetworkEvaluatorCompiler extends DMNEvaluatorCompiler {
 
         FeelDecisionTable feelDecisionTable = new FeelDecisionTable(decisionTableName, outputs, feelHelper, variableTypes, dmnModelImpl.getTypeRegistry().unknown());
 
-        return new DMNAlphaNetworkEvaluatorImpl(dmnCompiledAlphaNetworkEvaluator, feelHelper, decisionTableName, feelDecisionTable, dmnBaseNode, resultCollector);
+        return new DMNAlphaNetworkEvaluatorImpl(dmnCompiledAlphaNetworkEvaluator, feelHelper, decisionTableName, feelDecisionTable, dmnBaseNode, results);
     }
 
     private ObjectTypeNodeCompiler createAlphaNetworkCompiler(ObjectTypeNode firstObjectTypeNodeOfRete) {

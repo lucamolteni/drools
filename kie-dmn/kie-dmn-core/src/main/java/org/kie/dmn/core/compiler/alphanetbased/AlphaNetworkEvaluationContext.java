@@ -27,16 +27,16 @@ public class AlphaNetworkEvaluationContext {
 
     private final Variable<PropertyEvaluator> variable;
     private final Declaration declaration;
-    private final ResultCollector resultCollector;
+    private final Results results;
 
-    public AlphaNetworkEvaluationContext(ResultCollector resultCollector) {
+    public AlphaNetworkEvaluationContext(Results results) {
         ClassObjectType objectType = new ClassObjectType(PropertyEvaluator.class);
         variable = declarationOf(PropertyEvaluator.class, "$ctx");
 
         Pattern pattern = new Pattern(1, objectType, "$ctx");
         declaration = pattern.getDeclaration();
 
-        this.resultCollector = resultCollector;
+        this.results = results;
     }
 
     public Variable<PropertyEvaluator> getVariable() {
@@ -47,7 +47,7 @@ public class AlphaNetworkEvaluationContext {
         return declaration;
     }
 
-    public ResultCollector getResultCollector() {
-        return resultCollector;
+    public Results getResultCollector() {
+        return results;
     }
 }

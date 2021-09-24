@@ -46,7 +46,7 @@ public class DMNAlphaNetworkEvaluatorImpl implements DMNExpressionEvaluator {
     private static Logger logger = LoggerFactory.getLogger(DMNAlphaNetworkEvaluatorImpl.class);
 
     private final DMNAlphaNetworkEvaluator compiledNetwork;
-    private ResultCollector resultCollector;
+    private Results results;
     private final DMNFEELHelper feel;
     private final String decisionTableName;
     private final FeelDecisionTable feelDecisionTable;
@@ -57,20 +57,20 @@ public class DMNAlphaNetworkEvaluatorImpl implements DMNExpressionEvaluator {
                                         String decisionTableName,
                                         FeelDecisionTable feelDecisionTable,
                                         DMNBaseNode node,
-                                        ResultCollector resultCollector) {
+                                        Results results) {
         this.feel = feel;
         this.decisionTableName = decisionTableName;
         this.feelDecisionTable = feelDecisionTable;
         this.node = node;
         this.compiledNetwork = compiledNetwork;
-        this.resultCollector = resultCollector;
+        this.results = results;
     }
 
     @Override
     public EvaluatorResult evaluate(DMNRuntimeEventManager eventManager, DMNResult dmnResult) {
         DMNRuntimeEventManagerUtils.fireBeforeEvaluateDecisionTable(eventManager, node.getName(), decisionTableName, dmnResult);
 
-        EvaluationContext evalCtx = createEvaluationContext(resultCollector.getEvents(), eventManager, dmnResult);
+        EvaluationContext evalCtx = createEvaluationContext(results.getEvents(), eventManager, dmnResult);
         evalCtx.enterFrame();
 
         DMNDTExpressionEvaluator.EventResults eventResults = null;
@@ -91,7 +91,7 @@ public class DMNAlphaNetworkEvaluatorImpl implements DMNExpressionEvaluator {
 
             Object result = compiledNetwork.evaluate(evalCtx, feelDecisionTable);
 
-            eventResults = processEvents(resultCollector.getEvents(), eventManager, (DMNResultImpl) dmnResult, node);
+            eventResults = processEvents(results.getEvents(), eventManager, (DMNResultImpl) dmnResult, node);
 
             return new EvaluatorResultImpl(result,
                                            eventResults.hasErrors ?

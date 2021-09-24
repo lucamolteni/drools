@@ -38,9 +38,9 @@ public class ResultCollectorAlphaSink extends LeftInputAdapterNode implements Re
 
     private final int row;
     private final String columnName;
-    private final ResultCollector resultCollector;
-    private final Function1<EvaluationContext, Object> outputEvaluationFunction;
     private final String outputClass;
+    private final Function1<EvaluationContext, Object> outputEvaluationFunction;
+    private final Results results;
 
     public ResultCollectorAlphaSink(int id,
                                     ObjectSource source,
@@ -53,25 +53,25 @@ public class ResultCollectorAlphaSink extends LeftInputAdapterNode implements Re
         this.columnName = columnName;
         this.outputClass = outputClass;
         this.outputEvaluationFunction = null; // only used at runtime
-        resultCollector = null; // only used at runtime
+        results = null; // only used at runtime
     }
 
 
     // TODO DT-ANC not sure this should be the same class
     public ResultCollectorAlphaSink(int row,
                                     String columnName,
-                                    ResultCollector resultCollector,
+                                    Results results,
                                     Function1<EvaluationContext, Object> outputEvaluationFunction) {
         this.row = row;
         this.columnName = columnName;
-        this.resultCollector = resultCollector;
-        this.outputEvaluationFunction = outputEvaluationFunction;
+        this.results = results;
         this.outputClass = ""; // used only at compilation time
+        this.outputEvaluationFunction = outputEvaluationFunction;
     }
 
     @Override
     public void assertObject(InternalFactHandle factHandle, PropagationContext propagationContext, InternalWorkingMemory workingMemory) {
-        resultCollector.addResult(row, columnName, outputEvaluationFunction);
+        results.addResult(row, columnName, outputEvaluationFunction);
     }
 
     @Override
@@ -101,6 +101,6 @@ public class ResultCollectorAlphaSink extends LeftInputAdapterNode implements Re
 
     @Override
     public void collectObject() {
-        resultCollector.addResult(row, columnName, outputEvaluationFunction);
+        results.addResult(row, columnName, outputEvaluationFunction);
     }
 }
