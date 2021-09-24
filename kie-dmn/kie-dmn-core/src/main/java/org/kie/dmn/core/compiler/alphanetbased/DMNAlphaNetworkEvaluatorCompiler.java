@@ -21,9 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.github.javaparser.StaticJavaParser;
-import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.NodeList;
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import org.drools.ancompiler.ANCConfiguration;
@@ -47,11 +45,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // TODO DT-ANC rename as it's too similar do DMNAlphaNetworkCompiler
-public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
+public class DMNAlphaNetworkEvaluatorCompiler extends DMNEvaluatorCompiler {
 
-    static final Logger logger = LoggerFactory.getLogger(AlphaNetDMNEvaluatorCompiler.class);
+    static final Logger logger = LoggerFactory.getLogger(DMNAlphaNetworkEvaluatorCompiler.class);
 
-    public AlphaNetDMNEvaluatorCompiler(DMNCompilerImpl compiler) {
+    public DMNAlphaNetworkEvaluatorCompiler(DMNCompilerImpl compiler) {
         super(compiler);
     }
 
@@ -73,7 +71,7 @@ public class AlphaNetDMNEvaluatorCompiler extends DMNEvaluatorCompiler {
 
         GeneratedSources allGeneratedSources = new GeneratedSources();
 
-        // Generate classes for DMNAlphaNetwork
+
         DMNAlphaNetworkCompiler dmnAlphaNetworkCompiler = new DMNAlphaNetworkCompiler();
         GeneratedSources generatedSources = dmnAlphaNetworkCompiler.generateSourceCode(decisionTable, tableCells, decisionTableName, allGeneratedSources);
 

@@ -49,7 +49,6 @@ public class DMNAlphaNetworkCompiler {
     private CompilationUnit template;
     private ClassOrInterfaceDeclaration dmnAlphaNetworkClass;
 
-
     public DMNAlphaNetworkCompiler() {
     }
 
