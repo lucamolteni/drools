@@ -22,8 +22,8 @@ import org.kie.dmn.api.feel.runtime.events.FEELEvent;
 import org.kie.dmn.feel.lang.EvaluationContext;
 import org.kie.dmn.feel.runtime.decisiontables.DecisionTable;
 
-// TODO DT-ANC change name as it's too similar to AlphaNetDMNExpressionEvaluator
-public interface DMNCompiledAlphaNetworkEvaluator {
+// TODO DT-ANC review these four names
+public interface DMNAlphaNetworkEvaluator {
 
     FEELEvent validate(EvaluationContext evaluationContext);
 

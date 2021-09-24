@@ -25,13 +25,11 @@ import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import org.drools.ancompiler.CompiledNetwork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.util.Optional.of;
 import static org.kie.dmn.core.compiler.alphanetbased.TableCell.ALPHANETWORK_STATIC_PACKAGE;
 
 public class GeneratedSources {
@@ -61,9 +59,9 @@ public class GeneratedSources {
         this.alphaNetworkClassName = alphaNetworkClassWithPackage;
     }
 
-    public DMNCompiledAlphaNetworkEvaluator newInstanceOfAlphaNetwork(Map<String, Class<?>> compiledClasses,
-                                                                      CompiledNetwork compiledNetwork,
-                                                                      AlphaNetworkEvaluationContext alphaNetworkEvaluationContext) {
+    public DMNAlphaNetworkEvaluator newInstanceOfAlphaNetwork(Map<String, Class<?>> compiledClasses,
+                                                              CompiledNetwork compiledNetwork,
+                                                              AlphaNetworkEvaluationContext alphaNetworkEvaluationContext) {
         Class<?> inputSetClass = compiledClasses.get(alphaNetworkClassName);
         Object inputSetInstance;
         try {
@@ -73,7 +71,7 @@ public class GeneratedSources {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        return (DMNCompiledAlphaNetworkEvaluator) inputSetInstance;
+        return (DMNAlphaNetworkEvaluator) inputSetInstance;
     }
 
     public Map<String, String> getAllGeneratedSources() {

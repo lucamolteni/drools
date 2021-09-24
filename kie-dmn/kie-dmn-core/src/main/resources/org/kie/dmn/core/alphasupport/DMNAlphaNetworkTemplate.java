@@ -20,7 +20,7 @@ import java.lang.Override;
 import org.drools.core.common.DefaultFactHandle;
 import org.drools.ancompiler.CompiledNetwork;
 import org.kie.dmn.api.feel.runtime.events.FEELEvent;
-import org.kie.dmn.core.compiler.alphanetbased.DMNCompiledAlphaNetworkEvaluator;
+import org.kie.dmn.core.compiler.alphanetbased.DMNAlphaNetworkEvaluator;
 import org.kie.dmn.core.compiler.alphanetbased.AlphaNetworkEvaluationContext;
 import org.kie.dmn.core.compiler.alphanetbased.ResultCollector;
 import org.kie.dmn.feel.lang.EvaluationContext;
@@ -29,7 +29,7 @@ import org.kie.dmn.feel.runtime.decisiontables.DecisionTable;
 import org.kie.dmn.feel.runtime.decisiontables.HitPolicy;
 
 // All implementations are used only for templating purposes and should never be called
-public class DMNAlphaNetworkTemplate implements DMNCompiledAlphaNetworkEvaluator {
+public class DMNAlphaNetworkTemplate implements DMNAlphaNetworkEvaluator {
 
     protected final CompiledNetwork compiledNetwork;
     protected final AlphaNetworkEvaluationContext alphaNetworkEvaluationContext;

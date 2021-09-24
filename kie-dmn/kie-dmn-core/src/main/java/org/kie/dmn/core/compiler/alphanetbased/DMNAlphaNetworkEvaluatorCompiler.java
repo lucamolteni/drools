@@ -97,7 +97,7 @@ public class DMNAlphaNetworkEvaluatorCompiler extends DMNEvaluatorCompiler {
         CompiledNetwork compiledAlphaNetwork = compiledNetworkSource.createInstanceAndSet(compiledNetworkClass);
         ResultCollector resultCollector = new ResultCollector();
         AlphaNetworkEvaluationContext evaluationContext = new AlphaNetworkEvaluationContext(resultCollector);
-        DMNCompiledAlphaNetworkEvaluator dmnCompiledAlphaNetworkEvaluator = generatedSources
+        DMNAlphaNetworkEvaluator dmnCompiledAlphaNetworkEvaluator = generatedSources
                 .newInstanceOfAlphaNetwork(compiledClasses, compiledAlphaNetwork, evaluationContext);
 
         // FeelDecisionTable is used at runtime to evaluate Hit Policy / Output values
@@ -108,7 +108,7 @@ public class DMNAlphaNetworkEvaluatorCompiler extends DMNEvaluatorCompiler {
 
         FeelDecisionTable feelDecisionTable = new FeelDecisionTable(decisionTableName, outputs, feelHelper, variableTypes, dmnModelImpl.getTypeRegistry().unknown());
 
-        return new AlphaNetDMNExpressionEvaluator(dmnCompiledAlphaNetworkEvaluator, feelHelper, decisionTableName, feelDecisionTable, dmnBaseNode, resultCollector);
+        return new DMNAlphaNetworkEvaluatorImpl(dmnCompiledAlphaNetworkEvaluator, feelHelper, decisionTableName, feelDecisionTable, dmnBaseNode, resultCollector);
     }
 
     private ObjectTypeNodeCompiler createAlphaNetworkCompiler(ObjectTypeNode firstObjectTypeNodeOfRete) {

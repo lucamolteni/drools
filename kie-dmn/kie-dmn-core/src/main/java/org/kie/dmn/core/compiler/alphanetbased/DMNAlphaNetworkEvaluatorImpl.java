@@ -41,23 +41,23 @@ import org.slf4j.LoggerFactory;
 
 import static org.kie.dmn.core.ast.DMNDTExpressionEvaluator.processEvents;
 
-public class AlphaNetDMNExpressionEvaluator implements DMNExpressionEvaluator {
+public class DMNAlphaNetworkEvaluatorImpl implements DMNExpressionEvaluator {
 
-    private static Logger logger = LoggerFactory.getLogger(AlphaNetDMNExpressionEvaluator.class);
+    private static Logger logger = LoggerFactory.getLogger(DMNAlphaNetworkEvaluatorImpl.class);
 
-    private final DMNCompiledAlphaNetworkEvaluator compiledNetwork;
+    private final DMNAlphaNetworkEvaluator compiledNetwork;
     private ResultCollector resultCollector;
     private final DMNFEELHelper feel;
     private final String decisionTableName;
     private final FeelDecisionTable feelDecisionTable;
     private final DMNBaseNode node;
 
-    public AlphaNetDMNExpressionEvaluator(DMNCompiledAlphaNetworkEvaluator compiledNetwork,
-                                          DMNFEELHelper feel,
-                                          String decisionTableName,
-                                          FeelDecisionTable feelDecisionTable,
-                                          DMNBaseNode node,
-                                          ResultCollector resultCollector) {
+    public DMNAlphaNetworkEvaluatorImpl(DMNAlphaNetworkEvaluator compiledNetwork,
+                                        DMNFEELHelper feel,
+                                        String decisionTableName,
+                                        FeelDecisionTable feelDecisionTable,
+                                        DMNBaseNode node,
+                                        ResultCollector resultCollector) {
         this.feel = feel;
         this.decisionTableName = decisionTableName;
         this.feelDecisionTable = feelDecisionTable;
