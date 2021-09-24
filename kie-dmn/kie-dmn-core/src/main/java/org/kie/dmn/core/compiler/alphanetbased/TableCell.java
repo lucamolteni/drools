@@ -64,7 +64,7 @@ public class TableCell {
 
     private static final String CREATE_INDEX_NODE_METHOD = "createIndex";
 
-    // TODO DT-ANC support specific package
+    // TODO DT-ANC https://issues.redhat.com/browse/DROOLS-6620
     public static final String ALPHANETWORK_STATIC_PACKAGE = "org.kie.dmn.core.alphasupport";
 
     public static class TableCellFactory {

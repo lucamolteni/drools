@@ -34,7 +34,7 @@ import static org.kie.dmn.core.compiler.alphanetbased.TableCell.ALPHANETWORK_STA
 
 public class GeneratedSources {
 
-    // TODO DT-ANC support specific packages for both DMN and Alpha Network classes
+    // TODO DT-ANC https://issues.redhat.com/browse/DROOLS-6620
     private static final String ANC_PACKAGE = "org.drools.ancompiler";
 
     private static final Logger logger = LoggerFactory.getLogger(GeneratedSources.class);
