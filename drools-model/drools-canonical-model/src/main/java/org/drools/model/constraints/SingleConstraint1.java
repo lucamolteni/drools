@@ -42,8 +42,11 @@ public class SingleConstraint1<A> extends AbstractSingleConstraint {
         this.predicate = predicate;
     }
 
-    /** This is useful to generate a constraint that doesn't need to be evaluated but needs to be shared
-     * TODO DT-ANC better comment
+    /**
+     * This constructor generates a constraint that cannot be evaluated as it lacks the actual predicate
+     * The AlphaNode referring this can be shared, as the exprId is provided
+     * Currently it's used only with the Alpha Network Compiler, since the code instantiating
+     * the actual constraint will be inlined inside the compiled Alpha Network itself.
      */
     public SingleConstraint1(String exprId, PredicateInformation predicateInformation) {
         super(exprId, predicateInformation);
