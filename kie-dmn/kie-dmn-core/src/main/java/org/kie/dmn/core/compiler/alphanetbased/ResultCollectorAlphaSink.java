@@ -21,7 +21,7 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
-import org.drools.ancompiler.ANCInlineable;
+import org.drools.ancompiler.CanInlineInANC;
 import org.drools.ancompiler.ResultCollectorSink;
 import org.drools.core.common.InternalFactHandle;
 import org.drools.core.common.InternalWorkingMemory;
@@ -34,7 +34,7 @@ import org.drools.model.functions.Function1;
 import org.kie.dmn.feel.lang.EvaluationContext;
 
 public class ResultCollectorAlphaSink extends LeftInputAdapterNode implements ResultCollectorSink,
-                                                                              ANCInlineable {
+                                                                              CanInlineInANC {
 
     private final int row;
     private final String columnName;
@@ -85,7 +85,7 @@ public class ResultCollectorAlphaSink extends LeftInputAdapterNode implements Re
     }
 
     @Override
-    public Expression createJavaMethod() {
+    public Expression toANCInlinedForm() {
         ObjectCreationExpr objectCreationExpr = new ObjectCreationExpr();
 
         objectCreationExpr.setType(StaticJavaParser.parseClassOrInterfaceType(this.getClass().getCanonicalName()));

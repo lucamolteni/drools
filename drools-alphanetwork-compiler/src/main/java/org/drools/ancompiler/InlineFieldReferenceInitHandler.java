@@ -140,7 +140,7 @@ public class InlineFieldReferenceInitHandler {
         ClassOrInterfaceDeclaration partitionedClass = (ClassOrInterfaceDeclaration) partitionedCompilationUnit.getChildNodes().get(1);
 
         for (NetworkNode n : subNodes) {
-            if (n instanceof ANCInlineable) {
+            if (n instanceof CanInlineInANC) {
 
                 String variableName;
                 final ClassOrInterfaceType initMethodReturnType;
@@ -160,7 +160,7 @@ public class InlineFieldReferenceInitHandler {
                                                                      initMethodName,
                                                                      initMethodReturnType,
                                                                      parametersFromAdditionalFields());
-                Expression initExpressionForNode = ((ANCInlineable) n).createJavaMethod();
+                Expression initExpressionForNode = ((CanInlineInANC) n).toANCInlinedForm();
 
                 partitionedClass.addMember(initMethod);
 

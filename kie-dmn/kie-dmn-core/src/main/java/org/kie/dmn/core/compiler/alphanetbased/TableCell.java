@@ -176,10 +176,10 @@ public class TableCell {
 
         // This is used for Alpha Sharing. It needs to have the column name to avoid collisions with same test in other cells
 
-        InlineableAlphaNode candidateAlphaNode;
+        CanBeInlinedAlphaNode candidateAlphaNode;
         if (tableIndex.isFirstColumn()) {
             Index index = createIndex();
-            candidateAlphaNode = InlineableAlphaNode.createBuilder()
+            candidateAlphaNode = CanBeInlinedAlphaNode.createBuilder()
                     .withConstraint(constraintIdentifier, null, index, reteBuilderContext.variable, reteBuilderContext.declaration)
                     .withFeelConstraint(classNameWithPackage, tableIndex.columnIndex(), "trace String")
                     .createAlphaNode(alphaNetworkCreation.getNextId(),
@@ -190,7 +190,7 @@ public class TableCell {
                 throw new RuntimeException("Need a previous Alpha Node");
             }
 
-            candidateAlphaNode = InlineableAlphaNode.createBuilder()
+            candidateAlphaNode = CanBeInlinedAlphaNode.createBuilder()
                     .withConstraint(constraintIdentifier, null, null, reteBuilderContext.variable, reteBuilderContext.declaration)
                     .withFeelConstraint(classNameWithPackage, tableIndex.columnIndex(), "trace String")
                     .createAlphaNode(alphaNetworkCreation.getNextId(),

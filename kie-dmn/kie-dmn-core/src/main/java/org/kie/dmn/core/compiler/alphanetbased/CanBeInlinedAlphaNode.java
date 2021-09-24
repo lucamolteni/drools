@@ -9,7 +9,7 @@ import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.NullLiteralExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
-import org.drools.ancompiler.ANCInlineable;
+import org.drools.ancompiler.CanInlineInANC;
 import org.drools.core.reteoo.AlphaNode;
 import org.drools.core.reteoo.ObjectSource;
 import org.drools.core.reteoo.builder.BuildContext;
@@ -27,11 +27,11 @@ import org.kie.dmn.core.compiler.alphanetbased.evaluator.TestEvaluator;
 
 import static com.github.javaparser.StaticJavaParser.parseExpression;
 
-public class InlineableAlphaNode extends AlphaNode implements ANCInlineable {
+public class CanBeInlinedAlphaNode extends AlphaNode implements CanInlineInANC {
 
     private MethodCallExpr methodCallExpr;
 
-    public InlineableAlphaNode() {
+    public CanBeInlinedAlphaNode() {
     }
 
     public static Builder createBuilder() {
@@ -113,18 +113,18 @@ public class InlineableAlphaNode extends AlphaNode implements ANCInlineable {
             return this;
         }
 
-        public InlineableAlphaNode createAlphaNode(int id, ObjectSource objectSource, BuildContext context) {
-            return new InlineableAlphaNode(id, constraint, objectSource, context, methodCallExpr);
+        public CanBeInlinedAlphaNode createAlphaNode(int id, ObjectSource objectSource, BuildContext context) {
+            return new CanBeInlinedAlphaNode(id, constraint, objectSource, context, methodCallExpr);
         }
     }
 
-    private InlineableAlphaNode(int id, AlphaNodeFieldConstraint constraint, ObjectSource objectSource, BuildContext context, MethodCallExpr methodCallExpr) {
+    private CanBeInlinedAlphaNode(int id, AlphaNodeFieldConstraint constraint, ObjectSource objectSource, BuildContext context, MethodCallExpr methodCallExpr) {
         super(id, constraint, objectSource, context);
         this.methodCallExpr = methodCallExpr;
     }
 
     @Override
-    public MethodCallExpr createJavaMethod() {
+    public MethodCallExpr toANCInlinedForm() {
         return methodCallExpr;
     }
 }

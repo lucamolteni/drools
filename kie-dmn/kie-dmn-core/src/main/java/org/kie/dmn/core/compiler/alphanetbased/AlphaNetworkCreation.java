@@ -51,7 +51,7 @@ public class AlphaNetworkCreation {
         source.addObjectSink(objectSink);
     }
 
-    public InlineableAlphaNode shareAlphaNode(InlineableAlphaNode candidateAlphaNode) {
+    public CanBeInlinedAlphaNode shareAlphaNode(CanBeInlinedAlphaNode candidateAlphaNode) {
         return buildUtils.attachNode(buildContext, candidateAlphaNode);
     }
 
