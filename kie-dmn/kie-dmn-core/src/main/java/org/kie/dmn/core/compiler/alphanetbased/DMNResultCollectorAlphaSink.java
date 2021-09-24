@@ -22,7 +22,6 @@ import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import org.drools.ancompiler.CanInlineInANC;
-import org.drools.ancompiler.ResultCollectorSink;
 import org.drools.core.common.InternalFactHandle;
 import org.drools.core.common.InternalWorkingMemory;
 import org.drools.core.reteoo.LeftInputAdapterNode;
@@ -30,65 +29,49 @@ import org.drools.core.reteoo.ModifyPreviousTuples;
 import org.drools.core.reteoo.ObjectSource;
 import org.drools.core.reteoo.builder.BuildContext;
 import org.drools.core.spi.PropagationContext;
-import org.drools.model.functions.Function1;
-import org.kie.dmn.feel.lang.EvaluationContext;
 
-public class ResultCollectorAlphaSink extends LeftInputAdapterNode implements ResultCollectorSink,
-                                                                              CanInlineInANC {
+public class DMNResultCollectorAlphaSink extends LeftInputAdapterNode implements CanInlineInANC<DMNResultCollector> {
 
     private final int row;
     private final String columnName;
     private final String outputClass;
-    private final Function1<EvaluationContext, Object> outputEvaluationFunction;
-    private final Results results;
 
-    public ResultCollectorAlphaSink(int id,
-                                    ObjectSource source,
-                                    BuildContext context,
-                                    int row,
-                                    String columnName,
-                                    String outputClass) {
+    public DMNResultCollectorAlphaSink(int id,
+                                       ObjectSource source,
+                                       BuildContext context,
+                                       int row,
+                                       String columnName,
+                                       String outputClass) {
         super(id, source, context);
         this.row = row;
         this.columnName = columnName;
         this.outputClass = outputClass;
-        this.outputEvaluationFunction = null; // only used at runtime
-        results = null; // only used at runtime
-    }
-
-
-    // TODO DT-ANC not sure this should be the same class
-    public ResultCollectorAlphaSink(int row,
-                                    String columnName,
-                                    Results results,
-                                    Function1<EvaluationContext, Object> outputEvaluationFunction) {
-        this.row = row;
-        this.columnName = columnName;
-        this.results = results;
-        this.outputClass = ""; // used only at compilation time
-        this.outputEvaluationFunction = outputEvaluationFunction;
     }
 
     @Override
     public void assertObject(InternalFactHandle factHandle, PropagationContext propagationContext, InternalWorkingMemory workingMemory) {
-        results.addResult(row, columnName, outputEvaluationFunction);
+        throwDoNotCallException();
     }
 
     @Override
     public void modifyObject(InternalFactHandle factHandle, ModifyPreviousTuples modifyPreviousTuples, PropagationContext context, InternalWorkingMemory workingMemory) {
-        throw new UnsupportedOperationException();
+        throwDoNotCallException();
     }
 
     @Override
     public void byPassModifyToBetaNode(InternalFactHandle factHandle, ModifyPreviousTuples modifyPreviousTuples, PropagationContext context, InternalWorkingMemory workingMemory) {
-        throw new UnsupportedOperationException();
+        throwDoNotCallException();
+    }
+
+    private void throwDoNotCallException() {
+        throw new UnsupportedOperationException("This sink will never be called, it'll be inlined as a DMNResultCollector");
     }
 
     @Override
     public Expression toANCInlinedForm() {
         ObjectCreationExpr objectCreationExpr = new ObjectCreationExpr();
 
-        objectCreationExpr.setType(StaticJavaParser.parseClassOrInterfaceType(this.getClass().getCanonicalName()));
+        objectCreationExpr.setType(StaticJavaParser.parseClassOrInterfaceType(DMNResultCollector.class.getCanonicalName()));
         objectCreationExpr.addArgument(new IntegerLiteralExpr(row));
         objectCreationExpr.addArgument(new StringLiteralExpr(columnName));
         objectCreationExpr.addArgument(StaticJavaParser.parseExpression("ctx.getResultCollector()"));
@@ -100,7 +83,7 @@ public class ResultCollectorAlphaSink extends LeftInputAdapterNode implements Re
     }
 
     @Override
-    public void collectObject() {
-        results.addResult(row, columnName, outputEvaluationFunction);
+    public Class<DMNResultCollector> inlinedType() {
+        return DMNResultCollector.class;
     }
 }

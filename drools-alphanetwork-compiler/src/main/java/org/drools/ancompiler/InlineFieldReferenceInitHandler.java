@@ -42,11 +42,11 @@ import com.github.javaparser.ast.type.VoidType;
 import org.drools.core.common.NetworkNode;
 import org.drools.core.reteoo.AlphaNode;
 import org.drools.core.reteoo.Sink;
-import org.drools.modelcompiler.constraints.LambdaConstraint;
 
 import static com.github.javaparser.StaticJavaParser.parseStatement;
 import static com.github.javaparser.ast.NodeList.nodeList;
 import static org.drools.ancompiler.AbstractCompilerHandler.getVariableName;
+import static org.drools.ancompiler.AbstractCompilerHandler.getVariableType;
 import static org.drools.core.util.StringUtils.ucFirst;
 
 /**
@@ -146,10 +146,10 @@ public class InlineFieldReferenceInitHandler {
                 final ClassOrInterfaceType initMethodReturnType;
                 if (n instanceof AlphaNode) {
                     variableName = getVariableName((AlphaNode) n);
-                    initMethodReturnType = StaticJavaParser.parseClassOrInterfaceType(LambdaConstraint.class.getCanonicalName());
+                    initMethodReturnType = StaticJavaParser.parseClassOrInterfaceType(getVariableType((AlphaNode) n).getCanonicalName());
                 } else {
                     variableName = getVariableName((Sink) n);
-                    initMethodReturnType = StaticJavaParser.parseClassOrInterfaceType(ResultCollectorSink.class.getCanonicalName());
+                    initMethodReturnType = StaticJavaParser.parseClassOrInterfaceType(getVariableType((Sink) n).getCanonicalName());
                 }
 
                 String initMethodName = String.format("init%s", variableName);

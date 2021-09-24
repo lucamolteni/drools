@@ -35,7 +35,7 @@ public class AssertHandler extends PropagatorCompilerHandler {
     @Override
     protected Statement propagateMethod(Sink sink) {
         Statement assertStatement;
-        if (sinkIsResultCollector(sink)) {
+        if (sinkCanBeInlined(sink)) {
             assertStatement = parseStatement("ALPHATERMINALNODE.collectObject();");
         } else {
             assertStatement = parseStatement("ALPHATERMINALNODE.assertObject(handle, context, wm);");

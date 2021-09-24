@@ -41,12 +41,12 @@ public class AlphaNetworkCreation {
                                                     int row,
                                                     String columnName,
                                                     String outputEvaluationClass) {
-        ResultCollectorAlphaSink objectSink = new ResultCollectorAlphaSink(getNextId(),
-                                                                           source,
-                                                                           buildContext,
-                                                                           row,
-                                                                           columnName,
-                                                                           outputEvaluationClass
+        DMNResultCollectorAlphaSink objectSink = new DMNResultCollectorAlphaSink(getNextId(),
+                                                                                 source,
+                                                                                 buildContext,
+                                                                                 row,
+                                                                                 columnName,
+                                                                                 outputEvaluationClass
         );
         source.addObjectSink(objectSink);
     }

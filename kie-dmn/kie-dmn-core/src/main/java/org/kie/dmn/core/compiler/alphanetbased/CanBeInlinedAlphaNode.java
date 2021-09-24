@@ -27,7 +27,7 @@ import org.kie.dmn.core.compiler.alphanetbased.evaluator.TestEvaluator;
 
 import static com.github.javaparser.StaticJavaParser.parseExpression;
 
-public class CanBeInlinedAlphaNode extends AlphaNode implements CanInlineInANC {
+public class CanBeInlinedAlphaNode extends AlphaNode implements CanInlineInANC<LambdaConstraint> {
 
     private MethodCallExpr methodCallExpr;
 
@@ -126,5 +126,10 @@ public class CanBeInlinedAlphaNode extends AlphaNode implements CanInlineInANC {
     @Override
     public MethodCallExpr toANCInlinedForm() {
         return methodCallExpr;
+    }
+
+    @Override
+    public Class<LambdaConstraint> inlinedType() {
+        return LambdaConstraint.class;
     }
 }

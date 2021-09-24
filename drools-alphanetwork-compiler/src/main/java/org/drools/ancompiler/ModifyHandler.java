@@ -36,7 +36,7 @@ public class ModifyHandler extends PropagatorCompilerHandler {
     @Override
     protected Statement propagateMethod(Sink sink) {
         Statement modifyStatement;
-        if (sinkIsResultCollector(sink)) {
+        if (sinkCanBeInlined(sink)) {
             modifyStatement = parseStatement("ALPHATERMINALNODE.collectObject();");
         } else {
             modifyStatement = parseStatement("ALPHATERMINALNODE.modifyObject(handle, modifyPreviousTuples, context, wm);");
