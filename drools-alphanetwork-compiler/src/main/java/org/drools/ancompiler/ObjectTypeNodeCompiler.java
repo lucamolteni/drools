@@ -137,8 +137,8 @@ public class ObjectTypeNodeCompiler {
         parser.accept(nodeCollectors);
 
 
-        // TODO DT-ANC avoid using a boolean
         final Collection<CompilationUnit> initClasses;
+        builder.append(String.format("protected boolean isInlined() { return %s; }", shouldInline));
         if(shouldInline) {
             addEmptySetNetworkReference(builder);
             InlineFieldReferenceInitHandler inlineFieldReferenceInitHandler = new InlineFieldReferenceInitHandler(nodeCollectors.getNodes(), additionalFields);

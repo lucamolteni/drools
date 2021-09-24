@@ -100,10 +100,12 @@ public abstract class CompiledNetwork implements ObjectSinkPropagator {
     public final void setObjectTypeNode(final ObjectTypeNode objectTypeNode) {
         this.objectTypeNode = objectTypeNode;
 
-        // TODO DT-ANC no need for this if inlining - parametrise this
-//        NodeReferenceSetter setter = new NodeReferenceSetter();
-//        ObjectTypeNodeParser parser = new ObjectTypeNodeParser(objectTypeNode);
-//        parser.accept(setter);
+        // Use this to set all the fields from the RETE
+       if(!isInlined()) {
+           NodeReferenceSetter setter = new NodeReferenceSetter();
+           ObjectTypeNodeParser parser = new ObjectTypeNodeParser(objectTypeNode);
+           parser.accept(setter);
+       }
     }
 
     // Sets the starting node for the evaluation of the compiled Alpha Network
@@ -133,7 +135,14 @@ public abstract class CompiledNetwork implements ObjectSinkPropagator {
      */
     protected abstract void setNetworkNodeReference(NetworkNode networkNode);
 
-    public abstract void initConstraintsResults();
+    /**
+     * Use to initialize the inlined expression so that the ANC can instantiate without depending on the Rete.
+     * Should be used instead of #setNetworkNodeReference
+     * See #isInlined
+     */
+    public void initConstraintsResults() { }
+
+    protected abstract boolean isInlined();
 
     public NetworkHandlerAdaptor createNodeReferenceSetter() {
         return new NodeReferenceSetter();
