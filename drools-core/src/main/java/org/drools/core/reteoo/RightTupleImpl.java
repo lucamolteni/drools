@@ -122,12 +122,12 @@ public class RightTupleImpl extends AbstractTuple implements RightTuple {
         this.memory = memory;
     }
 
-    public RightTuple getHandlePrevious() {
-        return (RightTuple) handlePrevious;
+    public RightTupleImpl getHandlePrevious() {
+        return (RightTupleImpl) handlePrevious;
     }
 
-    public RightTuple getHandleNext() {
-        return (RightTuple) handleNext;
+    public RightTupleImpl getHandleNext() {
+        return (RightTupleImpl) handleNext;
     }
 
     public AbstractLeftTuple getFirstChild() {
@@ -146,12 +146,12 @@ public class RightTupleImpl extends AbstractTuple implements RightTuple {
         this.lastChild = lastChild;
     }
     
-    public RightTuple getStagedNext() {
-        return (RightTuple) stagedNext;
+    public RightTupleImpl getStagedNext() {
+        return (RightTupleImpl) stagedNext;
     }
 
-    public RightTuple getStagedPrevious() {
-        return (RightTuple) stagedPrevious;
+    public RightTupleImpl getStagedPrevious() {
+        return (RightTupleImpl) stagedPrevious;
     }
 
     public AbstractLeftTuple getTempBlocked() {

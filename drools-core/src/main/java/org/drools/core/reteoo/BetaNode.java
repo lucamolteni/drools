@@ -376,13 +376,13 @@ public abstract class BetaNode extends LeftTupleSource
         }
     }
 
-    public RightTuple getFirstRightTuple(final Tuple leftTuple,
+    public RightTupleImpl getFirstRightTuple(final Tuple leftTuple,
                                          final TupleMemory memory,
                                          final FastIterator<Tuple> it) {
         if ( this.indexedUnificationJoin ) {
-            return (RightTuple) it.next( null );
+            return (RightTupleImpl) it.next( null );
         } else {
-            return (RightTuple) memory.getFirst(leftTuple);
+            return (RightTupleImpl) memory.getFirst(leftTuple);
         }
     }
 
