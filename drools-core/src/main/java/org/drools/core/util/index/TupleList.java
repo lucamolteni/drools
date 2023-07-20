@@ -20,6 +20,8 @@ import java.io.Serializable;
 
 import org.drools.core.common.InternalFactHandle;
 import org.drools.core.reteoo.AbstractTuple;
+import org.drools.core.reteoo.RightTuple;
+import org.drools.core.reteoo.RightTupleImpl;
 import org.drools.core.reteoo.TupleMemory;
 import org.drools.core.reteoo.Tuple;
 import org.drools.core.util.Entry;
@@ -207,7 +209,11 @@ public class TupleList<C> implements TupleMemory, Entry<TupleList<C>>, Serializa
     public FastIterator<Tuple> fullFastIterator() {
         return LinkedList.fastIterator; // contains no state, so ok to be static
     }
-    
+
+    @Override
+    public FastIterator<RightTupleImpl> rightTupleFastIterator() {
+        return LinkedList.rightTupleFastIterator;
+    }
 
     public FastIterator<Tuple> fullFastIterator(Tuple tuple) {
         return LinkedList.fastIterator; // contains no state, so ok to be static

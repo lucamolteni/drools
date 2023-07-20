@@ -54,7 +54,7 @@ public class LinkedList<T extends LinkedListNode<T>>
     private int                      size;
     
     public static final FastIterator<Tuple> fastIterator = new LinkedListFastIterator(); // contains no state, so ok to be static
-    public static final RightTupleLinkedListFastIterator rightTupleFastIterator = new RightTupleLinkedListFastIterator(); // contains no state, so ok to be static
+    public static final FastIterator<RightTupleImpl> rightTupleFastIterator = new RightTupleLinkedListFastIterator(); // contains no state, so ok to be static
 
     /**
      * Construct an empty <code>LinkedList</code>

@@ -61,6 +61,13 @@ public interface TupleMemory {
      * @return
      */
     FastIterator<Tuple> fullFastIterator();
+
+
+    /**
+     * Avoid using the same iterator for Right due to type pollution
+     * @return
+     */
+    FastIterator<RightTupleImpl> rightTupleFastIterator();
     
     /**
      * Iterator that resumes from the current RightTuple, regardless of whether the TupleMemory is hashed or not 

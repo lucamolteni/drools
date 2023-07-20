@@ -20,12 +20,14 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;
 import it.unimi.dsi.fastutil.objects.Object2ObjectRBTreeMap;
 import it.unimi.dsi.fastutil.objects.ObjectBidirectionalIterator;
+import org.drools.core.reteoo.RightTupleImpl;
 import org.drools.core.reteoo.Tuple;
 import org.drools.core.reteoo.TupleMemory;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.drools.core.util.FastIterator;
 import org.drools.base.util.FieldIndex;
 import org.drools.core.util.Iterator;
+import org.drools.core.util.LinkedList;
 import org.drools.core.util.index.AbstractTupleIndexTree;
 import org.drools.base.util.index.ConstraintTypeOperator;
 import org.drools.core.util.index.TupleIndexRBTree;
@@ -162,6 +164,11 @@ public class FastUtilTreeMemory extends AbstractTupleIndexTree implements TupleM
     public FastIterator fullFastIterator() {
         this.fullFastIterator.reset();
         return this.fullFastIterator;
+    }
+
+    @Override
+    public FastIterator<RightTupleImpl> rightTupleFastIterator() {
+        return new LinkedList.RightTupleLinkedListFastIterator();
     }
 
     @Override

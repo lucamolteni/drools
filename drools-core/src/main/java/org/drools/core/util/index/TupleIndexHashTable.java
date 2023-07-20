@@ -17,6 +17,7 @@
 package org.drools.core.util.index;
 
 import org.drools.base.util.FieldIndex;
+import org.drools.core.reteoo.RightTupleImpl;
 import org.drools.core.reteoo.Tuple;
 import org.drools.core.reteoo.TupleMemory;
 import org.drools.core.util.AbstractHashTable;
@@ -131,6 +132,11 @@ public class TupleIndexHashTable extends AbstractHashTable implements TupleMemor
             fullFastIterator.reset(this.table);
         }
         return fullFastIterator;
+    }
+
+    @Override
+    public FastIterator<RightTupleImpl> rightTupleFastIterator() {
+        return new LinkedList.RightTupleLinkedListFastIterator();
     }
 
     public FastIterator<Tuple>  fullFastIterator(Tuple tuple) {

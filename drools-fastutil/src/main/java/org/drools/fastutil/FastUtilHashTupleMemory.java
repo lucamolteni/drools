@@ -18,6 +18,7 @@ package org.drools.fastutil;
 
 import it.unimi.dsi.fastutil.Hash.Strategy;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import org.drools.core.reteoo.RightTupleImpl;
 import org.drools.core.reteoo.Tuple;
 import org.drools.core.reteoo.TupleMemory;
 import org.drools.core.util.AbstractHashTable.DoubleCompositeIndex;
@@ -190,6 +191,11 @@ public class FastUtilHashTupleMemory implements TupleMemory {
     public FastIterator<Tuple> fullFastIterator() {
         fullFastIterator.reset();
         return fullFastIterator;
+    }
+
+    @Override
+    public FastIterator<RightTupleImpl> rightTupleFastIterator() {
+        return new LinkedList.RightTupleLinkedListFastIterator();
     }
 
     @Override

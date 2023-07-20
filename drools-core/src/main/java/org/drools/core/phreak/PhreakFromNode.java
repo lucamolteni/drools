@@ -145,7 +145,7 @@ public class PhreakFromNode {
 
             betaConstraints.updateFromTuple(context, reteEvaluator, leftTuple);
 
-            LinkedList.RightTupleLinkedListFastIterator rightIt = LinkedList.rightTupleFastIterator;
+            FastIterator<RightTupleImpl> rightIt = LinkedList.rightTupleFastIterator;
             for (final java.util.Iterator<?> it = dataProvider.getResults(leftTuple, reteEvaluator, fm.providerContext); it.hasNext(); ) {
                 final Object object = it.next();
                 if ( (object == null) || !resultClass.isAssignableFrom( object.getClass() ) ) {

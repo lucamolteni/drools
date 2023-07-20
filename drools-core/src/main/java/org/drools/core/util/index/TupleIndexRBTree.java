@@ -25,11 +25,13 @@ import java.util.List;
 
 import org.drools.base.util.index.ConstraintTypeOperator;
 import org.drools.core.base.CoercionUtil;
+import org.drools.core.reteoo.RightTupleImpl;
 import org.drools.core.reteoo.TupleMemory;
 import org.drools.core.reteoo.Tuple;
 import org.drools.base.util.FieldIndex;
 import org.drools.core.util.FastIterator;
 import org.drools.core.util.Iterator;
+import org.drools.core.util.LinkedList;
 import org.drools.core.util.TupleRBTree;
 import org.drools.core.util.TupleRBTree.Boundary;
 import org.drools.core.util.TupleRBTree.Node;
@@ -128,6 +130,11 @@ public class TupleIndexRBTree extends AbstractTupleIndexTree implements External
 
     public FastIterator<Tuple> fullFastIterator() {
         return new TupleFastIterator();
+    }
+
+    @Override
+    public FastIterator<RightTupleImpl> rightTupleFastIterator() {
+        return new LinkedList.RightTupleLinkedListFastIterator();
     }
 
     public FastIterator<Tuple> fullFastIterator(Tuple leftTuple) {
