@@ -50,9 +50,18 @@ public class SingleLeftTupleSinkAdapter extends AbstractLeftTupleSinkAdapter {
     public LeftTupleSink[] getSinks() {
         return sinkArray;
     }
-    
+
     public LeftTupleSinkNode getFirstLeftTupleSink() {
-        return ( LeftTupleSinkNode ) sink;
+        if (sink instanceof AccumulateNode) {
+            return (AccumulateNode) sink;
+        } else if (sink instanceof RuleTerminalNode) {
+            return (RuleTerminalNode) sink;
+        } else if (sink instanceof RightInputAdapterNode) {
+            return (RightInputAdapterNode) sink;
+        } else if (sink instanceof ExistsNode) {
+            return (ExistsNode) sink;
+        }
+        return (LeftTupleSinkNode) sink;
     }
 
     public LeftTupleSinkNode getLastLeftTupleSink() {

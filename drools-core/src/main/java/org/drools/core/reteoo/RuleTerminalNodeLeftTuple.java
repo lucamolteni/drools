@@ -234,7 +234,7 @@ public class RuleTerminalNodeLeftTuple extends AbstractLeftTuple implements Inte
     }
 
     public TerminalNode getTerminalNode() {
-        return (TerminalNode) getTupleSink();
+        return (AbstractTerminalNode) getTupleSink();
     }
 
     public List<FactHandle> getFactHandles() {
