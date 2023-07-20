@@ -64,12 +64,6 @@ public class ObjectTypeConfigurationRegistry implements Serializable {
     }
 
     private Object getKey( Object object ) {
-        if ( object instanceof InternalMatch) {
-            return ClassObjectType.Match_ObjectType.getClassType();
-        }
-        if ( object instanceof Fact) {
-            return ((Fact) object).getFactTemplate().getName();
-        }
         return object.getClass();
     }
 
