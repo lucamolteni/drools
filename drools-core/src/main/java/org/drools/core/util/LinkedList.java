@@ -16,6 +16,7 @@
 
 package org.drools.core.util;
 
+import org.drools.core.reteoo.RightTupleImpl;
 import org.drools.core.reteoo.Tuple;
 
 import java.io.Externalizable;
@@ -53,6 +54,7 @@ public class LinkedList<T extends LinkedListNode<T>>
     private int                      size;
     
     public static final FastIterator<Tuple> fastIterator = new LinkedListFastIterator(); // contains no state, so ok to be static
+    public static final RightTupleLinkedListFastIterator rightTupleFastIterator = new RightTupleLinkedListFastIterator(); // contains no state, so ok to be static
 
     /**
      * Construct an empty <code>LinkedList</code>
@@ -365,6 +367,16 @@ public class LinkedList<T extends LinkedListNode<T>>
 
     public java.util.Iterator<T> javaUtilIterator() {
         return new JavaUtilIterator<>( this );
+    }
+
+    public static class RightTupleLinkedListFastIterator implements FastIterator<RightTupleImpl> {
+        public RightTupleImpl next(RightTupleImpl object) {
+            return (RightTupleImpl) object.getNext();
+        }
+
+        public boolean isFullIterator() {
+            return false;
+        }
     }
 
     /**

@@ -346,6 +346,7 @@ public class AbstractLeftTuple extends AbstractTuple implements LeftTuple {
 
     @Override
     public LeftTupleSink getTupleSink() {
+        Sink sink = this.sink;
         if (sink instanceof AccumulateNode) {
             return (AccumulateNode) sink;
         } else if (sink instanceof RuleTerminalNode) {

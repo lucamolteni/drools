@@ -28,6 +28,7 @@ import org.drools.core.reteoo.FromNode.FromMemory;
 import org.drools.core.reteoo.AbstractLeftTuple;
 import org.drools.core.reteoo.LeftTupleSink;
 import org.drools.core.reteoo.RightTuple;
+import org.drools.core.reteoo.RightTupleImpl;
 import org.drools.core.reteoo.TupleMemory;
 import org.drools.base.rule.ContextEntry;
 import org.drools.base.rule.constraint.AlphaNodeFieldConstraint;
@@ -138,20 +139,20 @@ public class PhreakFromNode {
 
             PropagationContext propagationContext = leftTuple.getPropagationContext();
 
-            final Map<Object, RightTuple> previousMatches = (Map<Object, RightTuple>) leftTuple.getContextObject();
-            final Map<Object, RightTuple> newMatches = new HashMap<>();
+            final Map<Object, RightTupleImpl> previousMatches = (Map<Object, RightTupleImpl>) leftTuple.getContextObject();
+            final Map<Object, RightTupleImpl> newMatches = new HashMap<>();
             leftTuple.setContextObject( newMatches );
 
             betaConstraints.updateFromTuple(context, reteEvaluator, leftTuple);
 
-            FastIterator rightIt = LinkedList.fastIterator;
+            LinkedList.RightTupleLinkedListFastIterator rightIt = LinkedList.rightTupleFastIterator;
             for (final java.util.Iterator<?> it = dataProvider.getResults(leftTuple, reteEvaluator, fm.providerContext); it.hasNext(); ) {
                 final Object object = it.next();
                 if ( (object == null) || !resultClass.isAssignableFrom( object.getClass() ) ) {
                     continue; // skip anything if it not assignable
                 }
 
-                RightTuple rightTuple = previousMatches.remove(object);
+                RightTupleImpl rightTuple = previousMatches.remove(object);
 
                 if (rightTuple == null) {
                     // new match, propagate assert
@@ -160,8 +161,7 @@ public class PhreakFromNode {
                     // previous match, so reevaluate and propagate modify
                     if (rightIt.next(rightTuple) != null) {
                         // handle the odd case where more than one object has the same hashcode/equals value
-                        previousMatches.put(object,
-                                            (RightTuple) rightIt.next(rightTuple));
+                        previousMatches.put(object, rightIt.next(rightTuple));
                         rightTuple.setNext(null);
                     }
                 }
@@ -174,8 +174,8 @@ public class PhreakFromNode {
                 }
             }
 
-            for (RightTuple rightTuple : previousMatches.values()) {
-                for (RightTuple current = rightTuple; current != null; current = (RightTuple) rightIt.next(current)) {
+            for (RightTupleImpl rightTuple : previousMatches.values()) {
+                for (RightTupleImpl current = rightTuple; current != null; current = rightIt.next(current)) {
                     deleteChildLeftTuple(propagationContext, trgLeftTuples, stagedLeftTuples, current.getFirstChild());
                 }
             }
