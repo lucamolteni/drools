@@ -320,11 +320,16 @@ public class AccumulateNode extends BetaNode {
         public TupleList<AccumulateContextEntry> getGroup(Object workingMemoryContext, Accumulate accumulate, Tuple leftTuple,
                                                           Object key, ReteEvaluator reteEvaluator) {
             return groupsMap.computeIfAbsent(key, k -> {
-                AccumulateContextEntry entry = new AccumulateContextEntry(key);
-                entry.setFunctionContext( accumulate.init(workingMemoryContext, entry, accumulate.createFunctionContext(), leftTuple, reteEvaluator) );
-                PhreakAccumulateNode.initContext(workingMemoryContext, reteEvaluator, accumulate, leftTuple, entry);
-                return new TupleList<>(entry);
+                return groupByFunction(workingMemoryContext, accumulate, leftTuple, key, reteEvaluator);
             });
+        }
+
+        private static TupleList<AccumulateContextEntry> groupByFunction(Object workingMemoryContext, Accumulate accumulate,
+                                                                         Tuple leftTuple, Object key, ReteEvaluator reteEvaluator) {
+            AccumulateContextEntry entry = new AccumulateContextEntry(key);
+            entry.setFunctionContext(accumulate.init(workingMemoryContext, entry, accumulate.createFunctionContext(), leftTuple, reteEvaluator) );
+            PhreakAccumulateNode.initContext(workingMemoryContext, reteEvaluator, accumulate, leftTuple, entry);
+            return new TupleList<>(entry);
         }
 
         public void removeGroup(Object key) {
