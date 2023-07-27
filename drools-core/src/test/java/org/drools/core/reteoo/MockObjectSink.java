@@ -28,10 +28,10 @@ import org.drools.core.common.ReteEvaluator;
 import org.drools.base.common.RuleBasePartitionId;
 import org.kie.api.definition.rule.Rule;
 
-public class MockObjectSink
-    implements
-    ObjectSinkNode,
-    RightTupleSink {
+public class MockObjectSink extends BetaNode
+        implements
+        ObjectSinkNode,
+        RightTupleSink {
     private final List     asserted  = new ArrayList();
     private final List     retracted = new ArrayList();
     private final List     updated   = new ArrayList();
@@ -111,12 +111,22 @@ public class MockObjectSink
         return 0;
     }
 
+    @Override
+    protected boolean doRemove(RuleRemovalContext context, ReteooBuilder builder) {
+        return false;
+    }
+
     public RuleBasePartitionId getPartitionId() {
         return null;
     }
 
     public short getType() {
         return NodeTypeEnums.JoinNode;
+    }
+
+    @Override
+    public AbstractLeftTuple createPeer(AbstractLeftTuple original) {
+        return null;
     }
 
     public void modifyObject(InternalFactHandle factHandle,
@@ -181,10 +191,38 @@ public class MockObjectSink
 
     public int nodeHashCode() {return this.hashCode();}
 
-    public void setPartitionIdWithSinks( RuleBasePartitionId partitionId ) { }
+    @Override
+    public AbstractLeftTuple createLeftTuple(InternalFactHandle factHandle, boolean leftTupleMemoryEnabled) {
+        return null;
+    }
+
+    @Override
+    public AbstractLeftTuple createLeftTuple(InternalFactHandle factHandle, AbstractLeftTuple leftTuple, Sink sink) {
+        return null;
+    }
+
+    @Override
+    public AbstractLeftTuple createLeftTuple(AbstractLeftTuple leftTuple, Sink sink, PropagationContext pctx, boolean leftTupleMemoryEnabled) {
+        return null;
+    }
+
+    @Override
+    public AbstractLeftTuple createLeftTuple(AbstractLeftTuple leftTuple, RightTuple rightTuple, Sink sink) {
+        return null;
+    }
+
+    @Override
+    public AbstractLeftTuple createLeftTuple(AbstractLeftTuple leftTuple, RightTuple rightTuple, AbstractLeftTuple currentLeftChild, AbstractLeftTuple currentRightChild, Sink sink, boolean leftTupleMemoryEnabled) {
+        return null;
+    }
 
     @Override
     public NetworkNode[] getSinks() {
         return new NetworkNode[0];
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        return this == object;
     }
 }
