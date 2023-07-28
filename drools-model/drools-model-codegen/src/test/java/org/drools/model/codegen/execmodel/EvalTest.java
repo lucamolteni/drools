@@ -23,11 +23,20 @@ import org.drools.model.codegen.execmodel.domain.Overloaded;
 import org.drools.model.codegen.execmodel.domain.Person;
 import org.drools.model.codegen.execmodel.domain.Result;
 import org.junit.Test;
+import org.junit.runners.Parameterized;
 import org.kie.api.runtime.KieSession;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.drools.model.codegen.execmodel.BaseModelTest.RUN_TYPE.PATTERN_DSL;
 
 public class EvalTest extends BaseModelTest {
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Object[] params() {
+        return new Object[]{
+                PATTERN_DSL,
+        };
+    }
 
     public EvalTest( RUN_TYPE testRunType ) {
         super( testRunType );

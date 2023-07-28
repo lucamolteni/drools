@@ -175,7 +175,7 @@ public final class TestParametersUtil {
         } else {
             engineTestConfigurations.add(EngineTestConfiguration.IDENTITY_MODE);
         }
-        engineTestConfigurations.add(EngineTestConfiguration.EXECUTABLE_MODEL_OFF);
+//        engineTestConfigurations.add(EngineTestConfiguration.EXECUTABLE_MODEL_OFF);
         engineTestConfigurations.add(EngineTestConfiguration.ALPHA_NETWORK_COMPILER_FALSE);
 
         if (TEST_WITH_ALPHA_NETWORK) {

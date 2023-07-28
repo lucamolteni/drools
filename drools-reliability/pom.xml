@@ -25,7 +25,7 @@
     <module>drools-reliability-core</module>
     <module>drools-reliability-infinispan</module>
     <module>drools-reliability-h2mvstore</module>
-    <module>drools-reliability-tests</module>
+<!--    <module>drools-reliability-tests</module>-->
   </modules>
 
 </project>

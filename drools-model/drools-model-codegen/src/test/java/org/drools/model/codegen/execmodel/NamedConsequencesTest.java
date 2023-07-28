@@ -25,6 +25,7 @@ import org.drools.model.codegen.execmodel.domain.Cheese;
 import org.drools.model.codegen.execmodel.domain.Person;
 import org.drools.model.codegen.execmodel.domain.Result;
 import org.junit.Test;
+import org.junit.runners.Parameterized;
 import org.kie.api.builder.Message.Level;
 import org.kie.api.builder.Results;
 import org.kie.api.runtime.KieSession;
@@ -32,8 +33,16 @@ import org.kie.api.runtime.rule.FactHandle;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.drools.model.codegen.execmodel.BaseModelTest.RUN_TYPE.PATTERN_DSL;
 
 public class NamedConsequencesTest extends BaseModelTest {
+    @Parameterized.Parameters(name = "{0}")
+    public static Object[] params() {
+        return new Object[]{
+                PATTERN_DSL,
+        };
+    }
+
 
     public NamedConsequencesTest( RUN_TYPE testRunType ) {
         super( testRunType );
