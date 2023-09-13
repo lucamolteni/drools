@@ -110,7 +110,7 @@ public class LambdaGroupByAccumulate extends Accumulate {
         GroupByContext groupByContext = ( GroupByContext ) context;
         LeftTuple leftTupleMatch = (LeftTuple) match;
         TupleList<AccumulateContextEntry> tupleList = groupByContext.getGroup(workingMemoryContext, innerAccumulate,
-                                                                              leftTupleMatch, getKey(leftTupleMatch, handle, (ReteEvaluator) valueResolver), (ReteEvaluator) valueResolver);
+                                                                              (Tuple) match, getKey( (Tuple) match, handle, (ReteEvaluator) valueResolver), (ReteEvaluator) valueResolver);
 
         return accumulate(workingMemoryContext, match, handle, groupByContext, tupleList, valueResolver);
     }
@@ -126,7 +126,7 @@ public class LambdaGroupByAccumulate extends Accumulate {
     @Override
     public boolean tryReverse(Object workingMemoryContext, Object context, BaseTuple leftTuple, FactHandle handle,
                               BaseTuple match, ValueResolver valueResolver) {
-        LeftTuple tupleMatch = (LeftTuple) match;
+        Tuple tupleMatch = (Tuple) match;
         TupleList<AccumulateContextEntry> memory = tupleMatch.getMemory();
         AccumulateContextEntry entry = memory.getContext();
         boolean reversed = innerAccumulate.tryReverse(workingMemoryContext, entry, leftTuple, handle, match, valueResolver);

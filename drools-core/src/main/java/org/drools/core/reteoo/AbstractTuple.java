@@ -35,7 +35,7 @@ public abstract class AbstractTuple implements Tuple {
     protected Tuple stagedPrevious;
 
     private Tuple   previous;
-    private AbstractTuple   next;
+    private Tuple   next;
 
     private Sink sink;
 
@@ -112,11 +112,11 @@ public abstract class AbstractTuple implements Tuple {
         this.previous = previous;
     }
 
-    public AbstractTuple getNext() {
+    public Tuple getNext() {
         return next;
     }
 
-    public void setNext(AbstractTuple next) {
+    public void setNext(Tuple next) {
         this.next = next;
     }
 

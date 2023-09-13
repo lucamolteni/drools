@@ -16,6 +16,18 @@
 
 package org.drools.model.codegen.execmodel;
 
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
 import org.drools.model.codegen.execmodel.FunctionsTest.Pojo;
 import org.drools.model.codegen.execmodel.domain.Address;
 import org.drools.model.codegen.execmodel.domain.Adult;
@@ -1537,62 +1549,5 @@ public class FromTest extends BaseModelTest {
             this.strValue = strValue;
         }
 
-    }
-
-    @Test
-    public void testFromGlobalWithDuplicates() {
-        String str =
-                "import java.util.concurrent.atomic.AtomicInteger;\n" +
-                        "import " + NamedPerson.class.getCanonicalName() + ";\n" +
-                        "global java.util.List list         \n" +
-                        "rule R when                        \n" +
-                        "  $i : AtomicInteger()\n" +
-                        "  $o : NamedPerson(age > $i.get()) from list\n" +
-                        "then                               \n" +
-                        "  insert($o);                      \n" +
-                        "end                                ";
-
-        KieSession ksession = getKieSession(str);
-
-        List<NamedPerson> strings = Arrays.asList(new NamedPerson("Mario", 1), new NamedPerson("Mario", 2));
-
-        ksession.setGlobal("list", strings);
-
-        AtomicInteger i = new AtomicInteger(0);
-        FactHandle fh = ksession.insert(i);
-
-        assertThat(ksession.fireAllRules()).isEqualTo(2);
-
-        i.incrementAndGet();
-        ksession.update(fh, i);
-
-        assertThat(ksession.fireAllRules()).isEqualTo(1);
-    }
-
-    public static class NamedPerson {
-        private final String name;
-        private final int age;
-
-        public NamedPerson(String name, int age) {
-            this.name = name;
-            this.age = age;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            NamedPerson myPerson = (NamedPerson) o;
-            return Objects.equals(name, myPerson.name);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(name);
-        }
-
-        public int getAge() {
-            return age;
-        }
     }
 }
