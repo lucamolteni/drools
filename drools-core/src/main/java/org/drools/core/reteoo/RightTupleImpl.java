@@ -52,15 +52,8 @@ public class RightTupleImpl extends AbstractTuple implements RightTuple {
         handle.addLastRightTuple( this );
     }
 
-    // It's better to always cast to a concrete or abstract class to avoid
-    // secondary super cache problem. See https://issues.redhat.com/browse/DROOLS-7521
     public RightTupleSink getTupleSink() {
-        Object sink = getSink();
-        if(sink instanceof BetaNode) {
-            return (BetaNode)sink;
-        } else {
-            return (RightTupleSink) sink;
-        }
+        return (RightTupleSink) getSink();
     }
     
     public void reAdd() {

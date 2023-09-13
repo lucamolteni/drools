@@ -1643,7 +1643,7 @@ class LazyPhreakBuilder implements PhreakBuilder {
                 }
 
             } else if (NodeTypeEnums.isTerminalNode(sink)) {
-                pmem = reteEvaluator.getNodeMemory((AbstractTerminalNode) sink);
+                pmem = (PathMemory) reteEvaluator.getNodeMemory((MemoryFactory) sink);
             }
 
             if (pmem != null && smem.getPos() < pmem.getSegmentMemories().length) {
