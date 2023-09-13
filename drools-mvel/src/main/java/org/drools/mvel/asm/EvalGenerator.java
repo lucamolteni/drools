@@ -91,7 +91,7 @@ public class EvalGenerator {
                     mv.visitVarInsn(ALOAD, 3); // reteEvaluator
 
                     mv.visitVarInsn(ALOAD, 5);
-                    invokeInterface(BaseTuple.class, "getFactHandle", FactHandle.class);
+                    invokeInterface(LeftTuple.class, "getFactHandle", FactHandle.class);
                     invokeInterface(FactHandle.class, "getObject", Object.class); // tuple.getFactHandle().getObject()
 
                     storeObjectFromDeclaration(declarations[i], expectedDeclarations[i]);

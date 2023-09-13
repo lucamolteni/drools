@@ -155,7 +155,7 @@ public class TimerNode extends LeftTupleSource
     @Override
     public LeftTuple createPeer(LeftTuple original) {
         EvalNodeLeftTuple peer = new EvalNodeLeftTuple();
-        peer.initPeer((LeftTuple) original, this);
+        peer.initPeer((AbstractLeftTuple) original, this);
         original.setPeer(peer);
         return peer;
     }

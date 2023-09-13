@@ -19,7 +19,7 @@ package org.drools.core.reteoo;
 import org.drools.core.common.InternalFactHandle;
 import org.drools.core.common.PropagationContext;
 
-public class EvalNodeLeftTuple extends LeftTuple {
+public class EvalNodeLeftTuple extends AbstractLeftTuple {
 
     private static final long serialVersionUID = 540l;
 

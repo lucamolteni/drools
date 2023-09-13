@@ -102,7 +102,7 @@ public class ExistsNode extends BetaNode {
     
     public LeftTuple createPeer(LeftTuple original) {
         NotNodeLeftTuple peer = new NotNodeLeftTuple();
-        peer.initPeer(original, this);
+        peer.initPeer((AbstractLeftTuple) original, this);
         original.setPeer( peer );
         return peer;
     }
