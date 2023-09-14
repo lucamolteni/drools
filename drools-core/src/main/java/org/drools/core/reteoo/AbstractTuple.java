@@ -37,7 +37,7 @@ public abstract class AbstractTuple implements Tuple {
     private Tuple   previous;
     private Tuple   next;
 
-    private Sink sink;
+    protected Sink sink;
 
     protected Tuple handlePrevious;
     protected Tuple handleNext;
