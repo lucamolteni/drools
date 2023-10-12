@@ -1,0 +1,12 @@
+# Created by buildmetadata-maven-plugin 1.7.0 ( SHA: 6f444cae ) 
+build.maven.version=3.8.6
+build.version=7.67.0.Final
+build.java.vm=OpenJDK 64-Bit Server VM
+build.version.full=7.67.0.Final
+build.java.compiler=HotSpot 64-Bit Tiered Compilers
+build.maven.execution.cmdline=clean install -DskipTests -DskipITs -Denforcer.fail\=false
+build.groupId=org.drools
+build.java.vendor=Red Hat, Inc.
+build.java.runtime.name=OpenJDK Runtime Environment
+build.java.runtime.version=11.0.20+8-LTS
+build.artifactId=drools-benchmarks-simple

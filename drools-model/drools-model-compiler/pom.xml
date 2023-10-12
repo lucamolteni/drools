@@ -15,7 +15,7 @@
 
   <properties>
     <java.module.name>org.drools.modelcompiler</java.module.name>
-    <version.jmh>1.19</version.jmh>
+    <version.jmh>1.35</version.jmh>
   </properties>
 
   <dependencyManagement>

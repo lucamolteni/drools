@@ -1,0 +1,3706 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" width="1920" height="694" onload="init(evt)" viewBox="0 0 1920 694" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<style type="text/css">
+	text { font-family:Verdana; font-size:12px; fill:rgb(0,0,0); }
+	#search { opacity:0.1; cursor:pointer; }
+	#search:hover, #search.show { opacity:1; }
+	#subtitle { text-anchor:middle; font-color:rgb(160,160,160); }
+	#title { text-anchor:middle; font-size:17px}
+	#unzoom { cursor:pointer; }
+	#frames > *:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+	.hide { display:none; }
+	.parent { opacity:0.5; }
+</style>
+<script type="text/ecmascript">
+<![CDATA[
+	"use strict";
+	var details, searchbtn, unzoombtn, matchedtxt, svg, searching;
+	function init(evt) {
+		details = document.getElementById("details").firstChild;
+		searchbtn = document.getElementById("search");
+		unzoombtn = document.getElementById("unzoom");
+		matchedtxt = document.getElementById("matched");
+		svg = document.getElementsByTagName("svg")[0];
+		searching = 0;
+	}
+
+	window.addEventListener("click", function(e) {
+		var target = find_group(e.target);
+		if (target) {
+			if (target.nodeName == "a") {
+				if (e.ctrlKey === false) return;
+				e.preventDefault();
+			}
+			if (target.classList.contains("parent")) unzoom();
+			zoom(target);
+		}
+		else if (e.target.id == "unzoom") unzoom();
+		else if (e.target.id == "search") search_prompt();
+	}, false)
+
+	// mouse-over for info
+	// show
+	window.addEventListener("mouseover", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = "Function: " + g_to_text(target);
+	}, false)
+
+	// clear
+	window.addEventListener("mouseout", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = ' ';
+	}, false)
+
+	// ctrl-F for search
+	window.addEventListener("keydown",function (e) {
+		if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+			e.preventDefault();
+			search_prompt();
+		}
+	}, false)
+
+	// functions
+	function find_child(node, selector) {
+		var children = node.querySelectorAll(selector);
+		if (children.length) return children[0];
+		return;
+	}
+	function find_group(node) {
+		var parent = node.parentElement;
+		if (!parent) return;
+		if (parent.id == "frames") return node;
+		return find_group(parent);
+	}
+	function orig_save(e, attr, val) {
+		if (e.attributes["_orig_" + attr] != undefined) return;
+		if (e.attributes[attr] == undefined) return;
+		if (val == undefined) val = e.attributes[attr].value;
+		e.setAttribute("_orig_" + attr, val);
+	}
+	function orig_load(e, attr) {
+		if (e.attributes["_orig_"+attr] == undefined) return;
+		e.attributes[attr].value = e.attributes["_orig_" + attr].value;
+		e.removeAttribute("_orig_"+attr);
+	}
+	function g_to_text(e) {
+		var text = find_child(e, "title").firstChild.nodeValue;
+		return (text)
+	}
+	function g_to_func(e) {
+		var func = g_to_text(e);
+		// if there's any manipulation we want to do to the function
+		// name before it's searched, do it here before returning.
+		return (func);
+	}
+	function update_text(e) {
+		var r = find_child(e, "rect");
+		var t = find_child(e, "text");
+		var w = parseFloat(r.attributes.width.value) -3;
+		var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+		t.attributes.x.value = parseFloat(r.attributes.x.value) + 3;
+
+		// Smaller than this size won't fit anything
+		if (w < 2 * 12 * 0.59) {
+			t.textContent = "";
+			return;
+		}
+
+		t.textContent = txt;
+		// Fit in full text width
+		if (/^ *$/.test(txt) || t.getSubStringLength(0, txt.length) < w)
+			return;
+
+		for (var x = txt.length - 2; x > 0; x--) {
+			if (t.getSubStringLength(0, x + 2) <= w) {
+				t.textContent = txt.substring(0, x) + "..";
+				return;
+			}
+		}
+		t.textContent = "";
+	}
+
+	// zoom
+	function zoom_reset(e) {
+		if (e.attributes != undefined) {
+			orig_load(e, "x");
+			orig_load(e, "width");
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_reset(c[i]);
+		}
+	}
+	function zoom_child(e, x, ratio) {
+		if (e.attributes != undefined) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = (parseFloat(e.attributes.x.value) - x - 10) * ratio + 10;
+				if (e.tagName == "text")
+					e.attributes.x.value = find_child(e.parentNode, "rect[x]").attributes.x.value + 3;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseFloat(e.attributes.width.value) * ratio;
+			}
+		}
+
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_child(c[i], x - 10, ratio);
+		}
+	}
+	function zoom_parent(e) {
+		if (e.attributes) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = 10;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseInt(svg.width.baseVal.value) - (10 * 2);
+			}
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_parent(c[i]);
+		}
+	}
+	function zoom(node) {
+		var attr = find_child(node, "rect").attributes;
+		var width = parseFloat(attr.width.value);
+		var xmin = parseFloat(attr.x.value);
+		var xmax = parseFloat(xmin + width);
+		var ymin = parseFloat(attr.y.value);
+		var ratio = (svg.width.baseVal.value - 2 * 10) / width;
+
+		// XXX: Workaround for JavaScript float issues (fix me)
+		var fudge = 0.0001;
+
+		unzoombtn.classList.remove("hide");
+
+		var el = document.getElementById("frames").children;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var a = find_child(e, "rect").attributes;
+			var ex = parseFloat(a.x.value);
+			var ew = parseFloat(a.width.value);
+			var upstack;
+			// Is it an ancestor
+			if (0 == 0) {
+				upstack = parseFloat(a.y.value) > ymin;
+			} else {
+				upstack = parseFloat(a.y.value) < ymin;
+			}
+			if (upstack) {
+				// Direct ancestor
+				if (ex <= xmin && (ex+ew+fudge) >= xmax) {
+					e.classList.add("parent");
+					zoom_parent(e);
+					update_text(e);
+				}
+				// not in current path
+				else
+					e.classList.add("hide");
+			}
+			// Children maybe
+			else {
+				// no common path
+				if (ex < xmin || ex + fudge >= xmax) {
+					e.classList.add("hide");
+				}
+				else {
+					zoom_child(e, xmin, ratio);
+					update_text(e);
+				}
+			}
+		}
+	}
+	function unzoom() {
+		unzoombtn.classList.add("hide");
+		var el = document.getElementById("frames").children;
+		for(var i = 0; i < el.length; i++) {
+			el[i].classList.remove("parent");
+			el[i].classList.remove("hide");
+			zoom_reset(el[i]);
+			update_text(el[i]);
+		}
+	}
+
+	// search
+	function reset_search() {
+		var el = document.querySelectorAll("#frames rect");
+		for (var i = 0; i < el.length; i++) {
+			orig_load(el[i], "fill")
+		}
+	}
+	function search_prompt() {
+		if (!searching) {
+			var term = prompt("Enter a search term (regexp " +
+			    "allowed, eg: ^ext4_)", "");
+			if (term != null) {
+				search(term)
+			}
+		} else {
+			reset_search();
+			searching = 0;
+			searchbtn.classList.remove("show");
+			searchbtn.firstChild.nodeValue = "Search"
+			matchedtxt.classList.add("hide");
+			matchedtxt.firstChild.nodeValue = ""
+		}
+	}
+	function search(term) {
+		var re = new RegExp(term);
+		var el = document.getElementById("frames").children;
+		var matches = new Object();
+		var maxwidth = 0;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var func = g_to_func(e);
+			var rect = find_child(e, "rect");
+			if (func == null || rect == null)
+				continue;
+
+			// Save max width. Only works as we have a root frame
+			var w = parseFloat(rect.attributes.width.value);
+			if (w > maxwidth)
+				maxwidth = w;
+
+			if (func.match(re)) {
+				// highlight
+				var x = parseFloat(rect.attributes.x.value);
+				orig_save(rect, "fill");
+				rect.attributes.fill.value = "rgb(230,0,230)";
+
+				// remember matches
+				if (matches[x] == undefined) {
+					matches[x] = w;
+				} else {
+					if (w > matches[x]) {
+						// overwrite with parent
+						matches[x] = w;
+					}
+				}
+				searching = 1;
+			}
+		}
+		if (!searching)
+			return;
+
+		searchbtn.classList.add("show");
+		searchbtn.firstChild.nodeValue = "Reset Search";
+
+		// calculate percent matched, excluding vertical overlap
+		var count = 0;
+		var lastx = -1;
+		var lastw = 0;
+		var keys = Array();
+		for (k in matches) {
+			if (matches.hasOwnProperty(k))
+				keys.push(k);
+		}
+		// sort the matched frames by their x location
+		// ascending, then width descending
+		keys.sort(function(a, b){
+			return a - b;
+		});
+		// Step through frames saving only the biggest bottom-up frames
+		// thanks to the sort order. This relies on the tree property
+		// where children are always smaller than their parents.
+		var fudge = 0.0001;	// JavaScript floating point
+		for (var k in keys) {
+			var x = parseFloat(keys[k]);
+			var w = matches[keys[k]];
+			if (x >= lastx + lastw - fudge) {
+				count += w;
+				lastx = x;
+				lastw = w;
+			}
+		}
+		// display matched percent
+		matchedtxt.classList.remove("hide");
+		var pct = 100 * count / maxwidth;
+		if (pct != 100) pct = pct.toFixed(1)
+		matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+	}
+]]>
+</script>
+<rect x="0" y="0" width="100%" height="100%" fill="rgb(240,240,220)"/>
+<text id="title" x="960" y="24">Flame Graph</text>
+<text id="details" x="10" y="677"> </text>
+<text id="unzoom" x="10" y="24" class="hide">Reset Zoom</text>
+<text id="search" x="1810" y="24">Search</text>
+<text id="matched" x="1810" y="677"> </text>
+<g id="frames">
+<g>
+<title>all (15,869 samples, 100.00%)</title><rect x="10.0" y="643.0" width="1900.0" height="15" fill="#fa7b7b" rx="2" ry="2"/>
+<text x="13.0" y="654.0">all</text>
+</g>
+<g>
+<title>Thread.run (14,142 samples, 89.12%)</title><rect x="10.1" y="627.0" width="1693.2" height="15" fill="#5bec5b" rx="2" ry="2"/>
+<text x="13.1" y="638.0">Thread.run</text>
+</g>
+<g>
+<title>ThreadPoolExecutor$Worker.run (14,142 samples, 89.12%)</title><rect x="10.1" y="611.0" width="1693.2" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="13.1" y="622.0">ThreadPoolExecutor$Worker.run</text>
+</g>
+<g>
+<title>ThreadPoolExecutor.runWorker (14,142 samples, 89.12%)</title><rect x="10.1" y="595.0" width="1693.2" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="13.1" y="606.0">ThreadPoolExecutor.runWorker</text>
+</g>
+<g>
+<title>ConcurrentUpdateBenchmark$1.run (14,135 samples, 89.07%)</title><rect x="10.1" y="579.0" width="1692.4" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="13.1" y="590.0">ConcurrentUpdateBenchmark$1.run</text>
+</g>
+<g>
+<title>StatefulKnowledgeSessionImpl.fireAllRules (14,135 samples, 89.07%)</title><rect x="10.1" y="563.0" width="1692.4" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="13.1" y="574.0">StatefulKnowledgeSessionImpl.fireAllRules</text>
+</g>
+<g>
+<title>StatefulKnowledgeSessionImpl.fireAllRules (14,135 samples, 89.07%)</title><rect x="10.1" y="547.0" width="1692.4" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="13.1" y="558.0">StatefulKnowledgeSessionImpl.fireAllRules</text>
+</g>
+<g>
+<title>StatefulKnowledgeSessionImpl.internalFireAllRules (14,135 samples, 89.07%)</title><rect x="10.1" y="531.0" width="1692.4" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="13.1" y="542.0">StatefulKnowledgeSessionImpl.internalFireAllRules</text>
+</g>
+<g>
+<title>DefaultAgenda.fireAllRules (14,134 samples, 89.07%)</title><rect x="10.1" y="515.0" width="1692.3" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="13.1" y="526.0">DefaultAgenda.fireAllRules</text>
+</g>
+<g>
+<title>DefaultAgenda.internalFireAllRules (14,134 samples, 89.07%)</title><rect x="10.1" y="499.0" width="1692.3" height="15" fill="#60f160" rx="2" ry="2"/>
+<text x="13.1" y="510.0">DefaultAgenda.internalFireAllRules</text>
+</g>
+<g>
+<title>DefaultAgenda.fireLoop (14,134 samples, 89.07%)</title><rect x="10.1" y="483.0" width="1692.3" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="13.1" y="494.0">DefaultAgenda.fireLoop</text>
+</g>
+<g>
+<title>SequentialRuleEvaluator.evaluateAndFire (14,132 samples, 89.05%)</title><rect x="10.2" y="467.0" width="1692.1" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="13.2" y="478.0">SequentialRuleEvaluator.evaluateAndFire</text>
+</g>
+<g>
+<title>AbstractRuleEvaluator.internalEvaluateAndFire (14,132 samples, 89.05%)</title><rect x="10.2" y="451.0" width="1692.1" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="13.2" y="462.0">AbstractRuleEvaluator.internalEvaluateAndFire</text>
+</g>
+<g>
+<title>RuleExecutor.evaluateNetworkAndFire (14,131 samples, 89.05%)</title><rect x="10.4" y="435.0" width="1691.9" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="13.4" y="446.0">RuleExecutor.evaluateNetworkAndFire</text>
+</g>
+<g>
+<title>RuleExecutor.fire (13,453 samples, 84.78%)</title><rect x="10.5" y="419.0" width="1610.7" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="13.5" y="430.0">RuleExecutor.fire</text>
+</g>
+<g>
+<title>DefaultAgenda.flushPropagations (12,239 samples, 77.13%)</title><rect x="11.9" y="403.0" width="1465.4" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="14.9" y="414.0">DefaultAgenda.flushPropagations</text>
+</g>
+<g>
+<title>CompositeObjectSinkAdapter.propagateModifyObject (3 samples, 0.02%)</title><rect x="12.2" y="387.0" width="0.3" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="15.2" y="398.0"></text>
+</g>
+<g>
+<title>SynchronizedPropagationList.flush (12,234 samples, 77.09%)</title><rect x="12.5" y="387.0" width="1464.8" height="15" fill="#65f665" rx="2" ry="2"/>
+<text x="15.5" y="398.0">SynchronizedPropagationList.flush</text>
+</g>
+<g>
+<title>SynchronizedPropagationList.flush (12,232 samples, 77.08%)</title><rect x="12.5" y="371.0" width="1464.6" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="15.5" y="382.0">SynchronizedPropagationList.flush</text>
+</g>
+<g>
+<title>PropagationEntry$Update.execute (12,229 samples, 77.06%)</title><rect x="12.9" y="355.0" width="1464.2" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="15.9" y="366.0">PropagationEntry$Update.execute</text>
+</g>
+<g>
+<title>PropagationEntry$Update.execute (12,229 samples, 77.06%)</title><rect x="12.9" y="339.0" width="1464.2" height="15" fill="#50e150" rx="2" ry="2"/>
+<text x="15.9" y="350.0">PropagationEntry$Update.execute</text>
+</g>
+<g>
+<title>ClassObjectTypeConf.getObjectTypeNodes (3 samples, 0.02%)</title><rect x="13.6" y="323.0" width="0.4" height="15" fill="#57e857" rx="2" ry="2"/>
+<text x="16.6" y="334.0"></text>
+</g>
+<g>
+<title>DefaultFactHandle.detachLinkedTuples (43 samples, 0.27%)</title><rect x="14.0" y="323.0" width="5.1" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="17.0" y="334.0"></text>
+</g>
+<g>
+<title>DefaultFactHandle$SingleLinkedTuples.&lt;init&gt; (4 samples, 0.03%)</title><rect x="18.5" y="307.0" width="0.5" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="21.5" y="318.0"></text>
+</g>
+<g>
+<title>Object.&lt;init&gt; (3 samples, 0.02%)</title><rect x="18.6" y="291.0" width="0.4" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="21.6" y="302.0"></text>
+</g>
+<g>
+<title>ModifyPreviousTuples.&lt;init&gt; (4 samples, 0.03%)</title><rect x="19.1" y="323.0" width="0.5" height="15" fill="#5ced5c" rx="2" ry="2"/>
+<text x="22.1" y="334.0"></text>
+</g>
+<g>
+<title>ObjectTypeNode.modifyObject (12,173 samples, 76.71%)</title><rect x="19.6" y="323.0" width="1457.5" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="22.6" y="334.0">ObjectTypeNode.modifyObject</text>
+</g>
+<g>
+<title>CompositeObjectSinkAdapter.propagateModifyObject (12,069 samples, 76.05%)</title><rect x="20.8" y="307.0" width="1445.0" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="23.8" y="318.0">CompositeObjectSinkAdapter.propagateModifyObject</text>
+</g>
+<g>
+<title>CompositeObjectSinkAdapter.doPropagateModifyObject (11,985 samples, 75.52%)</title><rect x="27.7" y="291.0" width="1435.0" height="15" fill="#6dfe6d" rx="2" ry="2"/>
+<text x="30.7" y="302.0">CompositeObjectSinkAdapter.doPropagateModifyObject</text>
+</g>
+<g>
+<title>BetaNode.modifyObject (11,975 samples, 75.46%)</title><rect x="28.9" y="275.0" width="1433.8" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="31.9" y="286.0">BetaNode.modifyObject</text>
+</g>
+<g>
+<title>BetaNode.reorderRightTuple (1,761 samples, 11.10%)</title><rect x="93.9" y="259.0" width="210.9" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="96.9" y="270.0">BetaNode.reorderRightTuple</text>
+</g>
+<g>
+<title>BetaNode.getBetaMemory (1,750 samples, 11.03%)</title><rect x="93.9" y="243.0" width="209.6" height="15" fill="#69fa69" rx="2" ry="2"/>
+<text x="96.9" y="254.0">BetaNode.getBetaMemory</text>
+</g>
+<g>
+<title>BaseClassFieldReader.getValue (44 samples, 0.28%)</title><rect x="94.6" y="227.0" width="5.3" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="97.6" y="238.0"></text>
+</g>
+<g>
+<title>BaseNode.getMemoryId (44 samples, 0.28%)</title><rect x="94.6" y="211.0" width="5.3" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="97.6" y="222.0"></text>
+</g>
+<g>
+<title>StatefulKnowledgeSessionImpl.getNodeMemory (1,700 samples, 10.71%)</title><rect x="99.9" y="227.0" width="203.6" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="102.9" y="238.0">StatefulKnowledgeSessionImp..</text>
+</g>
+<g>
+<title>ConcurrentNodeMemories.getNodeMemory (1,641 samples, 10.34%)</title><rect x="107.0" y="211.0" width="196.5" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="110.0" y="222.0">ConcurrentNodeMemories.get..</text>
+</g>
+<g>
+<title>AtomicReferenceArray.get (666 samples, 4.20%)</title><rect x="143.0" y="195.0" width="79.8" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="146.0" y="206.0">AtomicRef..</text>
+</g>
+<g>
+<title>BaseNode.getMemoryId (58 samples, 0.37%)</title><rect x="149.0" y="179.0" width="7.0" height="15" fill="#6dfe6d" rx="2" ry="2"/>
+<text x="152.0" y="190.0"></text>
+</g>
+<g>
+<title>VarHandleGuards.guard_LI_L (36 samples, 0.23%)</title><rect x="156.0" y="179.0" width="4.3" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="159.0" y="190.0"></text>
+</g>
+<g>
+<title>VarHandleObjects$Array.getVolatile (36 samples, 0.23%)</title><rect x="156.0" y="163.0" width="4.3" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="159.0" y="174.0"></text>
+</g>
+<g>
+<title>itable stub (522 samples, 3.29%)</title><rect x="160.3" y="179.0" width="62.5" height="15" fill="#f06f6f" rx="2" ry="2"/>
+<text x="163.3" y="190.0">itable..</text>
+</g>
+<g>
+<title>AtomicReferenceArray.length (23 samples, 0.14%)</title><rect x="222.8" y="195.0" width="2.7" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="225.8" y="206.0"></text>
+</g>
+<g>
+<title>BaseNode.getMemoryId (62 samples, 0.39%)</title><rect x="225.5" y="195.0" width="7.4" height="15" fill="#5ced5c" rx="2" ry="2"/>
+<text x="228.5" y="206.0"></text>
+</g>
+<g>
+<title>itable stub (589 samples, 3.71%)</title><rect x="232.9" y="195.0" width="70.6" height="15" fill="#fb7d7d" rx="2" ry="2"/>
+<text x="235.9" y="206.0">itable s..</text>
+</g>
+<g>
+<title>RuleNetworkEvaluator.doUpdatesReorderChildLeftTuple (11 samples, 0.07%)</title><rect x="303.5" y="243.0" width="1.3" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="306.5" y="254.0"></text>
+</g>
+<g>
+<title>LongBitMask.intersects (35 samples, 0.22%)</title><rect x="304.8" y="259.0" width="4.2" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="307.8" y="270.0"></text>
+</g>
+<g>
+<title>ModifyPreviousTuples.peekRightTuple (104 samples, 0.66%)</title><rect x="309.0" y="259.0" width="12.4" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="312.0" y="270.0"></text>
+</g>
+<g>
+<title>InternalFactHandle$LinkedTuples.getFirstRightTuple (104 samples, 0.66%)</title><rect x="309.0" y="243.0" width="12.4" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="312.0" y="254.0"></text>
+</g>
+<g>
+<title>DefaultFactHandle$SingleLinkedTuples.getFirstRightTuple (68 samples, 0.43%)</title><rect x="309.0" y="227.0" width="8.1" height="15" fill="#52e352" rx="2" ry="2"/>
+<text x="312.0" y="238.0"></text>
+</g>
+<g>
+<title>RuleBasePartitionId.getParallelEvaluationSlot (36 samples, 0.23%)</title><rect x="317.1" y="227.0" width="4.3" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="320.1" y="238.0"></text>
+</g>
+<g>
+<title>ModifyPreviousTuples.removeRightTuple (1,700 samples, 10.71%)</title><rect x="321.4" y="259.0" width="203.6" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="324.4" y="270.0">ModifyPreviousTuples.remove..</text>
+</g>
+<g>
+<title>DefaultFactHandle$SingleLinkedTuples.removeRightTuple (1,118 samples, 7.05%)</title><rect x="339.3" y="243.0" width="133.8" height="15" fill="#52e352" rx="2" ry="2"/>
+<text x="342.3" y="254.0">DefaultFactHandle..</text>
+</g>
+<g>
+<title>BaseTuple.setHandleNext (29 samples, 0.18%)</title><rect x="427.6" y="227.0" width="3.5" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="430.6" y="238.0"></text>
+</g>
+<g>
+<title>BaseTuple.setHandlePrevious (81 samples, 0.51%)</title><rect x="431.1" y="227.0" width="9.7" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="434.1" y="238.0"></text>
+</g>
+<g>
+<title>RightTupleImpl.getHandleNext (252 samples, 1.59%)</title><rect x="440.8" y="227.0" width="30.2" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="443.8" y="238.0">Ri..</text>
+</g>
+<g>
+<title>RightTupleImpl.getHandleNext (224 samples, 1.41%)</title><rect x="444.1" y="211.0" width="26.9" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="447.1" y="222.0">R..</text>
+</g>
+<g>
+<title>RightTupleImpl.getHandlePrevious (16 samples, 0.10%)</title><rect x="471.0" y="227.0" width="1.9" height="15" fill="#51e251" rx="2" ry="2"/>
+<text x="474.0" y="238.0"></text>
+</g>
+<g>
+<title>RightTupleImpl.getHandlePrevious (16 samples, 0.10%)</title><rect x="471.0" y="211.0" width="1.9" height="15" fill="#50e150" rx="2" ry="2"/>
+<text x="474.0" y="222.0"></text>
+</g>
+<g>
+<title>ModifyPreviousTuples.peekRightTuple (433 samples, 2.73%)</title><rect x="473.1" y="243.0" width="51.9" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="476.1" y="254.0">Modif..</text>
+</g>
+<g>
+<title>InternalFactHandle$LinkedTuples.getFirstRightTuple (336 samples, 2.12%)</title><rect x="484.7" y="227.0" width="40.3" height="15" fill="#51e251" rx="2" ry="2"/>
+<text x="487.7" y="238.0">Int..</text>
+</g>
+<g>
+<title>DefaultFactHandle$SingleLinkedTuples.getFirstRightTuple (174 samples, 1.10%)</title><rect x="504.1" y="211.0" width="20.9" height="15" fill="#57e857" rx="2" ry="2"/>
+<text x="507.1" y="222.0"></text>
+</g>
+<g>
+<title>BaseClassFieldReader.getValue (94 samples, 0.59%)</title><rect x="512.0" y="195.0" width="11.3" height="15" fill="#6dfe6d" rx="2" ry="2"/>
+<text x="515.0" y="206.0"></text>
+</g>
+<g>
+<title>DefaultFactHandle$SingleLinkedTuples.getFirstRightTuple (14 samples, 0.09%)</title><rect x="523.3" y="195.0" width="1.7" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="526.3" y="206.0"></text>
+</g>
+<g>
+<title>NotNode.reorderRightTuple (5,818 samples, 36.66%)</title><rect x="525.0" y="259.0" width="696.6" height="15" fill="#69fa69" rx="2" ry="2"/>
+<text x="528.0" y="270.0">NotNode.reorderRightTuple</text>
+</g>
+<g>
+<title>RuleNetworkEvaluator.doExistentialUpdatesReorderChildLeftTuple (5,794 samples, 36.51%)</title><rect x="527.8" y="243.0" width="693.8" height="15" fill="#57e857" rx="2" ry="2"/>
+<text x="530.8" y="254.0">RuleNetworkEvaluator.doExistentialUpdatesReorderChildLeftTuple</text>
+</g>
+<g>
+<title>BetaNode.getBetaMemory (1,767 samples, 11.13%)</title><rect x="533.6" y="227.0" width="211.5" height="15" fill="#60f160" rx="2" ry="2"/>
+<text x="536.6" y="238.0">BetaNode.getBetaMemory</text>
+</g>
+<g>
+<title>BaseClassFieldReader.getValue (42 samples, 0.26%)</title><rect x="534.7" y="211.0" width="5.0" height="15" fill="#5bec5b" rx="2" ry="2"/>
+<text x="537.7" y="222.0"></text>
+</g>
+<g>
+<title>BaseNode.getMemoryId (42 samples, 0.26%)</title><rect x="534.7" y="195.0" width="5.0" height="15" fill="#66f766" rx="2" ry="2"/>
+<text x="537.7" y="206.0"></text>
+</g>
+<g>
+<title>StatefulKnowledgeSessionImpl.getNodeMemory (1,716 samples, 10.81%)</title><rect x="539.7" y="211.0" width="205.4" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="542.7" y="222.0">StatefulKnowledgeSessionImp..</text>
+</g>
+<g>
+<title>ConcurrentNodeMemories.getNodeMemory (1,671 samples, 10.53%)</title><rect x="545.1" y="195.0" width="200.0" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="548.1" y="206.0">ConcurrentNodeMemories.get..</text>
+</g>
+<g>
+<title>AtomicReferenceArray.get (655 samples, 4.13%)</title><rect x="588.1" y="179.0" width="78.4" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="591.1" y="190.0">AtomicRef..</text>
+</g>
+<g>
+<title>BaseNode.getMemoryId (47 samples, 0.30%)</title><rect x="593.7" y="163.0" width="5.6" height="15" fill="#51e251" rx="2" ry="2"/>
+<text x="596.7" y="174.0"></text>
+</g>
+<g>
+<title>VarHandleGuards.guard_LI_L (41 samples, 0.26%)</title><rect x="599.3" y="163.0" width="4.9" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="602.3" y="174.0"></text>
+</g>
+<g>
+<title>VarHandleObjects$Array.getVolatile (41 samples, 0.26%)</title><rect x="599.3" y="147.0" width="4.9" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="602.3" y="158.0"></text>
+</g>
+<g>
+<title>itable stub (520 samples, 3.28%)</title><rect x="604.2" y="163.0" width="62.3" height="15" fill="#fc7f7f" rx="2" ry="2"/>
+<text x="607.2" y="174.0">itable..</text>
+</g>
+<g>
+<title>AtomicReferenceArray.length (26 samples, 0.16%)</title><rect x="666.5" y="179.0" width="3.1" height="15" fill="#65f665" rx="2" ry="2"/>
+<text x="669.5" y="190.0"></text>
+</g>
+<g>
+<title>BaseNode.getMemoryId (74 samples, 0.47%)</title><rect x="669.6" y="179.0" width="8.9" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="672.6" y="190.0"></text>
+</g>
+<g>
+<title>itable stub (557 samples, 3.51%)</title><rect x="678.5" y="179.0" width="66.6" height="15" fill="#f77777" rx="2" ry="2"/>
+<text x="681.5" y="190.0">itable ..</text>
+</g>
+<g>
+<title>RuleNetworkEvaluator.doAddExistentialRightMemoryForReorder (2,164 samples, 13.64%)</title><rect x="745.1" y="227.0" width="259.1" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="748.1" y="238.0">RuleNetworkEvaluator.doAddExistenti..</text>
+</g>
+<g>
+<title>RuleNetworkEvaluator.doUpdatesReorderChildLeftTuple (310 samples, 1.95%)</title><rect x="745.9" y="211.0" width="37.1" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="748.9" y="222.0">Rul..</text>
+</g>
+<g>
+<title>BaseLeftTuple.reAddLeft (242 samples, 1.52%)</title><rect x="754.0" y="195.0" width="29.0" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="757.0" y="206.0">Ba..</text>
+</g>
+<g>
+<title>BaseLeftTuple.setFirstChild (60 samples, 0.38%)</title><rect x="767.4" y="179.0" width="7.2" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="770.4" y="190.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.setLastChild (34 samples, 0.21%)</title><rect x="774.6" y="179.0" width="4.1" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="777.6" y="190.0"></text>
+</g>
+<g>
+<title>BaseTuple.setHandleNext (32 samples, 0.20%)</title><rect x="778.7" y="179.0" width="3.8" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="781.7" y="190.0"></text>
+</g>
+<g>
+<title>BaseTuple.setHandlePrevious (4 samples, 0.03%)</title><rect x="782.5" y="179.0" width="0.5" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="785.5" y="190.0"></text>
+</g>
+<g>
+<title>TupleIndexRBTree.add (1,848 samples, 11.65%)</title><rect x="783.0" y="211.0" width="221.2" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="786.0" y="222.0">TupleIndexRBTree.add</text>
+</g>
+<g>
+<title>TupleIndexRBTree.getLeftIndexedValue (620 samples, 3.91%)</title><rect x="790.8" y="195.0" width="74.2" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="793.8" y="206.0">TupleInd..</text>
+</g>
+<g>
+<title>TupleIndexRBTree.getIndexedValue (620 samples, 3.91%)</title><rect x="790.8" y="179.0" width="74.2" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="793.8" y="190.0">TupleInd..</text>
+</g>
+<g>
+<title>ClassFieldReader.getValue (320 samples, 2.02%)</title><rect x="791.0" y="163.0" width="38.3" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="794.0" y="174.0">Cla..</text>
+</g>
+<g>
+<title>BaseClassFieldReader.getValue (309 samples, 1.95%)</title><rect x="791.1" y="147.0" width="37.0" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="794.1" y="158.0">Bas..</text>
+</g>
+<g>
+<title>B438639916$getValue.getIntValue (4 samples, 0.03%)</title><rect x="793.4" y="131.0" width="0.5" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="796.4" y="142.0"></text>
+</g>
+<g>
+<title>BaseIntClassFieldReader.getValue (198 samples, 1.25%)</title><rect x="793.9" y="131.0" width="23.7" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="796.9" y="142.0">B..</text>
+</g>
+<g>
+<title>B438639916$getValue.getIntValue (17 samples, 0.11%)</title><rect x="804.6" y="115.0" width="2.1" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="807.6" y="126.0"></text>
+</g>
+<g>
+<title>Integer.valueOf (91 samples, 0.57%)</title><rect x="806.7" y="115.0" width="10.9" height="15" fill="#69fa69" rx="2" ry="2"/>
+<text x="809.7" y="126.0"></text>
+</g>
+<g>
+<title>B438639916$getValue.getIntValue (40 samples, 0.25%)</title><rect x="810.4" y="99.0" width="4.8" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="813.4" y="110.0"></text>
+</g>
+<g>
+<title>vtable stub (20 samples, 0.13%)</title><rect x="815.2" y="99.0" width="2.4" height="15" fill="#fc7e7e" rx="2" ry="2"/>
+<text x="818.2" y="110.0"></text>
+</g>
+<g>
+<title>vtable stub (87 samples, 0.55%)</title><rect x="817.7" y="131.0" width="10.4" height="15" fill="#ec6969" rx="2" ry="2"/>
+<text x="820.7" y="142.0"></text>
+</g>
+<g>
+<title>BaseIntClassFieldReader.getValue (10 samples, 0.06%)</title><rect x="828.1" y="147.0" width="1.2" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="831.1" y="158.0"></text>
+</g>
+<g>
+<title>TupleValueExtractor.getValue (298 samples, 1.88%)</title><rect x="829.3" y="163.0" width="35.7" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="832.3" y="174.0">Tup..</text>
+</g>
+<g>
+<title>Declaration.getValue (298 samples, 1.88%)</title><rect x="829.3" y="147.0" width="35.7" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="832.3" y="158.0">Dec..</text>
+</g>
+<g>
+<title>BaseTuple.get (43 samples, 0.27%)</title><rect x="842.8" y="131.0" width="5.2" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="845.8" y="142.0"></text>
+</g>
+<g>
+<title>Declaration.getTupleIndex (26 samples, 0.16%)</title><rect x="844.9" y="115.0" width="3.1" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="847.9" y="126.0"></text>
+</g>
+<g>
+<title>Declaration.getValue (142 samples, 0.89%)</title><rect x="848.0" y="131.0" width="17.0" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="851.0" y="142.0"></text>
+</g>
+<g>
+<title>Declaration.getValue (120 samples, 0.76%)</title><rect x="850.6" y="115.0" width="14.4" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="853.6" y="126.0"></text>
+</g>
+<g>
+<title>ClassFieldReader.getValue (89 samples, 0.56%)</title><rect x="854.3" y="99.0" width="10.7" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="857.3" y="110.0"></text>
+</g>
+<g>
+<title>BaseIntClassFieldReader.getValue (57 samples, 0.36%)</title><rect x="858.2" y="83.0" width="6.8" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="861.2" y="94.0"></text>
+</g>
+<g>
+<title>Integer.valueOf (57 samples, 0.36%)</title><rect x="858.2" y="67.0" width="6.8" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="861.2" y="78.0"></text>
+</g>
+<g>
+<title>TupleList.add (63 samples, 0.40%)</title><rect x="865.0" y="195.0" width="7.5" height="15" fill="#5ced5c" rx="2" ry="2"/>
+<text x="868.0" y="206.0"></text>
+</g>
+<g>
+<title>BaseTuple.setPrevious (15 samples, 0.09%)</title><rect x="870.7" y="179.0" width="1.8" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="873.7" y="190.0"></text>
+</g>
+<g>
+<title>TupleRBTree.insert (1,100 samples, 6.93%)</title><rect x="872.5" y="195.0" width="131.7" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="875.5" y="206.0">TupleRBTree.insert</text>
+</g>
+<g>
+<title>TupleRBTree$Node.&lt;init&gt; (465 samples, 2.93%)</title><rect x="904.7" y="179.0" width="55.7" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="907.7" y="190.0">Tuple..</text>
+</g>
+<g>
+<title>PtrQueue::enqueue_known_active(void*) (4 samples, 0.03%)</title><rect x="953.8" y="163.0" width="0.5" height="15" fill="#d1d13f" rx="2" ry="2"/>
+<text x="956.8" y="174.0"></text>
+</g>
+<g>
+<title>SATBMarkQueue::should_enqueue_buffer() (4 samples, 0.03%)</title><rect x="953.8" y="147.0" width="0.5" height="15" fill="#d5d540" rx="2" ry="2"/>
+<text x="956.8" y="158.0"></text>
+</g>
+<g>
+<title>SATBMarkQueue::filter() (4 samples, 0.03%)</title><rect x="953.8" y="131.0" width="0.5" height="15" fill="#cece3e" rx="2" ry="2"/>
+<text x="956.8" y="142.0"></text>
+</g>
+<g>
+<title>TupleList.&lt;init&gt; (36 samples, 0.23%)</title><rect x="954.3" y="163.0" width="4.3" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="957.3" y="174.0"></text>
+</g>
+<g>
+<title>TupleRBTree.replaceNode (15 samples, 0.09%)</title><rect x="958.6" y="163.0" width="1.8" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="961.6" y="174.0"></text>
+</g>
+<g>
+<title>TupleRBTree$Node.access$002 (25 samples, 0.16%)</title><rect x="960.4" y="179.0" width="3.0" height="15" fill="#60f160" rx="2" ry="2"/>
+<text x="963.4" y="190.0"></text>
+</g>
+<g>
+<title>TupleRBTree$Node.access$102 (19 samples, 0.12%)</title><rect x="963.4" y="179.0" width="2.3" height="15" fill="#5ced5c" rx="2" ry="2"/>
+<text x="966.4" y="190.0"></text>
+</g>
+<g>
+<title>TupleRBTree$Node.access$302 (9 samples, 0.06%)</title><rect x="965.7" y="179.0" width="1.1" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="968.7" y="190.0"></text>
+</g>
+<g>
+<title>TupleRBTree.insertCase1 (313 samples, 1.97%)</title><rect x="966.8" y="179.0" width="37.4" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="969.8" y="190.0">Tup..</text>
+</g>
+<g>
+<title>TupleRBTree$Node.access$202 (25 samples, 0.16%)</title><rect x="968.3" y="163.0" width="3.0" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="971.3" y="174.0"></text>
+</g>
+<g>
+<title>TupleRBTree.insertCase2 (275 samples, 1.73%)</title><rect x="971.3" y="163.0" width="32.9" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="974.3" y="174.0">Tu..</text>
+</g>
+<g>
+<title>TupleRBTree.insertCase3 (266 samples, 1.68%)</title><rect x="972.4" y="147.0" width="31.8" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="975.4" y="158.0">Tu..</text>
+</g>
+<g>
+<title>TupleRBTree$Node.access$202 (21 samples, 0.13%)</title><rect x="973.1" y="131.0" width="2.5" height="15" fill="#66f766" rx="2" ry="2"/>
+<text x="976.1" y="142.0"></text>
+</g>
+<g>
+<title>TupleRBTree$Node.grandparent (9 samples, 0.06%)</title><rect x="975.6" y="131.0" width="1.1" height="15" fill="#6dfe6d" rx="2" ry="2"/>
+<text x="978.6" y="142.0"></text>
+</g>
+<g>
+<title>TupleRBTree.insertCase1 (189 samples, 1.19%)</title><rect x="976.7" y="131.0" width="22.6" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="979.7" y="142.0">T..</text>
+</g>
+<g>
+<title>TupleRBTree$Node.access$202 (5 samples, 0.03%)</title><rect x="977.7" y="115.0" width="0.6" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="980.7" y="126.0"></text>
+</g>
+<g>
+<title>TupleRBTree.insertCase2 (176 samples, 1.11%)</title><rect x="978.3" y="115.0" width="21.0" height="15" fill="#5bec5b" rx="2" ry="2"/>
+<text x="981.3" y="126.0">T..</text>
+</g>
+<g>
+<title>TupleRBTree.insertCase3 (170 samples, 1.07%)</title><rect x="979.0" y="99.0" width="20.3" height="15" fill="#66f766" rx="2" ry="2"/>
+<text x="982.0" y="110.0"></text>
+</g>
+<g>
+<title>TupleRBTree$Node.access$202 (38 samples, 0.24%)</title><rect x="981.3" y="83.0" width="4.5" height="15" fill="#5bec5b" rx="2" ry="2"/>
+<text x="984.3" y="94.0"></text>
+</g>
+<g>
+<title>TupleRBTree.insertCase4 (110 samples, 0.69%)</title><rect x="986.2" y="83.0" width="13.1" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="989.2" y="94.0"></text>
+</g>
+<g>
+<title>TupleRBTree.insertCase5 (77 samples, 0.49%)</title><rect x="989.6" y="67.0" width="9.3" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="992.6" y="78.0"></text>
+</g>
+<g>
+<title>TupleRBTree.rotateLeft (77 samples, 0.49%)</title><rect x="989.6" y="51.0" width="9.3" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="992.6" y="62.0"></text>
+</g>
+<g>
+<title>TupleRBTree$Node.access$002 (32 samples, 0.20%)</title><rect x="990.1" y="35.0" width="3.8" height="15" fill="#57e857" rx="2" ry="2"/>
+<text x="993.1" y="46.0"></text>
+</g>
+<g>
+<title>TupleRBTree$Node.access$302 (41 samples, 0.26%)</title><rect x="993.9" y="35.0" width="5.0" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="996.9" y="46.0"></text>
+</g>
+<g>
+<title>TupleRBTree.rotateRight (4 samples, 0.03%)</title><rect x="998.9" y="67.0" width="0.4" height="15" fill="#65f665" rx="2" ry="2"/>
+<text x="1001.9" y="78.0"></text>
+</g>
+<g>
+<title>TupleRBTree$Node.access$002 (3 samples, 0.02%)</title><rect x="998.9" y="51.0" width="0.3" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="1001.9" y="62.0"></text>
+</g>
+<g>
+<title>TupleRBTree.insertCase4 (41 samples, 0.26%)</title><rect x="999.3" y="131.0" width="4.9" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="1002.3" y="142.0"></text>
+</g>
+<g>
+<title>TupleRBTree.insertCase5 (23 samples, 0.14%)</title><rect x="999.3" y="115.0" width="2.8" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="1002.3" y="126.0"></text>
+</g>
+<g>
+<title>TupleRBTree.rotateLeft (23 samples, 0.14%)</title><rect x="999.3" y="99.0" width="2.8" height="15" fill="#66f766" rx="2" ry="2"/>
+<text x="1002.3" y="110.0"></text>
+</g>
+<g>
+<title>TupleRBTree.replaceNode (22 samples, 0.14%)</title><rect x="999.5" y="83.0" width="2.6" height="15" fill="#52e352" rx="2" ry="2"/>
+<text x="1002.5" y="94.0"></text>
+</g>
+<g>
+<title>TupleRBTree.rotateRight (18 samples, 0.11%)</title><rect x="1002.1" y="115.0" width="2.1" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="1005.1" y="126.0"></text>
+</g>
+<g>
+<title>TupleRBTree.replaceNode (17 samples, 0.11%)</title><rect x="1002.2" y="99.0" width="2.0" height="15" fill="#51e251" rx="2" ry="2"/>
+<text x="1005.2" y="110.0"></text>
+</g>
+<g>
+<title>TupleRBTree$Node.access$300 (3 samples, 0.02%)</title><rect x="1003.8" y="83.0" width="0.3" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="1006.8" y="94.0"></text>
+</g>
+<g>
+<title>RuleNetworkEvaluator.doRemoveExistentialRightMemoryForReorder (1,788 samples, 11.27%)</title><rect x="1004.2" y="227.0" width="214.1" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1007.2" y="238.0">RuleNetworkEvaluator.doRemov..</text>
+</g>
+<g>
+<title>PtrQueue::enqueue_known_active(void*) (5 samples, 0.03%)</title><rect x="1007.6" y="211.0" width="0.6" height="15" fill="#cfcf3e" rx="2" ry="2"/>
+<text x="1010.6" y="222.0"></text>
+</g>
+<g>
+<title>SATBMarkQueue::should_enqueue_buffer() (4 samples, 0.03%)</title><rect x="1007.7" y="195.0" width="0.5" height="15" fill="#dfdf43" rx="2" ry="2"/>
+<text x="1010.7" y="206.0"></text>
+</g>
+<g>
+<title>SATBMarkQueue::filter() (4 samples, 0.03%)</title><rect x="1007.7" y="179.0" width="0.5" height="15" fill="#dddd43" rx="2" ry="2"/>
+<text x="1010.7" y="190.0"></text>
+</g>
+<g>
+<title>RightTupleImpl.setBlocked (5 samples, 0.03%)</title><rect x="1008.2" y="211.0" width="0.6" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1011.2" y="222.0"></text>
+</g>
+<g>
+<title>RightTupleImpl.setTempBlocked (162 samples, 1.02%)</title><rect x="1008.8" y="211.0" width="19.4" height="15" fill="#6dfe6d" rx="2" ry="2"/>
+<text x="1011.8" y="222.0"></text>
+</g>
+<g>
+<title>PtrQueue::enqueue_known_active(void*) (16 samples, 0.10%)</title><rect x="1026.3" y="195.0" width="1.9" height="15" fill="#dbdb42" rx="2" ry="2"/>
+<text x="1029.3" y="206.0"></text>
+</g>
+<g>
+<title>SATBMarkQueue::should_enqueue_buffer() (15 samples, 0.09%)</title><rect x="1026.4" y="179.0" width="1.8" height="15" fill="#dede43" rx="2" ry="2"/>
+<text x="1029.4" y="190.0"></text>
+</g>
+<g>
+<title>SATBMarkQueue::filter() (15 samples, 0.09%)</title><rect x="1026.4" y="163.0" width="1.8" height="15" fill="#caca3c" rx="2" ry="2"/>
+<text x="1029.4" y="174.0"></text>
+</g>
+<g>
+<title>TupleIndexRBTree.remove (1,588 samples, 10.01%)</title><rect x="1028.2" y="211.0" width="190.1" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="1031.2" y="222.0">TupleIndexRBTree.remove</text>
+</g>
+<g>
+<title>TupleList.remove (127 samples, 0.80%)</title><rect x="1031.2" y="195.0" width="15.2" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="1034.2" y="206.0"></text>
+</g>
+<g>
+<title>BaseTuple.getNext (14 samples, 0.09%)</title><rect x="1038.6" y="179.0" width="1.7" height="15" fill="#52e352" rx="2" ry="2"/>
+<text x="1041.6" y="190.0"></text>
+</g>
+<g>
+<title>BaseTuple.getNext (14 samples, 0.09%)</title><rect x="1038.6" y="163.0" width="1.7" height="15" fill="#52e352" rx="2" ry="2"/>
+<text x="1041.6" y="174.0"></text>
+</g>
+<g>
+<title>BaseTuple.getPrevious (5 samples, 0.03%)</title><rect x="1040.3" y="179.0" width="0.6" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1043.3" y="190.0"></text>
+</g>
+<g>
+<title>RightTupleImpl.clear (46 samples, 0.29%)</title><rect x="1040.9" y="179.0" width="5.5" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="1043.9" y="190.0"></text>
+</g>
+<g>
+<title>BaseTuple.clear (13 samples, 0.08%)</title><rect x="1044.8" y="163.0" width="1.6" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1047.8" y="174.0"></text>
+</g>
+<g>
+<title>TupleRBTree.delete (1,436 samples, 9.05%)</title><rect x="1046.4" y="195.0" width="171.9" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1049.4" y="206.0">TupleRBTree.delete</text>
+</g>
+<g>
+<title>TupleRBTree$Node.access$000 (12 samples, 0.08%)</title><rect x="1058.7" y="179.0" width="1.5" height="15" fill="#66f766" rx="2" ry="2"/>
+<text x="1061.7" y="190.0"></text>
+</g>
+<g>
+<title>TupleRBTree$Node.access$100 (11 samples, 0.07%)</title><rect x="1060.2" y="179.0" width="1.3" height="15" fill="#51e251" rx="2" ry="2"/>
+<text x="1063.2" y="190.0"></text>
+</g>
+<g>
+<title>TupleRBTree$Node.copyStateInto (63 samples, 0.40%)</title><rect x="1061.5" y="179.0" width="7.5" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="1064.5" y="190.0"></text>
+</g>
+<g>
+<title>TupleList.copyStateInto (60 samples, 0.38%)</title><rect x="1061.8" y="163.0" width="7.2" height="15" fill="#6dfe6d" rx="2" ry="2"/>
+<text x="1064.8" y="174.0"></text>
+</g>
+<g>
+<title>RightTupleImpl.setMemory (14 samples, 0.09%)</title><rect x="1067.3" y="147.0" width="1.7" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1070.3" y="158.0"></text>
+</g>
+<g>
+<title>TupleRBTree.deleteCase1 (3 samples, 0.02%)</title><rect x="1069.0" y="179.0" width="0.4" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1072.0" y="190.0"></text>
+</g>
+<g>
+<title>TupleRBTree.deleteCase2 (3 samples, 0.02%)</title><rect x="1069.0" y="163.0" width="0.4" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="1072.0" y="174.0"></text>
+</g>
+<g>
+<title>TupleRBTree$Node.access$202 (3 samples, 0.02%)</title><rect x="1069.0" y="147.0" width="0.4" height="15" fill="#6dfe6d" rx="2" ry="2"/>
+<text x="1072.0" y="158.0"></text>
+</g>
+<g>
+<title>TupleRBTree.lookup (1,201 samples, 7.57%)</title><rect x="1069.4" y="179.0" width="143.8" height="15" fill="#51e251" rx="2" ry="2"/>
+<text x="1072.4" y="190.0">TupleRBTree.lookup</text>
+</g>
+<g>
+<title>Integer.compareTo (937 samples, 5.90%)</title><rect x="1090.9" y="163.0" width="112.2" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1093.9" y="174.0">Integer.compar..</text>
+</g>
+<g>
+<title>Integer.compareTo (185 samples, 1.17%)</title><rect x="1180.8" y="147.0" width="22.2" height="15" fill="#52e352" rx="2" ry="2"/>
+<text x="1183.8" y="158.0">I..</text>
+</g>
+<g>
+<title>Integer.compare (185 samples, 1.17%)</title><rect x="1180.8" y="131.0" width="22.2" height="15" fill="#50e150" rx="2" ry="2"/>
+<text x="1183.8" y="142.0">I..</text>
+</g>
+<g>
+<title>TupleRBTree$Node.access$000 (59 samples, 0.37%)</title><rect x="1203.1" y="163.0" width="7.1" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1206.1" y="174.0"></text>
+</g>
+<g>
+<title>TupleRBTree$Node.access$100 (25 samples, 0.16%)</title><rect x="1210.2" y="163.0" width="3.0" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1213.2" y="174.0"></text>
+</g>
+<g>
+<title>TupleRBTree.maximumNode (9 samples, 0.06%)</title><rect x="1213.2" y="179.0" width="1.0" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1216.2" y="190.0"></text>
+</g>
+<g>
+<title>TupleRBTree.nodeColor (31 samples, 0.20%)</title><rect x="1214.2" y="179.0" width="3.8" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="1217.2" y="190.0"></text>
+</g>
+<g>
+<title>TupleRBTree.replaceNode (3 samples, 0.02%)</title><rect x="1218.0" y="179.0" width="0.3" height="15" fill="#5bec5b" rx="2" ry="2"/>
+<text x="1221.0" y="190.0"></text>
+</g>
+<g>
+<title>TupleRBTree$Node.access$300 (3 samples, 0.02%)</title><rect x="1218.0" y="163.0" width="0.3" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1221.0" y="174.0"></text>
+</g>
+<g>
+<title>TupleMemory$IndexType.isComparison (26 samples, 0.16%)</title><rect x="1218.3" y="227.0" width="3.1" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1221.3" y="238.0"></text>
+</g>
+<g>
+<title>RuleNetworkEvaluator.doRemoveExistentialRightMemoryForReorder (16 samples, 0.10%)</title><rect x="1219.5" y="211.0" width="1.9" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="1222.5" y="222.0"></text>
+</g>
+<g>
+<title>ObjectTypeNode$Id.before (60 samples, 0.38%)</title><rect x="1221.6" y="259.0" width="7.1" height="15" fill="#60f160" rx="2" ry="2"/>
+<text x="1224.6" y="270.0"></text>
+</g>
+<g>
+<title>ObjectTypeNode$Id.equals (54 samples, 0.34%)</title><rect x="1228.7" y="259.0" width="6.5" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1231.7" y="270.0"></text>
+</g>
+<g>
+<title>PtrQueue::enqueue_known_active(void*) (6 samples, 0.04%)</title><rect x="1235.2" y="259.0" width="0.7" height="15" fill="#d5d540" rx="2" ry="2"/>
+<text x="1238.2" y="270.0"></text>
+</g>
+<g>
+<title>SATBMarkQueue::should_enqueue_buffer() (6 samples, 0.04%)</title><rect x="1235.2" y="243.0" width="0.7" height="15" fill="#dcdc42" rx="2" ry="2"/>
+<text x="1238.2" y="254.0"></text>
+</g>
+<g>
+<title>SATBMarkQueue::filter() (6 samples, 0.04%)</title><rect x="1235.2" y="227.0" width="0.7" height="15" fill="#caca3c" rx="2" ry="2"/>
+<text x="1238.2" y="238.0"></text>
+</g>
+<g>
+<title>RightTupleImpl.getInputOtnId (1,452 samples, 9.15%)</title><rect x="1235.9" y="259.0" width="173.9" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="1238.9" y="270.0">RightTupleImpl.getInpu..</text>
+</g>
+<g>
+<title>BetaNode.getRightInputOtnId (16 samples, 0.10%)</title><rect x="1274.1" y="243.0" width="1.9" height="15" fill="#66f766" rx="2" ry="2"/>
+<text x="1277.1" y="254.0"></text>
+</g>
+<g>
+<title>PtrQueue::enqueue_known_active(void*) (12 samples, 0.08%)</title><rect x="1274.6" y="227.0" width="1.4" height="15" fill="#d1d13f" rx="2" ry="2"/>
+<text x="1277.6" y="238.0"></text>
+</g>
+<g>
+<title>SATBMarkQueue::should_enqueue_buffer() (12 samples, 0.08%)</title><rect x="1274.6" y="211.0" width="1.4" height="15" fill="#e5e545" rx="2" ry="2"/>
+<text x="1277.6" y="222.0"></text>
+</g>
+<g>
+<title>SATBMarkQueue::filter() (12 samples, 0.08%)</title><rect x="1274.6" y="195.0" width="1.4" height="15" fill="#d9d941" rx="2" ry="2"/>
+<text x="1277.6" y="206.0"></text>
+</g>
+<g>
+<title>PtrQueue::enqueue_known_active(void*) (9 samples, 0.06%)</title><rect x="1276.0" y="243.0" width="1.1" height="15" fill="#e2e244" rx="2" ry="2"/>
+<text x="1279.0" y="254.0"></text>
+</g>
+<g>
+<title>SATBMarkQueue::should_enqueue_buffer() (9 samples, 0.06%)</title><rect x="1276.0" y="227.0" width="1.1" height="15" fill="#dede43" rx="2" ry="2"/>
+<text x="1279.0" y="238.0"></text>
+</g>
+<g>
+<title>SATBMarkQueue::filter() (9 samples, 0.06%)</title><rect x="1276.0" y="211.0" width="1.1" height="15" fill="#dada42" rx="2" ry="2"/>
+<text x="1279.0" y="222.0"></text>
+</g>
+<g>
+<title>RightTupleImpl.getTupleSink (1,108 samples, 6.98%)</title><rect x="1277.1" y="243.0" width="132.7" height="15" fill="#51e251" rx="2" ry="2"/>
+<text x="1280.1" y="254.0">RightTupleImpl.g..</text>
+</g>
+<g>
+<title>PtrQueue::enqueue_known_active(void*) (27 samples, 0.17%)</title><rect x="1406.5" y="227.0" width="3.3" height="15" fill="#dede43" rx="2" ry="2"/>
+<text x="1409.5" y="238.0"></text>
+</g>
+<g>
+<title>SATBMarkQueue::should_enqueue_buffer() (27 samples, 0.17%)</title><rect x="1406.5" y="211.0" width="3.3" height="15" fill="#e0e044" rx="2" ry="2"/>
+<text x="1409.5" y="222.0"></text>
+</g>
+<g>
+<title>SATBMarkQueue::filter() (27 samples, 0.17%)</title><rect x="1406.5" y="195.0" width="3.3" height="15" fill="#e3e345" rx="2" ry="2"/>
+<text x="1409.5" y="206.0"></text>
+</g>
+<g>
+<title>RightTupleImpl.reAdd (410 samples, 2.58%)</title><rect x="1409.8" y="259.0" width="49.1" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1412.8" y="270.0">Right..</text>
+</g>
+<g>
+<title>DefaultFactHandle.addLastRightTuple (397 samples, 2.50%)</title><rect x="1411.3" y="243.0" width="47.6" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1414.3" y="254.0">Defa..</text>
+</g>
+<g>
+<title>DefaultFactHandle$SingleLinkedTuples.addLastRightTuple (383 samples, 2.41%)</title><rect x="1413.0" y="227.0" width="45.9" height="15" fill="#6dfe6d" rx="2" ry="2"/>
+<text x="1416.0" y="238.0">Defa..</text>
+</g>
+<g>
+<title>BaseTuple.setHandleNext (121 samples, 0.76%)</title><rect x="1439.8" y="211.0" width="14.5" height="15" fill="#66f766" rx="2" ry="2"/>
+<text x="1442.8" y="222.0"></text>
+</g>
+<g>
+<title>TupleRBTree.insert (40 samples, 0.25%)</title><rect x="1449.5" y="195.0" width="4.8" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1452.5" y="206.0"></text>
+</g>
+<g>
+<title>BaseTuple.setHandlePrevious (38 samples, 0.24%)</title><rect x="1454.3" y="211.0" width="4.6" height="15" fill="#6dfe6d" rx="2" ry="2"/>
+<text x="1457.3" y="222.0"></text>
+</g>
+<g>
+<title>StatefulKnowledgeSessionImpl.getNodeMemory (32 samples, 0.20%)</title><rect x="1458.9" y="259.0" width="3.8" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1461.9" y="270.0"></text>
+</g>
+<g>
+<title>StatefulKnowledgeSessionImpl.getNodeMemory (26 samples, 0.16%)</title><rect x="1462.7" y="291.0" width="3.1" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1465.7" y="302.0"></text>
+</g>
+<g>
+<title>PhreakPropagationContext.adaptModificationMaskForObjectType (94 samples, 0.59%)</title><rect x="1465.8" y="307.0" width="11.3" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="1468.8" y="318.0"></text>
+</g>
+<g>
+<title>Class.getPackage (77 samples, 0.49%)</title><rect x="1467.7" y="291.0" width="9.2" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1470.7" y="302.0"></text>
+</g>
+<g>
+<title>ClassLoader.definePackage (77 samples, 0.49%)</title><rect x="1467.7" y="275.0" width="9.2" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1470.7" y="286.0"></text>
+</g>
+<g>
+<title>Class.getPackageName (16 samples, 0.10%)</title><rect x="1469.0" y="259.0" width="1.9" height="15" fill="#52e352" rx="2" ry="2"/>
+<text x="1472.0" y="270.0"></text>
+</g>
+<g>
+<title>ClassLoader.definePackage (50 samples, 0.32%)</title><rect x="1470.9" y="259.0" width="6.0" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1473.9" y="270.0"></text>
+</g>
+<g>
+<title>ConcurrentHashMap.get (30 samples, 0.19%)</title><rect x="1472.7" y="243.0" width="3.6" height="15" fill="#57e857" rx="2" ry="2"/>
+<text x="1475.7" y="254.0"></text>
+</g>
+<g>
+<title>ConcurrentHashMap.spread (11 samples, 0.07%)</title><rect x="1474.7" y="227.0" width="1.3" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1477.7" y="238.0"></text>
+</g>
+<g>
+<title>String.isEmpty (5 samples, 0.03%)</title><rect x="1476.3" y="243.0" width="0.6" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1479.3" y="254.0"></text>
+</g>
+<g>
+<title>RuleExecutor.cancelAndContinue (14 samples, 0.09%)</title><rect x="1477.3" y="403.0" width="1.7" height="15" fill="#65f665" rx="2" ry="2"/>
+<text x="1480.3" y="414.0"></text>
+</g>
+<g>
+<title>RuleImpl.isEffective (14 samples, 0.09%)</title><rect x="1477.3" y="387.0" width="1.7" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1480.3" y="398.0"></text>
+</g>
+<g>
+<title>RuleExecutor.fireActivation (1,057 samples, 6.66%)</title><rect x="1479.0" y="403.0" width="126.5" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1482.0" y="414.0">RuleExecutor.fir..</text>
+</g>
+<g>
+<title>RuleExecutor.innerFireActivation (719 samples, 4.53%)</title><rect x="1501.5" y="387.0" width="86.1" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1504.5" y="398.0">RuleExecut..</text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.setActivation (19 samples, 0.12%)</title><rect x="1502.8" y="371.0" width="2.3" height="15" fill="#52e352" rx="2" ry="2"/>
+<text x="1505.8" y="382.0"></text>
+</g>
+<g>
+<title>RuleEventListenerSupport.onBeforeMatchFire (9 samples, 0.06%)</title><rect x="1505.3" y="371.0" width="1.1" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1508.3" y="382.0"></text>
+</g>
+<g>
+<title>AbstractEventSupport.hasListeners (8 samples, 0.05%)</title><rect x="1505.4" y="355.0" width="1.0" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1508.4" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R0423603248DefaultConsequenceInvoker.evaluate (46 samples, 0.29%)</title><rect x="1506.4" y="371.0" width="5.5" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1509.4" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R0423603248DefaultConsequenceInvokerGenerated.evaluate (45 samples, 0.28%)</title><rect x="1506.5" y="355.0" width="5.4" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="1509.5" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R0423603248.defaultConsequence (14 samples, 0.09%)</title><rect x="1506.6" y="339.0" width="1.7" height="15" fill="#6dfe6d" rx="2" ry="2"/>
+<text x="1509.6" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (14 samples, 0.09%)</title><rect x="1506.6" y="323.0" width="1.7" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="1509.6" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (14 samples, 0.09%)</title><rect x="1506.6" y="307.0" width="1.7" height="15" fill="#60f160" rx="2" ry="2"/>
+<text x="1509.6" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (4 samples, 0.03%)</title><rect x="1507.0" y="291.0" width="0.5" height="15" fill="#65f665" rx="2" ry="2"/>
+<text x="1510.0" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (4 samples, 0.03%)</title><rect x="1507.0" y="275.0" width="0.5" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="1510.0" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (4 samples, 0.03%)</title><rect x="1507.0" y="259.0" width="0.5" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1510.0" y="270.0"></text>
+</g>
+<g>
+<title>ReentrantLock$NonfairSync.tryAcquire (3 samples, 0.02%)</title><rect x="1507.1" y="243.0" width="0.4" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1510.1" y="254.0"></text>
+</g>
+<g>
+<title>ReentrantLock$Sync.nonfairTryAcquire (3 samples, 0.02%)</title><rect x="1507.1" y="227.0" width="0.4" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="1510.1" y="238.0"></text>
+</g>
+<g>
+<title>PhreakPropagationContextFactory.createPropagationContext (5 samples, 0.03%)</title><rect x="1507.6" y="291.0" width="0.6" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="1510.6" y="302.0"></text>
+</g>
+<g>
+<title>PhreakPropagationContext.&lt;init&gt; (5 samples, 0.03%)</title><rect x="1507.6" y="275.0" width="0.6" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="1510.6" y="286.0"></text>
+</g>
+<g>
+<title>itable stub (20 samples, 0.13%)</title><rect x="1509.5" y="339.0" width="2.4" height="15" fill="#fa7b7b" rx="2" ry="2"/>
+<text x="1512.5" y="350.0"></text>
+</g>
+<g>
+<title>Rule_R10423603248DefaultConsequenceInvoker.evaluate (17 samples, 0.11%)</title><rect x="1511.9" y="371.0" width="2.0" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="1514.9" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R10423603248DefaultConsequenceInvokerGenerated.evaluate (17 samples, 0.11%)</title><rect x="1511.9" y="355.0" width="2.0" height="15" fill="#50e150" rx="2" ry="2"/>
+<text x="1514.9" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R10423603248.defaultConsequence (14 samples, 0.09%)</title><rect x="1512.3" y="339.0" width="1.6" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="1515.3" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (14 samples, 0.09%)</title><rect x="1512.3" y="323.0" width="1.6" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1515.3" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (14 samples, 0.09%)</title><rect x="1512.3" y="307.0" width="1.6" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1515.3" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (3 samples, 0.02%)</title><rect x="1512.6" y="291.0" width="0.4" height="15" fill="#57e857" rx="2" ry="2"/>
+<text x="1515.6" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (3 samples, 0.02%)</title><rect x="1512.6" y="275.0" width="0.4" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1515.6" y="286.0"></text>
+</g>
+<g>
+<title>PhreakPropagationContextFactory.createPropagationContext (5 samples, 0.03%)</title><rect x="1513.2" y="291.0" width="0.6" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1516.2" y="302.0"></text>
+</g>
+<g>
+<title>PhreakPropagationContext.&lt;init&gt; (5 samples, 0.03%)</title><rect x="1513.2" y="275.0" width="0.6" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1516.2" y="286.0"></text>
+</g>
+<g>
+<title>Rule_R11423603248DefaultConsequenceInvoker.evaluate (27 samples, 0.17%)</title><rect x="1513.9" y="371.0" width="3.3" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1516.9" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R11423603248DefaultConsequenceInvokerGenerated.evaluate (27 samples, 0.17%)</title><rect x="1513.9" y="355.0" width="3.3" height="15" fill="#65f665" rx="2" ry="2"/>
+<text x="1516.9" y="366.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.getTupleSink (3 samples, 0.02%)</title><rect x="1513.9" y="339.0" width="0.4" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1516.9" y="350.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.getTupleSink (3 samples, 0.02%)</title><rect x="1513.9" y="323.0" width="0.4" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1516.9" y="334.0"></text>
+</g>
+<g>
+<title>Rule_R11423603248.defaultConsequence (24 samples, 0.15%)</title><rect x="1514.3" y="339.0" width="2.9" height="15" fill="#51e251" rx="2" ry="2"/>
+<text x="1517.3" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (23 samples, 0.14%)</title><rect x="1514.4" y="323.0" width="2.8" height="15" fill="#5ced5c" rx="2" ry="2"/>
+<text x="1517.4" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (23 samples, 0.14%)</title><rect x="1514.4" y="307.0" width="2.8" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1517.4" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (8 samples, 0.05%)</title><rect x="1515.1" y="291.0" width="1.0" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1518.1" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (8 samples, 0.05%)</title><rect x="1515.1" y="275.0" width="1.0" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1518.1" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (8 samples, 0.05%)</title><rect x="1515.1" y="259.0" width="1.0" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="1518.1" y="270.0"></text>
+</g>
+<g>
+<title>ReentrantLock$NonfairSync.tryAcquire (7 samples, 0.04%)</title><rect x="1515.1" y="243.0" width="0.9" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1518.1" y="254.0"></text>
+</g>
+<g>
+<title>ReentrantLock$Sync.nonfairTryAcquire (6 samples, 0.04%)</title><rect x="1515.2" y="227.0" width="0.8" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1518.2" y="238.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.compareAndSetState (4 samples, 0.03%)</title><rect x="1515.5" y="211.0" width="0.5" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1518.5" y="222.0"></text>
+</g>
+<g>
+<title>VarHandleGuards.guard_LII_Z (4 samples, 0.03%)</title><rect x="1515.5" y="195.0" width="0.5" height="15" fill="#65f665" rx="2" ry="2"/>
+<text x="1518.5" y="206.0"></text>
+</g>
+<g>
+<title>VarForm.getMemberName (4 samples, 0.03%)</title><rect x="1515.5" y="179.0" width="0.5" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1518.5" y="190.0"></text>
+</g>
+<g>
+<title>ObjectTypeConfigurationRegistry.getObjectTypeConf (3 samples, 0.02%)</title><rect x="1516.2" y="291.0" width="0.4" height="15" fill="#66f766" rx="2" ry="2"/>
+<text x="1519.2" y="302.0"></text>
+</g>
+<g>
+<title>PhreakPropagationContextFactory.createPropagationContext (3 samples, 0.02%)</title><rect x="1516.6" y="291.0" width="0.3" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1519.6" y="302.0"></text>
+</g>
+<g>
+<title>PhreakPropagationContext.&lt;init&gt; (3 samples, 0.02%)</title><rect x="1516.6" y="275.0" width="0.3" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1519.6" y="286.0"></text>
+</g>
+<g>
+<title>Rule_R12423603248DefaultConsequenceInvoker.evaluate (20 samples, 0.13%)</title><rect x="1517.2" y="371.0" width="2.4" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1520.2" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R12423603248DefaultConsequenceInvokerGenerated.evaluate (20 samples, 0.13%)</title><rect x="1517.2" y="355.0" width="2.4" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1520.2" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R12423603248.defaultConsequence (19 samples, 0.12%)</title><rect x="1517.3" y="339.0" width="2.3" height="15" fill="#57e857" rx="2" ry="2"/>
+<text x="1520.3" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (19 samples, 0.12%)</title><rect x="1517.3" y="323.0" width="2.3" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="1520.3" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (19 samples, 0.12%)</title><rect x="1517.3" y="307.0" width="2.3" height="15" fill="#52e352" rx="2" ry="2"/>
+<text x="1520.3" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (8 samples, 0.05%)</title><rect x="1517.8" y="291.0" width="0.9" height="15" fill="#57e857" rx="2" ry="2"/>
+<text x="1520.8" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (8 samples, 0.05%)</title><rect x="1517.8" y="275.0" width="0.9" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1520.8" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (8 samples, 0.05%)</title><rect x="1517.8" y="259.0" width="0.9" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1520.8" y="270.0"></text>
+</g>
+<g>
+<title>ReentrantLock$NonfairSync.tryAcquire (7 samples, 0.04%)</title><rect x="1517.9" y="243.0" width="0.8" height="15" fill="#52e352" rx="2" ry="2"/>
+<text x="1520.9" y="254.0"></text>
+</g>
+<g>
+<title>ReentrantLock$Sync.nonfairTryAcquire (7 samples, 0.04%)</title><rect x="1517.9" y="227.0" width="0.8" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="1520.9" y="238.0"></text>
+</g>
+<g>
+<title>AbstractOwnableSynchronizer.setExclusiveOwnerThread (3 samples, 0.02%)</title><rect x="1518.1" y="211.0" width="0.4" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="1521.1" y="222.0"></text>
+</g>
+<g>
+<title>Rule_R13423603248DefaultConsequenceInvoker.evaluate (16 samples, 0.10%)</title><rect x="1519.6" y="371.0" width="1.9" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1522.6" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R13423603248DefaultConsequenceInvokerGenerated.evaluate (16 samples, 0.10%)</title><rect x="1519.6" y="355.0" width="1.9" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1522.6" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R13423603248.defaultConsequence (15 samples, 0.09%)</title><rect x="1519.7" y="339.0" width="1.8" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1522.7" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (15 samples, 0.09%)</title><rect x="1519.7" y="323.0" width="1.8" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="1522.7" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (15 samples, 0.09%)</title><rect x="1519.7" y="307.0" width="1.8" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="1522.7" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (9 samples, 0.06%)</title><rect x="1520.3" y="291.0" width="1.1" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="1523.3" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (9 samples, 0.06%)</title><rect x="1520.3" y="275.0" width="1.1" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1523.3" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (9 samples, 0.06%)</title><rect x="1520.3" y="259.0" width="1.1" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1523.3" y="270.0"></text>
+</g>
+<g>
+<title>ReentrantLock$NonfairSync.tryAcquire (8 samples, 0.05%)</title><rect x="1520.4" y="243.0" width="1.0" height="15" fill="#6dfe6d" rx="2" ry="2"/>
+<text x="1523.4" y="254.0"></text>
+</g>
+<g>
+<title>ReentrantLock$Sync.nonfairTryAcquire (8 samples, 0.05%)</title><rect x="1520.4" y="227.0" width="1.0" height="15" fill="#50e150" rx="2" ry="2"/>
+<text x="1523.4" y="238.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.compareAndSetState (5 samples, 0.03%)</title><rect x="1520.8" y="211.0" width="0.6" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1523.8" y="222.0"></text>
+</g>
+<g>
+<title>VarHandleGuards.guard_LII_Z (5 samples, 0.03%)</title><rect x="1520.8" y="195.0" width="0.6" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1523.8" y="206.0"></text>
+</g>
+<g>
+<title>VarForm.getMemberName (5 samples, 0.03%)</title><rect x="1520.8" y="179.0" width="0.6" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1523.8" y="190.0"></text>
+</g>
+<g>
+<title>Rule_R1423603248DefaultConsequenceInvoker.evaluate (15 samples, 0.09%)</title><rect x="1521.5" y="371.0" width="1.8" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="1524.5" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R1423603248DefaultConsequenceInvokerGenerated.evaluate (15 samples, 0.09%)</title><rect x="1521.5" y="355.0" width="1.8" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="1524.5" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R1423603248.defaultConsequence (14 samples, 0.09%)</title><rect x="1521.6" y="339.0" width="1.7" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1524.6" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (14 samples, 0.09%)</title><rect x="1521.6" y="323.0" width="1.7" height="15" fill="#66f766" rx="2" ry="2"/>
+<text x="1524.6" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (14 samples, 0.09%)</title><rect x="1521.6" y="307.0" width="1.7" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1524.6" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (4 samples, 0.03%)</title><rect x="1522.2" y="291.0" width="0.5" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="1525.2" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (4 samples, 0.03%)</title><rect x="1522.2" y="275.0" width="0.5" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1525.2" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (4 samples, 0.03%)</title><rect x="1522.2" y="259.0" width="0.5" height="15" fill="#5bec5b" rx="2" ry="2"/>
+<text x="1525.2" y="270.0"></text>
+</g>
+<g>
+<title>ReentrantLock$NonfairSync.tryAcquire (4 samples, 0.03%)</title><rect x="1522.2" y="243.0" width="0.5" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="1525.2" y="254.0"></text>
+</g>
+<g>
+<title>ReentrantLock$Sync.nonfairTryAcquire (4 samples, 0.03%)</title><rect x="1522.2" y="227.0" width="0.5" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="1525.2" y="238.0"></text>
+</g>
+<g>
+<title>Rule_R14423603248DefaultConsequenceInvoker.evaluate (16 samples, 0.10%)</title><rect x="1523.3" y="371.0" width="1.9" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1526.3" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R14423603248DefaultConsequenceInvokerGenerated.evaluate (16 samples, 0.10%)</title><rect x="1523.3" y="355.0" width="1.9" height="15" fill="#69fa69" rx="2" ry="2"/>
+<text x="1526.3" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R14423603248.defaultConsequence (13 samples, 0.08%)</title><rect x="1523.6" y="339.0" width="1.6" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1526.6" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (13 samples, 0.08%)</title><rect x="1523.6" y="323.0" width="1.6" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="1526.6" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (12 samples, 0.08%)</title><rect x="1523.8" y="307.0" width="1.4" height="15" fill="#60f160" rx="2" ry="2"/>
+<text x="1526.8" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (3 samples, 0.02%)</title><rect x="1524.3" y="291.0" width="0.4" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="1527.3" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (3 samples, 0.02%)</title><rect x="1524.3" y="275.0" width="0.4" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1527.3" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (3 samples, 0.02%)</title><rect x="1524.3" y="259.0" width="0.4" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1527.3" y="270.0"></text>
+</g>
+<g>
+<title>ReentrantLock$NonfairSync.tryAcquire (3 samples, 0.02%)</title><rect x="1524.3" y="243.0" width="0.4" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1527.3" y="254.0"></text>
+</g>
+<g>
+<title>ReentrantLock$Sync.nonfairTryAcquire (3 samples, 0.02%)</title><rect x="1524.3" y="227.0" width="0.4" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1527.3" y="238.0"></text>
+</g>
+<g>
+<title>Rule_R15423603248DefaultConsequenceInvoker.evaluate (18 samples, 0.11%)</title><rect x="1525.2" y="371.0" width="2.1" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1528.2" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R15423603248DefaultConsequenceInvokerGenerated.evaluate (18 samples, 0.11%)</title><rect x="1525.2" y="355.0" width="2.1" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="1528.2" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R15423603248.defaultConsequence (16 samples, 0.10%)</title><rect x="1525.4" y="339.0" width="1.9" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="1528.4" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (16 samples, 0.10%)</title><rect x="1525.4" y="323.0" width="1.9" height="15" fill="#69fa69" rx="2" ry="2"/>
+<text x="1528.4" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (15 samples, 0.09%)</title><rect x="1525.5" y="307.0" width="1.8" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1528.5" y="318.0"></text>
+</g>
+<g>
+<title>ObjectTypeConfigurationRegistry.getObjectTypeConf (3 samples, 0.02%)</title><rect x="1526.6" y="291.0" width="0.4" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="1529.6" y="302.0"></text>
+</g>
+<g>
+<title>Rule_R16423603248DefaultConsequenceInvoker.evaluate (15 samples, 0.09%)</title><rect x="1527.3" y="371.0" width="1.8" height="15" fill="#69fa69" rx="2" ry="2"/>
+<text x="1530.3" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R16423603248DefaultConsequenceInvokerGenerated.evaluate (15 samples, 0.09%)</title><rect x="1527.3" y="355.0" width="1.8" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1530.3" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R16423603248.defaultConsequence (11 samples, 0.07%)</title><rect x="1527.8" y="339.0" width="1.3" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="1530.8" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (11 samples, 0.07%)</title><rect x="1527.8" y="323.0" width="1.3" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1530.8" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (11 samples, 0.07%)</title><rect x="1527.8" y="307.0" width="1.3" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1530.8" y="318.0"></text>
+</g>
+<g>
+<title>Rule_R17423603248DefaultConsequenceInvoker.evaluate (26 samples, 0.16%)</title><rect x="1529.1" y="371.0" width="3.2" height="15" fill="#65f665" rx="2" ry="2"/>
+<text x="1532.1" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R17423603248DefaultConsequenceInvokerGenerated.evaluate (26 samples, 0.16%)</title><rect x="1529.1" y="355.0" width="3.2" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="1532.1" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R17423603248.defaultConsequence (24 samples, 0.15%)</title><rect x="1529.4" y="339.0" width="2.9" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1532.4" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (24 samples, 0.15%)</title><rect x="1529.4" y="323.0" width="2.9" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1532.4" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (24 samples, 0.15%)</title><rect x="1529.4" y="307.0" width="2.9" height="15" fill="#69fa69" rx="2" ry="2"/>
+<text x="1532.4" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (8 samples, 0.05%)</title><rect x="1530.2" y="291.0" width="1.0" height="15" fill="#65f665" rx="2" ry="2"/>
+<text x="1533.2" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (8 samples, 0.05%)</title><rect x="1530.2" y="275.0" width="1.0" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1533.2" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (7 samples, 0.04%)</title><rect x="1530.3" y="259.0" width="0.9" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1533.3" y="270.0"></text>
+</g>
+<g>
+<title>ReentrantLock$NonfairSync.tryAcquire (7 samples, 0.04%)</title><rect x="1530.3" y="243.0" width="0.9" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1533.3" y="254.0"></text>
+</g>
+<g>
+<title>ReentrantLock$Sync.nonfairTryAcquire (7 samples, 0.04%)</title><rect x="1530.3" y="227.0" width="0.9" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="1533.3" y="238.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.compareAndSetState (5 samples, 0.03%)</title><rect x="1530.6" y="211.0" width="0.6" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="1533.6" y="222.0"></text>
+</g>
+<g>
+<title>VarHandleGuards.guard_LII_Z (5 samples, 0.03%)</title><rect x="1530.6" y="195.0" width="0.6" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="1533.6" y="206.0"></text>
+</g>
+<g>
+<title>VarForm.getMemberName (5 samples, 0.03%)</title><rect x="1530.6" y="179.0" width="0.6" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1533.6" y="190.0"></text>
+</g>
+<g>
+<title>ObjectTypeConfigurationRegistry.getObjectTypeConf (3 samples, 0.02%)</title><rect x="1531.3" y="291.0" width="0.4" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1534.3" y="302.0"></text>
+</g>
+<g>
+<title>StatefulKnowledgeSessionImpl.startOperation (5 samples, 0.03%)</title><rect x="1531.7" y="291.0" width="0.6" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1534.7" y="302.0"></text>
+</g>
+<g>
+<title>Rule_R18423603248DefaultConsequenceInvoker.evaluate (26 samples, 0.16%)</title><rect x="1532.3" y="371.0" width="3.1" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1535.3" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R18423603248DefaultConsequenceInvokerGenerated.evaluate (26 samples, 0.16%)</title><rect x="1532.3" y="355.0" width="3.1" height="15" fill="#69fa69" rx="2" ry="2"/>
+<text x="1535.3" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R18423603248.defaultConsequence (22 samples, 0.14%)</title><rect x="1532.7" y="339.0" width="2.7" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1535.7" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (22 samples, 0.14%)</title><rect x="1532.7" y="323.0" width="2.7" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1535.7" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (22 samples, 0.14%)</title><rect x="1532.7" y="307.0" width="2.7" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="1535.7" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (6 samples, 0.04%)</title><rect x="1534.0" y="291.0" width="0.8" height="15" fill="#5bec5b" rx="2" ry="2"/>
+<text x="1537.0" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (6 samples, 0.04%)</title><rect x="1534.0" y="275.0" width="0.8" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1537.0" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (6 samples, 0.04%)</title><rect x="1534.0" y="259.0" width="0.8" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1537.0" y="270.0"></text>
+</g>
+<g>
+<title>ReentrantLock$NonfairSync.tryAcquire (5 samples, 0.03%)</title><rect x="1534.0" y="243.0" width="0.6" height="15" fill="#57e857" rx="2" ry="2"/>
+<text x="1537.0" y="254.0"></text>
+</g>
+<g>
+<title>ReentrantLock$Sync.nonfairTryAcquire (5 samples, 0.03%)</title><rect x="1534.0" y="227.0" width="0.6" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="1537.0" y="238.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.compareAndSetState (4 samples, 0.03%)</title><rect x="1534.2" y="211.0" width="0.4" height="15" fill="#52e352" rx="2" ry="2"/>
+<text x="1537.2" y="222.0"></text>
+</g>
+<g>
+<title>VarHandleGuards.guard_LII_Z (4 samples, 0.03%)</title><rect x="1534.2" y="195.0" width="0.4" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="1537.2" y="206.0"></text>
+</g>
+<g>
+<title>VarForm.getMemberName (4 samples, 0.03%)</title><rect x="1534.2" y="179.0" width="0.4" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1537.2" y="190.0"></text>
+</g>
+<g>
+<title>ObjectTypeConfigurationRegistry.getObjectTypeConf (3 samples, 0.02%)</title><rect x="1534.8" y="291.0" width="0.3" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="1537.8" y="302.0"></text>
+</g>
+<g>
+<title>Rule_R19423603248DefaultConsequenceInvoker.evaluate (23 samples, 0.14%)</title><rect x="1535.4" y="371.0" width="2.7" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="1538.4" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R19423603248DefaultConsequenceInvokerGenerated.evaluate (23 samples, 0.14%)</title><rect x="1535.4" y="355.0" width="2.7" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1538.4" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R19423603248.defaultConsequence (20 samples, 0.13%)</title><rect x="1535.7" y="339.0" width="2.4" height="15" fill="#52e352" rx="2" ry="2"/>
+<text x="1538.7" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (20 samples, 0.13%)</title><rect x="1535.7" y="323.0" width="2.4" height="15" fill="#5ced5c" rx="2" ry="2"/>
+<text x="1538.7" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (20 samples, 0.13%)</title><rect x="1535.7" y="307.0" width="2.4" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="1538.7" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (8 samples, 0.05%)</title><rect x="1536.0" y="291.0" width="0.9" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1539.0" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (8 samples, 0.05%)</title><rect x="1536.0" y="275.0" width="0.9" height="15" fill="#57e857" rx="2" ry="2"/>
+<text x="1539.0" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (6 samples, 0.04%)</title><rect x="1536.2" y="259.0" width="0.7" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1539.2" y="270.0"></text>
+</g>
+<g>
+<title>ReentrantLock$NonfairSync.tryAcquire (6 samples, 0.04%)</title><rect x="1536.2" y="243.0" width="0.7" height="15" fill="#66f766" rx="2" ry="2"/>
+<text x="1539.2" y="254.0"></text>
+</g>
+<g>
+<title>ReentrantLock$Sync.nonfairTryAcquire (6 samples, 0.04%)</title><rect x="1536.2" y="227.0" width="0.7" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1539.2" y="238.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.compareAndSetState (3 samples, 0.02%)</title><rect x="1536.6" y="211.0" width="0.3" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="1539.6" y="222.0"></text>
+</g>
+<g>
+<title>VarHandleGuards.guard_LII_Z (3 samples, 0.02%)</title><rect x="1536.6" y="195.0" width="0.3" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1539.6" y="206.0"></text>
+</g>
+<g>
+<title>VarForm.getMemberName (3 samples, 0.02%)</title><rect x="1536.6" y="179.0" width="0.3" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1539.6" y="190.0"></text>
+</g>
+<g>
+<title>ObjectTypeConfigurationRegistry.getObjectTypeConf (5 samples, 0.03%)</title><rect x="1536.9" y="291.0" width="0.6" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="1539.9" y="302.0"></text>
+</g>
+<g>
+<title>StatefulKnowledgeSessionImpl.startOperation (4 samples, 0.03%)</title><rect x="1537.6" y="291.0" width="0.5" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1540.6" y="302.0"></text>
+</g>
+<g>
+<title>Rule_R20423603248DefaultConsequenceInvoker.evaluate (17 samples, 0.11%)</title><rect x="1538.1" y="371.0" width="2.1" height="15" fill="#60f160" rx="2" ry="2"/>
+<text x="1541.1" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R20423603248DefaultConsequenceInvokerGenerated.evaluate (17 samples, 0.11%)</title><rect x="1538.1" y="355.0" width="2.1" height="15" fill="#5ced5c" rx="2" ry="2"/>
+<text x="1541.1" y="366.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.getTupleSink (3 samples, 0.02%)</title><rect x="1538.1" y="339.0" width="0.4" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1541.1" y="350.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.getTupleSink (3 samples, 0.02%)</title><rect x="1538.1" y="323.0" width="0.4" height="15" fill="#5bec5b" rx="2" ry="2"/>
+<text x="1541.1" y="334.0"></text>
+</g>
+<g>
+<title>Rule_R20423603248.defaultConsequence (14 samples, 0.09%)</title><rect x="1538.5" y="339.0" width="1.7" height="15" fill="#57e857" rx="2" ry="2"/>
+<text x="1541.5" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (14 samples, 0.09%)</title><rect x="1538.5" y="323.0" width="1.7" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1541.5" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (14 samples, 0.09%)</title><rect x="1538.5" y="307.0" width="1.7" height="15" fill="#65f665" rx="2" ry="2"/>
+<text x="1541.5" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (4 samples, 0.03%)</title><rect x="1539.0" y="291.0" width="0.4" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1542.0" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (4 samples, 0.03%)</title><rect x="1539.0" y="275.0" width="0.4" height="15" fill="#6dfe6d" rx="2" ry="2"/>
+<text x="1542.0" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (3 samples, 0.02%)</title><rect x="1539.1" y="259.0" width="0.3" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="1542.1" y="270.0"></text>
+</g>
+<g>
+<title>StatefulKnowledgeSessionImpl.startOperation (3 samples, 0.02%)</title><rect x="1539.8" y="291.0" width="0.4" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1542.8" y="302.0"></text>
+</g>
+<g>
+<title>Rule_R21423603248DefaultConsequenceInvoker.evaluate (16 samples, 0.10%)</title><rect x="1540.2" y="371.0" width="1.9" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="1543.2" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R21423603248DefaultConsequenceInvokerGenerated.evaluate (16 samples, 0.10%)</title><rect x="1540.2" y="355.0" width="1.9" height="15" fill="#5ced5c" rx="2" ry="2"/>
+<text x="1543.2" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R21423603248.defaultConsequence (14 samples, 0.09%)</title><rect x="1540.4" y="339.0" width="1.7" height="15" fill="#50e150" rx="2" ry="2"/>
+<text x="1543.4" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (14 samples, 0.09%)</title><rect x="1540.4" y="323.0" width="1.7" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="1543.4" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (14 samples, 0.09%)</title><rect x="1540.4" y="307.0" width="1.7" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="1543.4" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (3 samples, 0.02%)</title><rect x="1541.1" y="291.0" width="0.4" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="1544.1" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (3 samples, 0.02%)</title><rect x="1541.1" y="275.0" width="0.4" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="1544.1" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (3 samples, 0.02%)</title><rect x="1541.1" y="259.0" width="0.4" height="15" fill="#69fa69" rx="2" ry="2"/>
+<text x="1544.1" y="270.0"></text>
+</g>
+<g>
+<title>StatefulKnowledgeSessionImpl.startOperation (4 samples, 0.03%)</title><rect x="1541.6" y="291.0" width="0.5" height="15" fill="#65f665" rx="2" ry="2"/>
+<text x="1544.6" y="302.0"></text>
+</g>
+<g>
+<title>Rule_R22423603248DefaultConsequenceInvoker.evaluate (23 samples, 0.14%)</title><rect x="1542.1" y="371.0" width="2.7" height="15" fill="#51e251" rx="2" ry="2"/>
+<text x="1545.1" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R22423603248DefaultConsequenceInvokerGenerated.evaluate (23 samples, 0.14%)</title><rect x="1542.1" y="355.0" width="2.7" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="1545.1" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R22423603248.defaultConsequence (18 samples, 0.11%)</title><rect x="1542.7" y="339.0" width="2.1" height="15" fill="#6dfe6d" rx="2" ry="2"/>
+<text x="1545.7" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (18 samples, 0.11%)</title><rect x="1542.7" y="323.0" width="2.1" height="15" fill="#65f665" rx="2" ry="2"/>
+<text x="1545.7" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (18 samples, 0.11%)</title><rect x="1542.7" y="307.0" width="2.1" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1545.7" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (5 samples, 0.03%)</title><rect x="1543.6" y="291.0" width="0.6" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1546.6" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (5 samples, 0.03%)</title><rect x="1543.6" y="275.0" width="0.6" height="15" fill="#69fa69" rx="2" ry="2"/>
+<text x="1546.6" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (5 samples, 0.03%)</title><rect x="1543.6" y="259.0" width="0.6" height="15" fill="#52e352" rx="2" ry="2"/>
+<text x="1546.6" y="270.0"></text>
+</g>
+<g>
+<title>ReentrantLock$NonfairSync.tryAcquire (4 samples, 0.03%)</title><rect x="1543.6" y="243.0" width="0.5" height="15" fill="#52e352" rx="2" ry="2"/>
+<text x="1546.6" y="254.0"></text>
+</g>
+<g>
+<title>ReentrantLock$Sync.nonfairTryAcquire (4 samples, 0.03%)</title><rect x="1543.6" y="227.0" width="0.5" height="15" fill="#5bec5b" rx="2" ry="2"/>
+<text x="1546.6" y="238.0"></text>
+</g>
+<g>
+<title>Rule_R23423603248DefaultConsequenceInvoker.evaluate (27 samples, 0.17%)</title><rect x="1544.8" y="371.0" width="3.3" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1547.8" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R23423603248DefaultConsequenceInvokerGenerated.evaluate (27 samples, 0.17%)</title><rect x="1544.8" y="355.0" width="3.3" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1547.8" y="366.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.getTupleSink (4 samples, 0.03%)</title><rect x="1544.9" y="339.0" width="0.5" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1547.9" y="350.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.getTupleSink (4 samples, 0.03%)</title><rect x="1544.9" y="323.0" width="0.5" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="1547.9" y="334.0"></text>
+</g>
+<g>
+<title>Rule_R23423603248.defaultConsequence (22 samples, 0.14%)</title><rect x="1545.4" y="339.0" width="2.7" height="15" fill="#51e251" rx="2" ry="2"/>
+<text x="1548.4" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (22 samples, 0.14%)</title><rect x="1545.4" y="323.0" width="2.7" height="15" fill="#51e251" rx="2" ry="2"/>
+<text x="1548.4" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (21 samples, 0.13%)</title><rect x="1545.5" y="307.0" width="2.6" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="1548.5" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (11 samples, 0.07%)</title><rect x="1546.4" y="291.0" width="1.3" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="1549.4" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (11 samples, 0.07%)</title><rect x="1546.4" y="275.0" width="1.3" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1549.4" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (8 samples, 0.05%)</title><rect x="1546.7" y="259.0" width="1.0" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="1549.7" y="270.0"></text>
+</g>
+<g>
+<title>ReentrantLock$NonfairSync.tryAcquire (6 samples, 0.04%)</title><rect x="1546.9" y="243.0" width="0.7" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="1549.9" y="254.0"></text>
+</g>
+<g>
+<title>ReentrantLock$Sync.nonfairTryAcquire (6 samples, 0.04%)</title><rect x="1546.9" y="227.0" width="0.7" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1549.9" y="238.0"></text>
+</g>
+<g>
+<title>AbstractOwnableSynchronizer.setExclusiveOwnerThread (3 samples, 0.02%)</title><rect x="1546.9" y="211.0" width="0.3" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1549.9" y="222.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.compareAndSetState (3 samples, 0.02%)</title><rect x="1547.2" y="211.0" width="0.4" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="1550.2" y="222.0"></text>
+</g>
+<g>
+<title>VarHandleGuards.guard_LII_Z (3 samples, 0.02%)</title><rect x="1547.2" y="195.0" width="0.4" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1550.2" y="206.0"></text>
+</g>
+<g>
+<title>VarForm.getMemberName (3 samples, 0.02%)</title><rect x="1547.2" y="179.0" width="0.4" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="1550.2" y="190.0"></text>
+</g>
+<g>
+<title>Rule_R2423603248DefaultConsequenceInvoker.evaluate (15 samples, 0.09%)</title><rect x="1548.1" y="371.0" width="1.8" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1551.1" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R2423603248DefaultConsequenceInvokerGenerated.evaluate (15 samples, 0.09%)</title><rect x="1548.1" y="355.0" width="1.8" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1551.1" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R2423603248.defaultConsequence (12 samples, 0.08%)</title><rect x="1548.4" y="339.0" width="1.5" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1551.4" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (12 samples, 0.08%)</title><rect x="1548.4" y="323.0" width="1.5" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1551.4" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (12 samples, 0.08%)</title><rect x="1548.4" y="307.0" width="1.5" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1551.4" y="318.0"></text>
+</g>
+<g>
+<title>ObjectTypeConfigurationRegistry.getObjectTypeConf (3 samples, 0.02%)</title><rect x="1549.1" y="291.0" width="0.4" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="1552.1" y="302.0"></text>
+</g>
+<g>
+<title>Rule_R24423603248DefaultConsequenceInvoker.evaluate (26 samples, 0.16%)</title><rect x="1549.9" y="371.0" width="3.1" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1552.9" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R24423603248DefaultConsequenceInvokerGenerated.evaluate (26 samples, 0.16%)</title><rect x="1549.9" y="355.0" width="3.1" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1552.9" y="366.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.getTupleSink (3 samples, 0.02%)</title><rect x="1550.2" y="339.0" width="0.4" height="15" fill="#57e857" rx="2" ry="2"/>
+<text x="1553.2" y="350.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.getTupleSink (3 samples, 0.02%)</title><rect x="1550.2" y="323.0" width="0.4" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1553.2" y="334.0"></text>
+</g>
+<g>
+<title>Rule_R24423603248.defaultConsequence (20 samples, 0.13%)</title><rect x="1550.6" y="339.0" width="2.4" height="15" fill="#52e352" rx="2" ry="2"/>
+<text x="1553.6" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (20 samples, 0.13%)</title><rect x="1550.6" y="323.0" width="2.4" height="15" fill="#52e352" rx="2" ry="2"/>
+<text x="1553.6" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (20 samples, 0.13%)</title><rect x="1550.6" y="307.0" width="2.4" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1553.6" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (7 samples, 0.04%)</title><rect x="1551.3" y="291.0" width="0.8" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1554.3" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (7 samples, 0.04%)</title><rect x="1551.3" y="275.0" width="0.8" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1554.3" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (6 samples, 0.04%)</title><rect x="1551.4" y="259.0" width="0.7" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1554.4" y="270.0"></text>
+</g>
+<g>
+<title>ReentrantLock$NonfairSync.tryAcquire (4 samples, 0.03%)</title><rect x="1551.6" y="243.0" width="0.5" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1554.6" y="254.0"></text>
+</g>
+<g>
+<title>ReentrantLock$Sync.nonfairTryAcquire (4 samples, 0.03%)</title><rect x="1551.6" y="227.0" width="0.5" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="1554.6" y="238.0"></text>
+</g>
+<g>
+<title>ObjectTypeConfigurationRegistry.getObjectTypeConf (4 samples, 0.03%)</title><rect x="1552.1" y="291.0" width="0.5" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="1555.1" y="302.0"></text>
+</g>
+<g>
+<title>Rule_R25423603248DefaultConsequenceInvoker.evaluate (18 samples, 0.11%)</title><rect x="1553.0" y="371.0" width="2.1" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1556.0" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R25423603248DefaultConsequenceInvokerGenerated.evaluate (17 samples, 0.11%)</title><rect x="1553.1" y="355.0" width="2.0" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="1556.1" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R25423603248.defaultConsequence (17 samples, 0.11%)</title><rect x="1553.1" y="339.0" width="2.0" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1556.1" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (17 samples, 0.11%)</title><rect x="1553.1" y="323.0" width="2.0" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1556.1" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (17 samples, 0.11%)</title><rect x="1553.1" y="307.0" width="2.0" height="15" fill="#51e251" rx="2" ry="2"/>
+<text x="1556.1" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (3 samples, 0.02%)</title><rect x="1553.7" y="291.0" width="0.3" height="15" fill="#57e857" rx="2" ry="2"/>
+<text x="1556.7" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (3 samples, 0.02%)</title><rect x="1553.7" y="275.0" width="0.3" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="1556.7" y="286.0"></text>
+</g>
+<g>
+<title>ObjectTypeConfigurationRegistry.getObjectTypeConf (7 samples, 0.04%)</title><rect x="1554.0" y="291.0" width="0.9" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1557.0" y="302.0"></text>
+</g>
+<g>
+<title>ConcurrentHashMap.get (5 samples, 0.03%)</title><rect x="1554.2" y="275.0" width="0.6" height="15" fill="#69fa69" rx="2" ry="2"/>
+<text x="1557.2" y="286.0"></text>
+</g>
+<g>
+<title>Rule_R26423603248DefaultConsequenceInvoker.evaluate (19 samples, 0.12%)</title><rect x="1555.1" y="371.0" width="2.3" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1558.1" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R26423603248DefaultConsequenceInvokerGenerated.evaluate (19 samples, 0.12%)</title><rect x="1555.1" y="355.0" width="2.3" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1558.1" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R26423603248.defaultConsequence (18 samples, 0.11%)</title><rect x="1555.2" y="339.0" width="2.2" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1558.2" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (17 samples, 0.11%)</title><rect x="1555.4" y="323.0" width="2.0" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1558.4" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (16 samples, 0.10%)</title><rect x="1555.5" y="307.0" width="1.9" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="1558.5" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (3 samples, 0.02%)</title><rect x="1556.6" y="291.0" width="0.3" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1559.6" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (3 samples, 0.02%)</title><rect x="1556.6" y="275.0" width="0.3" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="1559.6" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (3 samples, 0.02%)</title><rect x="1556.6" y="259.0" width="0.3" height="15" fill="#65f665" rx="2" ry="2"/>
+<text x="1559.6" y="270.0"></text>
+</g>
+<g>
+<title>ReentrantLock$NonfairSync.tryAcquire (3 samples, 0.02%)</title><rect x="1556.6" y="243.0" width="0.3" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1559.6" y="254.0"></text>
+</g>
+<g>
+<title>ReentrantLock$Sync.nonfairTryAcquire (3 samples, 0.02%)</title><rect x="1556.6" y="227.0" width="0.3" height="15" fill="#5ced5c" rx="2" ry="2"/>
+<text x="1559.6" y="238.0"></text>
+</g>
+<g>
+<title>Rule_R27423603248DefaultConsequenceInvoker.evaluate (16 samples, 0.10%)</title><rect x="1557.4" y="371.0" width="1.9" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1560.4" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R27423603248DefaultConsequenceInvokerGenerated.evaluate (16 samples, 0.10%)</title><rect x="1557.4" y="355.0" width="1.9" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="1560.4" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R27423603248.defaultConsequence (16 samples, 0.10%)</title><rect x="1557.4" y="339.0" width="1.9" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1560.4" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (15 samples, 0.09%)</title><rect x="1557.5" y="323.0" width="1.8" height="15" fill="#5bec5b" rx="2" ry="2"/>
+<text x="1560.5" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (14 samples, 0.09%)</title><rect x="1557.6" y="307.0" width="1.7" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="1560.6" y="318.0"></text>
+</g>
+<g>
+<title>PhreakPropagationContextFactory.createPropagationContext (3 samples, 0.02%)</title><rect x="1558.7" y="291.0" width="0.4" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="1561.7" y="302.0"></text>
+</g>
+<g>
+<title>PhreakPropagationContext.&lt;init&gt; (3 samples, 0.02%)</title><rect x="1558.7" y="275.0" width="0.4" height="15" fill="#60f160" rx="2" ry="2"/>
+<text x="1561.7" y="286.0"></text>
+</g>
+<g>
+<title>Rule_R28423603248DefaultConsequenceInvoker.evaluate (31 samples, 0.20%)</title><rect x="1559.3" y="371.0" width="3.7" height="15" fill="#50e150" rx="2" ry="2"/>
+<text x="1562.3" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R28423603248DefaultConsequenceInvokerGenerated.evaluate (31 samples, 0.20%)</title><rect x="1559.3" y="355.0" width="3.7" height="15" fill="#5bec5b" rx="2" ry="2"/>
+<text x="1562.3" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R28423603248.defaultConsequence (29 samples, 0.18%)</title><rect x="1559.5" y="339.0" width="3.5" height="15" fill="#5bec5b" rx="2" ry="2"/>
+<text x="1562.5" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (29 samples, 0.18%)</title><rect x="1559.5" y="323.0" width="3.5" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1562.5" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (28 samples, 0.18%)</title><rect x="1559.7" y="307.0" width="3.3" height="15" fill="#66f766" rx="2" ry="2"/>
+<text x="1562.7" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (7 samples, 0.04%)</title><rect x="1561.0" y="291.0" width="0.8" height="15" fill="#57e857" rx="2" ry="2"/>
+<text x="1564.0" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (7 samples, 0.04%)</title><rect x="1561.0" y="275.0" width="0.8" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1564.0" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (7 samples, 0.04%)</title><rect x="1561.0" y="259.0" width="0.8" height="15" fill="#60f160" rx="2" ry="2"/>
+<text x="1564.0" y="270.0"></text>
+</g>
+<g>
+<title>ReentrantLock$NonfairSync.tryAcquire (4 samples, 0.03%)</title><rect x="1561.3" y="243.0" width="0.5" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1564.3" y="254.0"></text>
+</g>
+<g>
+<title>ReentrantLock$Sync.nonfairTryAcquire (4 samples, 0.03%)</title><rect x="1561.3" y="227.0" width="0.5" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1564.3" y="238.0"></text>
+</g>
+<g>
+<title>ObjectTypeConfigurationRegistry.getObjectTypeConf (5 samples, 0.03%)</title><rect x="1561.9" y="291.0" width="0.6" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1564.9" y="302.0"></text>
+</g>
+<g>
+<title>ConcurrentHashMap.get (3 samples, 0.02%)</title><rect x="1562.2" y="275.0" width="0.3" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1565.2" y="286.0"></text>
+</g>
+<g>
+<title>PhreakPropagationContextFactory.createPropagationContext (3 samples, 0.02%)</title><rect x="1562.5" y="291.0" width="0.4" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1565.5" y="302.0"></text>
+</g>
+<g>
+<title>PhreakPropagationContext.&lt;init&gt; (3 samples, 0.02%)</title><rect x="1562.5" y="275.0" width="0.4" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1565.5" y="286.0"></text>
+</g>
+<g>
+<title>Rule_R29423603248DefaultConsequenceInvoker.evaluate (22 samples, 0.14%)</title><rect x="1563.0" y="371.0" width="2.7" height="15" fill="#50e150" rx="2" ry="2"/>
+<text x="1566.0" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R29423603248DefaultConsequenceInvokerGenerated.evaluate (22 samples, 0.14%)</title><rect x="1563.0" y="355.0" width="2.7" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="1566.0" y="366.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.getTupleSink (4 samples, 0.03%)</title><rect x="1563.1" y="339.0" width="0.5" height="15" fill="#69fa69" rx="2" ry="2"/>
+<text x="1566.1" y="350.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.getTupleSink (4 samples, 0.03%)</title><rect x="1563.1" y="323.0" width="0.5" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1566.1" y="334.0"></text>
+</g>
+<g>
+<title>Rule_R29423603248.defaultConsequence (17 samples, 0.11%)</title><rect x="1563.6" y="339.0" width="2.1" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1566.6" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (17 samples, 0.11%)</title><rect x="1563.6" y="323.0" width="2.1" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="1566.6" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (16 samples, 0.10%)</title><rect x="1563.7" y="307.0" width="2.0" height="15" fill="#5ced5c" rx="2" ry="2"/>
+<text x="1566.7" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (5 samples, 0.03%)</title><rect x="1564.6" y="291.0" width="0.6" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="1567.6" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (5 samples, 0.03%)</title><rect x="1564.6" y="275.0" width="0.6" height="15" fill="#65f665" rx="2" ry="2"/>
+<text x="1567.6" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (5 samples, 0.03%)</title><rect x="1564.6" y="259.0" width="0.6" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1567.6" y="270.0"></text>
+</g>
+<g>
+<title>ReentrantLock$NonfairSync.tryAcquire (4 samples, 0.03%)</title><rect x="1564.7" y="243.0" width="0.5" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1567.7" y="254.0"></text>
+</g>
+<g>
+<title>ReentrantLock$Sync.nonfairTryAcquire (4 samples, 0.03%)</title><rect x="1564.7" y="227.0" width="0.5" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="1567.7" y="238.0"></text>
+</g>
+<g>
+<title>Rule_R30423603248DefaultConsequenceInvoker.evaluate (27 samples, 0.17%)</title><rect x="1565.7" y="371.0" width="3.2" height="15" fill="#50e150" rx="2" ry="2"/>
+<text x="1568.7" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R30423603248DefaultConsequenceInvokerGenerated.evaluate (27 samples, 0.17%)</title><rect x="1565.7" y="355.0" width="3.2" height="15" fill="#51e251" rx="2" ry="2"/>
+<text x="1568.7" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R30423603248.defaultConsequence (25 samples, 0.16%)</title><rect x="1565.9" y="339.0" width="3.0" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1568.9" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (24 samples, 0.15%)</title><rect x="1566.0" y="323.0" width="2.9" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1569.0" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (24 samples, 0.15%)</title><rect x="1566.0" y="307.0" width="2.9" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1569.0" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (7 samples, 0.04%)</title><rect x="1566.7" y="291.0" width="0.9" height="15" fill="#65f665" rx="2" ry="2"/>
+<text x="1569.7" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (7 samples, 0.04%)</title><rect x="1566.7" y="275.0" width="0.9" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1569.7" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (5 samples, 0.03%)</title><rect x="1567.0" y="259.0" width="0.6" height="15" fill="#50e150" rx="2" ry="2"/>
+<text x="1570.0" y="270.0"></text>
+</g>
+<g>
+<title>ReentrantLock$NonfairSync.tryAcquire (4 samples, 0.03%)</title><rect x="1567.1" y="243.0" width="0.5" height="15" fill="#50e150" rx="2" ry="2"/>
+<text x="1570.1" y="254.0"></text>
+</g>
+<g>
+<title>ReentrantLock$Sync.nonfairTryAcquire (4 samples, 0.03%)</title><rect x="1567.1" y="227.0" width="0.5" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1570.1" y="238.0"></text>
+</g>
+<g>
+<title>AbstractOwnableSynchronizer.setExclusiveOwnerThread (4 samples, 0.03%)</title><rect x="1567.1" y="211.0" width="0.5" height="15" fill="#57e857" rx="2" ry="2"/>
+<text x="1570.1" y="222.0"></text>
+</g>
+<g>
+<title>ObjectTypeConfigurationRegistry.getObjectTypeConf (5 samples, 0.03%)</title><rect x="1567.6" y="291.0" width="0.6" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1570.6" y="302.0"></text>
+</g>
+<g>
+<title>StatefulKnowledgeSessionImpl.startOperation (3 samples, 0.02%)</title><rect x="1568.5" y="291.0" width="0.4" height="15" fill="#69fa69" rx="2" ry="2"/>
+<text x="1571.5" y="302.0"></text>
+</g>
+<g>
+<title>Rule_R31423603248DefaultConsequenceInvoker.evaluate (16 samples, 0.10%)</title><rect x="1568.9" y="371.0" width="1.9" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1571.9" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R31423603248DefaultConsequenceInvokerGenerated.evaluate (16 samples, 0.10%)</title><rect x="1568.9" y="355.0" width="1.9" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="1571.9" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R31423603248.defaultConsequence (15 samples, 0.09%)</title><rect x="1569.0" y="339.0" width="1.8" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1572.0" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (15 samples, 0.09%)</title><rect x="1569.0" y="323.0" width="1.8" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1572.0" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (15 samples, 0.09%)</title><rect x="1569.0" y="307.0" width="1.8" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1572.0" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (3 samples, 0.02%)</title><rect x="1569.7" y="291.0" width="0.4" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1572.7" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (3 samples, 0.02%)</title><rect x="1569.7" y="275.0" width="0.4" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1572.7" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (3 samples, 0.02%)</title><rect x="1569.7" y="259.0" width="0.4" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1572.7" y="270.0"></text>
+</g>
+<g>
+<title>ReentrantLock$NonfairSync.tryAcquire (3 samples, 0.02%)</title><rect x="1569.7" y="243.0" width="0.4" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="1572.7" y="254.0"></text>
+</g>
+<g>
+<title>ReentrantLock$Sync.nonfairTryAcquire (3 samples, 0.02%)</title><rect x="1569.7" y="227.0" width="0.4" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="1572.7" y="238.0"></text>
+</g>
+<g>
+<title>Rule_R3423603248DefaultConsequenceInvoker.evaluate (18 samples, 0.11%)</title><rect x="1570.8" y="371.0" width="2.2" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1573.8" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R3423603248DefaultConsequenceInvokerGenerated.evaluate (18 samples, 0.11%)</title><rect x="1570.8" y="355.0" width="2.2" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1573.8" y="366.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.getTupleSink (5 samples, 0.03%)</title><rect x="1570.8" y="339.0" width="0.6" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1573.8" y="350.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.getTupleSink (5 samples, 0.03%)</title><rect x="1570.8" y="323.0" width="0.6" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1573.8" y="334.0"></text>
+</g>
+<g>
+<title>Rule_R3423603248.defaultConsequence (13 samples, 0.08%)</title><rect x="1571.4" y="339.0" width="1.6" height="15" fill="#5bec5b" rx="2" ry="2"/>
+<text x="1574.4" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (13 samples, 0.08%)</title><rect x="1571.4" y="323.0" width="1.6" height="15" fill="#65f665" rx="2" ry="2"/>
+<text x="1574.4" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (12 samples, 0.08%)</title><rect x="1571.5" y="307.0" width="1.5" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1574.5" y="318.0"></text>
+</g>
+<g>
+<title>ObjectTypeConfigurationRegistry.getObjectTypeConf (4 samples, 0.03%)</title><rect x="1572.1" y="291.0" width="0.5" height="15" fill="#60f160" rx="2" ry="2"/>
+<text x="1575.1" y="302.0"></text>
+</g>
+<g>
+<title>ConcurrentHashMap.get (4 samples, 0.03%)</title><rect x="1572.1" y="275.0" width="0.5" height="15" fill="#66f766" rx="2" ry="2"/>
+<text x="1575.1" y="286.0"></text>
+</g>
+<g>
+<title>PhreakPropagationContextFactory.createPropagationContext (3 samples, 0.02%)</title><rect x="1572.6" y="291.0" width="0.4" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1575.6" y="302.0"></text>
+</g>
+<g>
+<title>PhreakPropagationContext.&lt;init&gt; (3 samples, 0.02%)</title><rect x="1572.6" y="275.0" width="0.4" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1575.6" y="286.0"></text>
+</g>
+<g>
+<title>Rule_R4423603248DefaultConsequenceInvoker.evaluate (15 samples, 0.09%)</title><rect x="1573.0" y="371.0" width="1.8" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1576.0" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R4423603248DefaultConsequenceInvokerGenerated.evaluate (15 samples, 0.09%)</title><rect x="1573.0" y="355.0" width="1.8" height="15" fill="#60f160" rx="2" ry="2"/>
+<text x="1576.0" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R4423603248.defaultConsequence (14 samples, 0.09%)</title><rect x="1573.1" y="339.0" width="1.7" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="1576.1" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (14 samples, 0.09%)</title><rect x="1573.1" y="323.0" width="1.7" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1576.1" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (14 samples, 0.09%)</title><rect x="1573.1" y="307.0" width="1.7" height="15" fill="#60f160" rx="2" ry="2"/>
+<text x="1576.1" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (3 samples, 0.02%)</title><rect x="1573.7" y="291.0" width="0.3" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="1576.7" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (3 samples, 0.02%)</title><rect x="1573.7" y="275.0" width="0.3" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="1576.7" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (3 samples, 0.02%)</title><rect x="1573.7" y="259.0" width="0.3" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1576.7" y="270.0"></text>
+</g>
+<g>
+<title>PhreakPropagationContextFactory.createPropagationContext (3 samples, 0.02%)</title><rect x="1574.2" y="291.0" width="0.3" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1577.2" y="302.0"></text>
+</g>
+<g>
+<title>PhreakPropagationContext.&lt;init&gt; (3 samples, 0.02%)</title><rect x="1574.2" y="275.0" width="0.3" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1577.2" y="286.0"></text>
+</g>
+<g>
+<title>Rule_R5423603248DefaultConsequenceInvoker.evaluate (15 samples, 0.09%)</title><rect x="1574.8" y="371.0" width="1.8" height="15" fill="#6dfe6d" rx="2" ry="2"/>
+<text x="1577.8" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R5423603248DefaultConsequenceInvokerGenerated.evaluate (15 samples, 0.09%)</title><rect x="1574.8" y="355.0" width="1.8" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="1577.8" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R5423603248.defaultConsequence (14 samples, 0.09%)</title><rect x="1574.9" y="339.0" width="1.7" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1577.9" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (13 samples, 0.08%)</title><rect x="1575.0" y="323.0" width="1.6" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1578.0" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (13 samples, 0.08%)</title><rect x="1575.0" y="307.0" width="1.6" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1578.0" y="318.0"></text>
+</g>
+<g>
+<title>Rule_R6423603248DefaultConsequenceInvoker.evaluate (24 samples, 0.15%)</title><rect x="1576.6" y="371.0" width="2.8" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1579.6" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R6423603248DefaultConsequenceInvokerGenerated.evaluate (24 samples, 0.15%)</title><rect x="1576.6" y="355.0" width="2.8" height="15" fill="#66f766" rx="2" ry="2"/>
+<text x="1579.6" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R6423603248.defaultConsequence (20 samples, 0.13%)</title><rect x="1577.0" y="339.0" width="2.4" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="1580.0" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (20 samples, 0.13%)</title><rect x="1577.0" y="323.0" width="2.4" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="1580.0" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (19 samples, 0.12%)</title><rect x="1577.1" y="307.0" width="2.3" height="15" fill="#57e857" rx="2" ry="2"/>
+<text x="1580.1" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (7 samples, 0.04%)</title><rect x="1577.6" y="291.0" width="0.9" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1580.6" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (7 samples, 0.04%)</title><rect x="1577.6" y="275.0" width="0.9" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1580.6" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (5 samples, 0.03%)</title><rect x="1577.9" y="259.0" width="0.6" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1580.9" y="270.0"></text>
+</g>
+<g>
+<title>ReentrantLock$NonfairSync.tryAcquire (3 samples, 0.02%)</title><rect x="1578.0" y="243.0" width="0.3" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="1581.0" y="254.0"></text>
+</g>
+<g>
+<title>ReentrantLock$Sync.nonfairTryAcquire (3 samples, 0.02%)</title><rect x="1578.0" y="227.0" width="0.3" height="15" fill="#69fa69" rx="2" ry="2"/>
+<text x="1581.0" y="238.0"></text>
+</g>
+<g>
+<title>AbstractOwnableSynchronizer.setExclusiveOwnerThread (3 samples, 0.02%)</title><rect x="1578.0" y="211.0" width="0.3" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1581.0" y="222.0"></text>
+</g>
+<g>
+<title>ObjectTypeConfigurationRegistry.getObjectTypeConf (3 samples, 0.02%)</title><rect x="1578.5" y="291.0" width="0.3" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1581.5" y="302.0"></text>
+</g>
+<g>
+<title>Rule_R7423603248DefaultConsequenceInvoker.evaluate (22 samples, 0.14%)</title><rect x="1579.4" y="371.0" width="2.7" height="15" fill="#5ced5c" rx="2" ry="2"/>
+<text x="1582.4" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R7423603248DefaultConsequenceInvokerGenerated.evaluate (22 samples, 0.14%)</title><rect x="1579.4" y="355.0" width="2.7" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1582.4" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R7423603248.defaultConsequence (21 samples, 0.13%)</title><rect x="1579.5" y="339.0" width="2.6" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1582.5" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (21 samples, 0.13%)</title><rect x="1579.5" y="323.0" width="2.6" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1582.5" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (21 samples, 0.13%)</title><rect x="1579.5" y="307.0" width="2.6" height="15" fill="#60f160" rx="2" ry="2"/>
+<text x="1582.5" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (7 samples, 0.04%)</title><rect x="1580.1" y="291.0" width="0.9" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="1583.1" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (7 samples, 0.04%)</title><rect x="1580.1" y="275.0" width="0.9" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1583.1" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (5 samples, 0.03%)</title><rect x="1580.4" y="259.0" width="0.6" height="15" fill="#50e150" rx="2" ry="2"/>
+<text x="1583.4" y="270.0"></text>
+</g>
+<g>
+<title>ReentrantLock$NonfairSync.tryAcquire (3 samples, 0.02%)</title><rect x="1580.6" y="243.0" width="0.4" height="15" fill="#65f665" rx="2" ry="2"/>
+<text x="1583.6" y="254.0"></text>
+</g>
+<g>
+<title>ReentrantLock$Sync.nonfairTryAcquire (3 samples, 0.02%)</title><rect x="1580.6" y="227.0" width="0.4" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="1583.6" y="238.0"></text>
+</g>
+<g>
+<title>PhreakPropagationContextFactory.createPropagationContext (5 samples, 0.03%)</title><rect x="1581.2" y="291.0" width="0.6" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1584.2" y="302.0"></text>
+</g>
+<g>
+<title>PhreakPropagationContext.&lt;init&gt; (5 samples, 0.03%)</title><rect x="1581.2" y="275.0" width="0.6" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="1584.2" y="286.0"></text>
+</g>
+<g>
+<title>Rule_R8423603248DefaultConsequenceInvoker.evaluate (26 samples, 0.16%)</title><rect x="1582.1" y="371.0" width="3.1" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="1585.1" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R8423603248DefaultConsequenceInvokerGenerated.evaluate (26 samples, 0.16%)</title><rect x="1582.1" y="355.0" width="3.1" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1585.1" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R8423603248.defaultConsequence (23 samples, 0.14%)</title><rect x="1582.4" y="339.0" width="2.8" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="1585.4" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (23 samples, 0.14%)</title><rect x="1582.4" y="323.0" width="2.8" height="15" fill="#51e251" rx="2" ry="2"/>
+<text x="1585.4" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (23 samples, 0.14%)</title><rect x="1582.4" y="307.0" width="2.8" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1585.4" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (9 samples, 0.06%)</title><rect x="1583.4" y="291.0" width="1.1" height="15" fill="#5bec5b" rx="2" ry="2"/>
+<text x="1586.4" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (9 samples, 0.06%)</title><rect x="1583.4" y="275.0" width="1.1" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1586.4" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (8 samples, 0.05%)</title><rect x="1583.5" y="259.0" width="1.0" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="1586.5" y="270.0"></text>
+</g>
+<g>
+<title>ReentrantLock$NonfairSync.tryAcquire (5 samples, 0.03%)</title><rect x="1583.6" y="243.0" width="0.6" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="1586.6" y="254.0"></text>
+</g>
+<g>
+<title>ReentrantLock$Sync.nonfairTryAcquire (5 samples, 0.03%)</title><rect x="1583.6" y="227.0" width="0.6" height="15" fill="#5ced5c" rx="2" ry="2"/>
+<text x="1586.6" y="238.0"></text>
+</g>
+<g>
+<title>Rule_R9423603248DefaultConsequenceInvoker.evaluate (20 samples, 0.13%)</title><rect x="1585.2" y="371.0" width="2.4" height="15" fill="#57e857" rx="2" ry="2"/>
+<text x="1588.2" y="382.0"></text>
+</g>
+<g>
+<title>Rule_R9423603248DefaultConsequenceInvokerGenerated.evaluate (20 samples, 0.13%)</title><rect x="1585.2" y="355.0" width="2.4" height="15" fill="#5ced5c" rx="2" ry="2"/>
+<text x="1588.2" y="366.0"></text>
+</g>
+<g>
+<title>Rule_R9423603248.defaultConsequence (20 samples, 0.13%)</title><rect x="1585.2" y="339.0" width="2.4" height="15" fill="#50e150" rx="2" ry="2"/>
+<text x="1588.2" y="350.0"></text>
+</g>
+<g>
+<title>DefaultKnowledgeHelper.update (19 samples, 0.12%)</title><rect x="1585.3" y="323.0" width="2.3" height="15" fill="#65f665" rx="2" ry="2"/>
+<text x="1588.3" y="334.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.update (19 samples, 0.12%)</title><rect x="1585.3" y="307.0" width="2.3" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1588.3" y="318.0"></text>
+</g>
+<g>
+<title>NamedEntryPoint.lock (4 samples, 0.03%)</title><rect x="1585.8" y="291.0" width="0.4" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1588.8" y="302.0"></text>
+</g>
+<g>
+<title>ReentrantLock.lock (4 samples, 0.03%)</title><rect x="1585.8" y="275.0" width="0.4" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1588.8" y="286.0"></text>
+</g>
+<g>
+<title>AbstractQueuedSynchronizer.acquire (4 samples, 0.03%)</title><rect x="1585.8" y="259.0" width="0.4" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="1588.8" y="270.0"></text>
+</g>
+<g>
+<title>ObjectTypeConfigurationRegistry.getObjectTypeConf (5 samples, 0.03%)</title><rect x="1586.2" y="291.0" width="0.6" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1589.2" y="302.0"></text>
+</g>
+<g>
+<title>ConcurrentHashMap.get (3 samples, 0.02%)</title><rect x="1586.5" y="275.0" width="0.3" height="15" fill="#6dfe6d" rx="2" ry="2"/>
+<text x="1589.5" y="286.0"></text>
+</g>
+<g>
+<title>PhreakPropagationContextFactory.createPropagationContext (4 samples, 0.03%)</title><rect x="1586.8" y="291.0" width="0.5" height="15" fill="#51e251" rx="2" ry="2"/>
+<text x="1589.8" y="302.0"></text>
+</g>
+<g>
+<title>PhreakPropagationContext.&lt;init&gt; (3 samples, 0.02%)</title><rect x="1587.0" y="275.0" width="0.3" height="15" fill="#52e352" rx="2" ry="2"/>
+<text x="1590.0" y="286.0"></text>
+</g>
+<g>
+<title>RuleTerminalNodeLeftTuple.getConsequence (127 samples, 0.80%)</title><rect x="1587.7" y="387.0" width="15.2" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1590.7" y="398.0"></text>
+</g>
+<g>
+<title>RuleTerminalNode.getConsequenceName (10 samples, 0.06%)</title><rect x="1597.7" y="371.0" width="1.2" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1600.7" y="382.0"></text>
+</g>
+<g>
+<title>RuleTerminalNodeLeftTuple.getTerminalNode (26 samples, 0.16%)</title><rect x="1599.1" y="371.0" width="3.1" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1602.1" y="382.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.getTupleSink (23 samples, 0.14%)</title><rect x="1599.4" y="355.0" width="2.8" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1602.4" y="366.0"></text>
+</g>
+<g>
+<title>String.equals (6 samples, 0.04%)</title><rect x="1602.2" y="371.0" width="0.7" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1605.2" y="382.0"></text>
+</g>
+<g>
+<title>RuleTerminalNodeLeftTuple.setQueued (5 samples, 0.03%)</title><rect x="1602.9" y="387.0" width="0.6" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1605.9" y="398.0"></text>
+</g>
+<g>
+<title>StatefulKnowledgeSessionImpl.startOperation (17 samples, 0.11%)</title><rect x="1603.5" y="387.0" width="2.0" height="15" fill="#66f766" rx="2" ry="2"/>
+<text x="1606.5" y="398.0"></text>
+</g>
+<g>
+<title>AtomicInteger.getAndIncrement (15 samples, 0.09%)</title><rect x="1603.7" y="371.0" width="1.8" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="1606.7" y="382.0"></text>
+</g>
+<g>
+<title>RuleExecutor.getNextTuple (119 samples, 0.75%)</title><rect x="1605.5" y="403.0" width="14.3" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="1608.5" y="414.0"></text>
+</g>
+<g>
+<title>TupleList.removeFirst (115 samples, 0.72%)</title><rect x="1606.0" y="387.0" width="13.8" height="15" fill="#69fa69" rx="2" ry="2"/>
+<text x="1609.0" y="398.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.clear (3 samples, 0.02%)</title><rect x="1616.3" y="371.0" width="0.4" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="1619.3" y="382.0"></text>
+</g>
+<g>
+<title>BaseTuple.setPrevious (20 samples, 0.13%)</title><rect x="1616.7" y="371.0" width="2.4" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="1619.7" y="382.0"></text>
+</g>
+<g>
+<title>DefaultAgenda.getActivationsFilter (5 samples, 0.03%)</title><rect x="1619.1" y="371.0" width="0.6" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1622.1" y="382.0"></text>
+</g>
+<g>
+<title>RuleExecutor.haltRuleFiring (12 samples, 0.08%)</title><rect x="1619.8" y="403.0" width="1.4" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="1622.8" y="414.0"></text>
+</g>
+<g>
+<title>DefaultAgenda.peekNextRule (6 samples, 0.04%)</title><rect x="1619.8" y="387.0" width="0.7" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="1622.8" y="398.0"></text>
+</g>
+<g>
+<title>RuleExecutor.isHigherSalience (6 samples, 0.04%)</title><rect x="1620.5" y="387.0" width="0.7" height="15" fill="#60f160" rx="2" ry="2"/>
+<text x="1623.5" y="398.0"></text>
+</g>
+<g>
+<title>PhreakConflictResolver.doCompare (6 samples, 0.04%)</title><rect x="1620.5" y="371.0" width="0.7" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1623.5" y="382.0"></text>
+</g>
+<g>
+<title>AgendaItemImpl.getRule (6 samples, 0.04%)</title><rect x="1620.5" y="355.0" width="0.7" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1623.5" y="366.0"></text>
+</g>
+<g>
+<title>RuleExecutor.reEvaluateNetwork (676 samples, 4.26%)</title><rect x="1621.2" y="419.0" width="80.9" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="1624.2" y="430.0">RuleExecu..</text>
+</g>
+<g>
+<title>RuleNetworkEvaluator.evaluateNetwork (676 samples, 4.26%)</title><rect x="1621.2" y="403.0" width="80.9" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="1624.2" y="414.0">RuleNetwo..</text>
+</g>
+<g>
+<title>RuleNetworkEvaluator.outerEval (676 samples, 4.26%)</title><rect x="1621.2" y="387.0" width="80.9" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1624.2" y="398.0">RuleNetwo..</text>
+</g>
+<g>
+<title>RuleNetworkEvaluator.innerEval (676 samples, 4.26%)</title><rect x="1621.2" y="371.0" width="80.9" height="15" fill="#6dfe6d" rx="2" ry="2"/>
+<text x="1624.2" y="382.0">RuleNetwo..</text>
+</g>
+<g>
+<title>PhreakRuleTerminalNode.doNode (346 samples, 2.18%)</title><rect x="1621.2" y="355.0" width="41.4" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1624.2" y="366.0">Phr..</text>
+</g>
+<g>
+<title>PhreakRuleTerminalNode.doLeftInserts (346 samples, 2.18%)</title><rect x="1621.2" y="339.0" width="41.4" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="1624.2" y="350.0">Phr..</text>
+</g>
+<g>
+<title>BaseLeftTuple.getStagedNext (40 samples, 0.25%)</title><rect x="1621.7" y="323.0" width="4.8" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="1624.7" y="334.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.getStagedNext (40 samples, 0.25%)</title><rect x="1621.7" y="307.0" width="4.8" height="15" fill="#66f766" rx="2" ry="2"/>
+<text x="1624.7" y="318.0"></text>
+</g>
+<g>
+<title>PhreakRuleTerminalNode.doLeftTupleInsert (302 samples, 1.90%)</title><rect x="1626.5" y="323.0" width="36.1" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1629.5" y="334.0">Phr..</text>
+</g>
+<g>
+<title>BaseTuple.increaseActivationCountForEvents (12 samples, 0.08%)</title><rect x="1628.2" y="307.0" width="1.4" height="15" fill="#57e857" rx="2" ry="2"/>
+<text x="1631.2" y="318.0"></text>
+</g>
+<g>
+<title>DefaultAgenda.addItemToActivationGroup (126 samples, 0.79%)</title><rect x="1629.6" y="307.0" width="15.1" height="15" fill="#66f766" rx="2" ry="2"/>
+<text x="1632.6" y="318.0"></text>
+</g>
+<g>
+<title>RuleImpl.getActivationGroup (14 samples, 0.09%)</title><rect x="1629.6" y="291.0" width="1.7" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="1632.6" y="302.0"></text>
+</g>
+<g>
+<title>RuleTerminalNode.getRule (10 samples, 0.06%)</title><rect x="1630.1" y="275.0" width="1.2" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1633.1" y="286.0"></text>
+</g>
+<g>
+<title>RuleTerminalNodeLeftTuple.getRule (112 samples, 0.71%)</title><rect x="1631.3" y="291.0" width="13.4" height="15" fill="#5ced5c" rx="2" ry="2"/>
+<text x="1634.3" y="302.0"></text>
+</g>
+<g>
+<title>RuleTerminalNodeLeftTuple.getTerminalNode (109 samples, 0.69%)</title><rect x="1631.6" y="275.0" width="13.1" height="15" fill="#60f160" rx="2" ry="2"/>
+<text x="1634.6" y="286.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.getTupleSink (46 samples, 0.29%)</title><rect x="1639.2" y="259.0" width="5.5" height="15" fill="#60f160" rx="2" ry="2"/>
+<text x="1642.2" y="270.0"></text>
+</g>
+<g>
+<title>DefaultAgenda.createAgendaItem (16 samples, 0.10%)</title><rect x="1644.7" y="307.0" width="1.9" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1647.7" y="318.0"></text>
+</g>
+<g>
+<title>RuleTerminalNodeLeftTuple.init (13 samples, 0.08%)</title><rect x="1645.0" y="291.0" width="1.6" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1648.0" y="302.0"></text>
+</g>
+<g>
+<title>BaseTuple.setPropagationContext (13 samples, 0.08%)</title><rect x="1645.0" y="275.0" width="1.6" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1648.0" y="286.0"></text>
+</g>
+<g>
+<title>PhreakRuleTerminalNode.getSalienceValue (24 samples, 0.15%)</title><rect x="1646.7" y="307.0" width="2.9" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="1649.7" y="318.0"></text>
+</g>
+<g>
+<title>AgendaItemImpl.getRule (3 samples, 0.02%)</title><rect x="1648.1" y="291.0" width="0.4" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1651.1" y="302.0"></text>
+</g>
+<g>
+<title>SalienceInteger.isDynamic (8 samples, 0.05%)</title><rect x="1648.6" y="291.0" width="1.0" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1651.6" y="302.0"></text>
+</g>
+<g>
+<title>RuleExecutor.addLeftTuple (50 samples, 0.32%)</title><rect x="1649.6" y="307.0" width="6.0" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1652.6" y="318.0"></text>
+</g>
+<g>
+<title>TupleList.add (46 samples, 0.29%)</title><rect x="1650.1" y="291.0" width="5.5" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1653.1" y="302.0"></text>
+</g>
+<g>
+<title>BaseTuple.setNext (37 samples, 0.23%)</title><rect x="1650.4" y="275.0" width="4.5" height="15" fill="#69fa69" rx="2" ry="2"/>
+<text x="1653.4" y="286.0"></text>
+</g>
+<g>
+<title>BaseTuple.setNext (11 samples, 0.07%)</title><rect x="1653.5" y="259.0" width="1.4" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="1656.5" y="270.0"></text>
+</g>
+<g>
+<title>BaseTuple.setPrevious (6 samples, 0.04%)</title><rect x="1654.9" y="275.0" width="0.7" height="15" fill="#5bec5b" rx="2" ry="2"/>
+<text x="1657.9" y="286.0"></text>
+</g>
+<g>
+<title>BaseTuple.setNext (5 samples, 0.03%)</title><rect x="1655.0" y="259.0" width="0.6" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1658.0" y="270.0"></text>
+</g>
+<g>
+<title>StatefulKnowledgeSessionImpl.getAgendaEventSupport (5 samples, 0.03%)</title><rect x="1656.1" y="307.0" width="0.6" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1659.1" y="318.0"></text>
+</g>
+<g>
+<title>RuleTerminalNodeLeftTuple.init (4 samples, 0.03%)</title><rect x="1656.2" y="291.0" width="0.5" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1659.2" y="302.0"></text>
+</g>
+<g>
+<title>Tuple.findMostRecentPropagationContext (50 samples, 0.32%)</title><rect x="1656.7" y="307.0" width="5.9" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1659.7" y="318.0"></text>
+</g>
+<g>
+<title>SalienceInteger.getValue (3 samples, 0.02%)</title><rect x="1662.3" y="291.0" width="0.3" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1665.3" y="302.0"></text>
+</g>
+<g>
+<title>RuleNetworkEvaluator.evalNode (330 samples, 2.08%)</title><rect x="1662.6" y="355.0" width="39.5" height="15" fill="#51e251" rx="2" ry="2"/>
+<text x="1665.6" y="366.0">Rul..</text>
+</g>
+<g>
+<title>RuleNetworkEvaluator.evalBetaNode (330 samples, 2.08%)</title><rect x="1662.6" y="339.0" width="39.5" height="15" fill="#60f160" rx="2" ry="2"/>
+<text x="1665.6" y="350.0">Rul..</text>
+</g>
+<g>
+<title>RuleNetworkEvaluator.switchOnDoBetaNode (330 samples, 2.08%)</title><rect x="1662.6" y="323.0" width="39.5" height="15" fill="#60f160" rx="2" ry="2"/>
+<text x="1665.6" y="334.0">Rul..</text>
+</g>
+<g>
+<title>PhreakJoinNode.doNode (293 samples, 1.85%)</title><rect x="1662.6" y="307.0" width="35.1" height="15" fill="#57e857" rx="2" ry="2"/>
+<text x="1665.6" y="318.0">Phr..</text>
+</g>
+<g>
+<title>PhreakJoinNode.doLeftInserts (293 samples, 1.85%)</title><rect x="1662.6" y="291.0" width="35.1" height="15" fill="#50e150" rx="2" ry="2"/>
+<text x="1665.6" y="302.0">Phr..</text>
+</g>
+<g>
+<title>PhreakJoinNode.insertChildLeftTuple (211 samples, 1.33%)</title><rect x="1662.9" y="275.0" width="25.2" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="1665.9" y="286.0">P..</text>
+</g>
+<g>
+<title>NotNode.createLeftTuple (163 samples, 1.03%)</title><rect x="1663.0" y="259.0" width="19.5" height="15" fill="#50e150" rx="2" ry="2"/>
+<text x="1666.0" y="270.0"></text>
+</g>
+<g>
+<title>NotNodeLeftTuple.&lt;init&gt; (163 samples, 1.03%)</title><rect x="1663.0" y="243.0" width="19.5" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1666.0" y="254.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.&lt;init&gt; (163 samples, 1.03%)</title><rect x="1663.0" y="227.0" width="19.5" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1666.0" y="238.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.setLastChild (6 samples, 0.04%)</title><rect x="1673.5" y="211.0" width="0.8" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="1676.5" y="222.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.setRightParentNext (4 samples, 0.03%)</title><rect x="1674.3" y="211.0" width="0.4" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1677.3" y="222.0"></text>
+</g>
+<g>
+<title>BaseTuple.getStagedType (9 samples, 0.06%)</title><rect x="1674.7" y="211.0" width="1.1" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1677.7" y="222.0"></text>
+</g>
+<g>
+<title>BaseTuple.setStagedNext (3 samples, 0.02%)</title><rect x="1676.2" y="211.0" width="0.3" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1679.2" y="222.0"></text>
+</g>
+<g>
+<title>BaseTuple.setStagedType (3 samples, 0.02%)</title><rect x="1676.5" y="211.0" width="0.4" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="1679.5" y="222.0"></text>
+</g>
+<g>
+<title>itable stub (43 samples, 0.27%)</title><rect x="1677.4" y="211.0" width="5.1" height="15" fill="#ef6d6d" rx="2" ry="2"/>
+<text x="1680.4" y="222.0"></text>
+</g>
+<g>
+<title>RuleTerminalNode.createLeftTuple (39 samples, 0.25%)</title><rect x="1682.5" y="259.0" width="4.7" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="1685.5" y="270.0"></text>
+</g>
+<g>
+<title>RuleTerminalNodeLeftTuple.&lt;init&gt; (38 samples, 0.24%)</title><rect x="1682.6" y="243.0" width="4.6" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1685.6" y="254.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.&lt;init&gt; (38 samples, 0.24%)</title><rect x="1682.6" y="227.0" width="4.6" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="1685.6" y="238.0"></text>
+</g>
+<g>
+<title>BaseTuple.setStagedPrevious (3 samples, 0.02%)</title><rect x="1684.4" y="211.0" width="0.4" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="1687.4" y="222.0"></text>
+</g>
+<g>
+<title>itable stub (20 samples, 0.13%)</title><rect x="1684.8" y="211.0" width="2.4" height="15" fill="#e96565" rx="2" ry="2"/>
+<text x="1687.8" y="222.0"></text>
+</g>
+<g>
+<title>TupleSetsImpl.addInsert (8 samples, 0.05%)</title><rect x="1687.2" y="259.0" width="0.9" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1690.2" y="270.0"></text>
+</g>
+<g>
+<title>TupleSetsImpl.getStagedType (3 samples, 0.02%)</title><rect x="1687.2" y="243.0" width="0.3" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="1690.2" y="254.0"></text>
+</g>
+<g>
+<title>BaseTuple.getStagedType (3 samples, 0.02%)</title><rect x="1687.2" y="227.0" width="0.3" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1690.2" y="238.0"></text>
+</g>
+<g>
+<title>SingleBetaConstraints.isAllowedCachedLeft (53 samples, 0.33%)</title><rect x="1688.1" y="275.0" width="6.4" height="15" fill="#66f766" rx="2" ry="2"/>
+<text x="1691.1" y="286.0"></text>
+</g>
+<g>
+<title>MVELConstraint.isAllowedCachedLeft (29 samples, 0.18%)</title><rect x="1689.6" y="259.0" width="3.4" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1692.6" y="270.0"></text>
+</g>
+<g>
+<title>MVELConstraint.evaluate (27 samples, 0.17%)</title><rect x="1689.8" y="243.0" width="3.2" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="1692.8" y="254.0"></text>
+</g>
+<g>
+<title>ConditionEvaluatora037fc7070d84664b335b7196337d382.evaluate (3 samples, 0.02%)</title><rect x="1691.5" y="227.0" width="0.4" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="1694.5" y="238.0"></text>
+</g>
+<g>
+<title>MVELConditionEvaluator.evaluate (8 samples, 0.05%)</title><rect x="1692.1" y="227.0" width="0.9" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="1695.1" y="238.0"></text>
+</g>
+<g>
+<title>MVELConditionEvaluator.evaluate (8 samples, 0.05%)</title><rect x="1692.1" y="211.0" width="0.9" height="15" fill="#69fa69" rx="2" ry="2"/>
+<text x="1695.1" y="222.0"></text>
+</g>
+<g>
+<title>MVELCompilationUnit.createFactory (4 samples, 0.03%)</title><rect x="1692.1" y="195.0" width="0.5" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1695.1" y="206.0"></text>
+</g>
+<g>
+<title>SimpleVariableSpaceModel.createFactory (3 samples, 0.02%)</title><rect x="1692.2" y="179.0" width="0.4" height="15" fill="#65f665" rx="2" ry="2"/>
+<text x="1695.2" y="190.0"></text>
+</g>
+<g>
+<title>itable stub (12 samples, 0.08%)</title><rect x="1693.0" y="259.0" width="1.5" height="15" fill="#fc7e7e" rx="2" ry="2"/>
+<text x="1696.0" y="270.0"></text>
+</g>
+<g>
+<title>TupleList.add (27 samples, 0.17%)</title><rect x="1694.5" y="275.0" width="3.2" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1697.5" y="286.0"></text>
+</g>
+<g>
+<title>BaseTuple.setNext (5 samples, 0.03%)</title><rect x="1695.0" y="259.0" width="0.6" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="1698.0" y="270.0"></text>
+</g>
+<g>
+<title>BaseTuple.setPrevious (8 samples, 0.05%)</title><rect x="1695.6" y="259.0" width="0.9" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1698.6" y="270.0"></text>
+</g>
+<g>
+<title>PhreakJoinNode.insertChildLeftTuple (4 samples, 0.03%)</title><rect x="1696.5" y="259.0" width="0.5" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1699.5" y="270.0"></text>
+</g>
+<g>
+<title>SingleBetaConstraints.isAllowedCachedLeft (6 samples, 0.04%)</title><rect x="1697.0" y="259.0" width="0.7" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1700.0" y="270.0"></text>
+</g>
+<g>
+<title>PhreakNotNode.doNode (37 samples, 0.23%)</title><rect x="1697.7" y="307.0" width="4.4" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1700.7" y="318.0"></text>
+</g>
+<g>
+<title>PhreakNotNode.doNormalNode (37 samples, 0.23%)</title><rect x="1697.7" y="291.0" width="4.4" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="1700.7" y="302.0"></text>
+</g>
+<g>
+<title>PhreakNotNode.doLeftInserts (32 samples, 0.20%)</title><rect x="1697.7" y="275.0" width="3.8" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1700.7" y="286.0"></text>
+</g>
+<g>
+<title>PhreakNotNode.insertChildLeftTuple (21 samples, 0.13%)</title><rect x="1698.1" y="259.0" width="2.5" height="15" fill="#6cfd6c" rx="2" ry="2"/>
+<text x="1701.1" y="270.0"></text>
+</g>
+<g>
+<title>JoinNode.createLeftTuple (4 samples, 0.03%)</title><rect x="1698.1" y="243.0" width="0.5" height="15" fill="#50e150" rx="2" ry="2"/>
+<text x="1701.1" y="254.0"></text>
+</g>
+<g>
+<title>JoinNodeLeftTuple.&lt;init&gt; (4 samples, 0.03%)</title><rect x="1698.1" y="227.0" width="0.5" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="1701.1" y="238.0"></text>
+</g>
+<g>
+<title>BaseLeftTuple.&lt;init&gt; (4 samples, 0.03%)</title><rect x="1698.1" y="211.0" width="0.5" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="1701.1" y="222.0"></text>
+</g>
+<g>
+<title>TupleIndexRBTree.add (16 samples, 0.10%)</title><rect x="1698.6" y="243.0" width="1.9" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="1701.6" y="254.0"></text>
+</g>
+<g>
+<title>TupleIndexRBTree.getLeftIndexedValue (8 samples, 0.05%)</title><rect x="1698.6" y="227.0" width="0.9" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1701.6" y="238.0"></text>
+</g>
+<g>
+<title>TupleIndexRBTree.getIndexedValue (8 samples, 0.05%)</title><rect x="1698.6" y="211.0" width="0.9" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1701.6" y="222.0"></text>
+</g>
+<g>
+<title>TupleValueExtractor.getValue (5 samples, 0.03%)</title><rect x="1698.9" y="195.0" width="0.6" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="1701.9" y="206.0"></text>
+</g>
+<g>
+<title>Declaration.getValue (5 samples, 0.03%)</title><rect x="1698.9" y="179.0" width="0.6" height="15" fill="#62f362" rx="2" ry="2"/>
+<text x="1701.9" y="190.0"></text>
+</g>
+<g>
+<title>Declaration.getValue (4 samples, 0.03%)</title><rect x="1699.0" y="163.0" width="0.5" height="15" fill="#52e352" rx="2" ry="2"/>
+<text x="1702.0" y="174.0"></text>
+</g>
+<g>
+<title>Declaration.getValue (4 samples, 0.03%)</title><rect x="1699.0" y="147.0" width="0.5" height="15" fill="#5bec5b" rx="2" ry="2"/>
+<text x="1702.0" y="158.0"></text>
+</g>
+<g>
+<title>ClassFieldReader.getValue (4 samples, 0.03%)</title><rect x="1699.0" y="131.0" width="0.5" height="15" fill="#5eef5e" rx="2" ry="2"/>
+<text x="1702.0" y="142.0"></text>
+</g>
+<g>
+<title>TupleList.add (4 samples, 0.03%)</title><rect x="1699.5" y="227.0" width="0.5" height="15" fill="#5dee5d" rx="2" ry="2"/>
+<text x="1702.5" y="238.0"></text>
+</g>
+<g>
+<title>BaseTuple.setNext (3 samples, 0.02%)</title><rect x="1699.5" y="211.0" width="0.4" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="1702.5" y="222.0"></text>
+</g>
+<g>
+<title>TupleRBTree.insert (4 samples, 0.03%)</title><rect x="1700.0" y="227.0" width="0.5" height="15" fill="#57e857" rx="2" ry="2"/>
+<text x="1703.0" y="238.0"></text>
+</g>
+<g>
+<title>TupleRBTree$Node.&lt;init&gt; (3 samples, 0.02%)</title><rect x="1700.1" y="211.0" width="0.4" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1703.1" y="222.0"></text>
+</g>
+<g>
+<title>RuleNetworkEvaluator.findLeftTupleBlocker (6 samples, 0.04%)</title><rect x="1700.6" y="259.0" width="0.7" height="15" fill="#60f160" rx="2" ry="2"/>
+<text x="1703.6" y="270.0"></text>
+</g>
+<g>
+<title>BetaNode.getFirstRightTuple (6 samples, 0.04%)</title><rect x="1700.6" y="243.0" width="0.7" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1703.6" y="254.0"></text>
+</g>
+<g>
+<title>TupleIndexRBTree.getFirst (6 samples, 0.04%)</title><rect x="1700.6" y="227.0" width="0.7" height="15" fill="#51e251" rx="2" ry="2"/>
+<text x="1703.6" y="238.0"></text>
+</g>
+<g>
+<title>TupleIndexRBTree.getRightIndexedValue (4 samples, 0.03%)</title><rect x="1700.8" y="211.0" width="0.5" height="15" fill="#5ced5c" rx="2" ry="2"/>
+<text x="1703.8" y="222.0"></text>
+</g>
+<g>
+<title>TupleIndexRBTree.getIndexedValue (4 samples, 0.03%)</title><rect x="1700.8" y="195.0" width="0.5" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1703.8" y="206.0"></text>
+</g>
+<g>
+<title>TupleValueExtractor.getValue (3 samples, 0.02%)</title><rect x="1701.0" y="179.0" width="0.3" height="15" fill="#66f766" rx="2" ry="2"/>
+<text x="1704.0" y="190.0"></text>
+</g>
+<g>
+<title>Declaration.getValue (3 samples, 0.02%)</title><rect x="1701.0" y="163.0" width="0.3" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="1704.0" y="174.0"></text>
+</g>
+<g>
+<title>PhreakNotNode.doRightInserts (5 samples, 0.03%)</title><rect x="1701.5" y="275.0" width="0.6" height="15" fill="#6dfe6d" rx="2" ry="2"/>
+<text x="1704.5" y="286.0"></text>
+</g>
+<g>
+<title>TupleIndexRBTree.add (4 samples, 0.03%)</title><rect x="1701.7" y="259.0" width="0.4" height="15" fill="#51e251" rx="2" ry="2"/>
+<text x="1704.7" y="270.0"></text>
+</g>
+<g>
+<title>TupleRBTree.insert (4 samples, 0.03%)</title><rect x="1701.7" y="243.0" width="0.4" height="15" fill="#5ff05f" rx="2" ry="2"/>
+<text x="1704.7" y="254.0"></text>
+</g>
+<g>
+<title>FutureTask.run (5 samples, 0.03%)</title><rect x="1702.5" y="579.0" width="0.6" height="15" fill="#56e756" rx="2" ry="2"/>
+<text x="1705.5" y="590.0"></text>
+</g>
+<g>
+<title>Executors$RunnableAdapter.call (5 samples, 0.03%)</title><rect x="1702.5" y="563.0" width="0.6" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1705.5" y="574.0"></text>
+</g>
+<g>
+<title>FutureTask.run (5 samples, 0.03%)</title><rect x="1702.5" y="547.0" width="0.6" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1705.5" y="558.0"></text>
+</g>
+<g>
+<title>BenchmarkHandler$BenchmarkTask.call (5 samples, 0.03%)</title><rect x="1702.5" y="531.0" width="0.6" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1705.5" y="542.0"></text>
+</g>
+<g>
+<title>BenchmarkHandler$BenchmarkTask.call (5 samples, 0.03%)</title><rect x="1702.5" y="515.0" width="0.6" height="15" fill="#6afb6a" rx="2" ry="2"/>
+<text x="1705.5" y="526.0"></text>
+</g>
+<g>
+<title>Method.invoke (5 samples, 0.03%)</title><rect x="1702.5" y="499.0" width="0.6" height="15" fill="#63f463" rx="2" ry="2"/>
+<text x="1705.5" y="510.0"></text>
+</g>
+<g>
+<title>DelegatingMethodAccessorImpl.invoke (5 samples, 0.03%)</title><rect x="1702.5" y="483.0" width="0.6" height="15" fill="#5aeb5a" rx="2" ry="2"/>
+<text x="1705.5" y="494.0"></text>
+</g>
+<g>
+<title>NativeMethodAccessorImpl.invoke (5 samples, 0.03%)</title><rect x="1702.5" y="467.0" width="0.6" height="15" fill="#51e251" rx="2" ry="2"/>
+<text x="1705.5" y="478.0"></text>
+</g>
+<g>
+<title>NativeMethodAccessorImpl.invoke0 (5 samples, 0.03%)</title><rect x="1702.5" y="451.0" width="0.6" height="15" fill="#67f867" rx="2" ry="2"/>
+<text x="1705.5" y="462.0"></text>
+</g>
+<g>
+<title>ConcurrentUpdateBenchmark_test_jmhTest.test_SingleShotTime (5 samples, 0.03%)</title><rect x="1702.5" y="435.0" width="0.6" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1705.5" y="446.0"></text>
+</g>
+<g>
+<title>ConcurrentUpdateBenchmark.setup (4 samples, 0.03%)</title><rect x="1702.5" y="419.0" width="0.5" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1705.5" y="430.0"></text>
+</g>
+<g>
+<title>RuntimeUtil.createKieSession (3 samples, 0.02%)</title><rect x="1702.5" y="403.0" width="0.4" height="15" fill="#64f564" rx="2" ry="2"/>
+<text x="1705.5" y="414.0"></text>
+</g>
+<g>
+<title>RuntimeUtil.getKieSessionConfiguration (3 samples, 0.02%)</title><rect x="1702.5" y="387.0" width="0.4" height="15" fill="#6bfc6b" rx="2" ry="2"/>
+<text x="1705.5" y="398.0"></text>
+</g>
+<g>
+<title>KieServicesImpl.newKieSessionConfiguration (3 samples, 0.02%)</title><rect x="1702.5" y="371.0" width="0.4" height="15" fill="#59ea59" rx="2" ry="2"/>
+<text x="1705.5" y="382.0"></text>
+</g>
+<g>
+<title>SessionConfiguration.newInstance (3 samples, 0.02%)</title><rect x="1702.5" y="355.0" width="0.4" height="15" fill="#66f766" rx="2" ry="2"/>
+<text x="1705.5" y="366.0"></text>
+</g>
+<g>
+<title>SessionConfigurationImpl.&lt;init&gt; (3 samples, 0.02%)</title><rect x="1702.5" y="339.0" width="0.4" height="15" fill="#58e958" rx="2" ry="2"/>
+<text x="1705.5" y="350.0"></text>
+</g>
+<g>
+<title>SessionConfigurationImpl.init (3 samples, 0.02%)</title><rect x="1702.5" y="323.0" width="0.4" height="15" fill="#68f968" rx="2" ry="2"/>
+<text x="1705.5" y="334.0"></text>
+</g>
+<g>
+<title>ChainedProperties.getChainedProperties (3 samples, 0.02%)</title><rect x="1702.5" y="307.0" width="0.4" height="15" fill="#55e655" rx="2" ry="2"/>
+<text x="1705.5" y="318.0"></text>
+</g>
+<g>
+<title>ChainedProperties.getChainedProperties (3 samples, 0.02%)</title><rect x="1702.5" y="291.0" width="0.4" height="15" fill="#61f261" rx="2" ry="2"/>
+<text x="1705.5" y="302.0"></text>
+</g>
+<g>
+<title>ChainedProperties.&lt;init&gt; (3 samples, 0.02%)</title><rect x="1702.5" y="275.0" width="0.4" height="15" fill="#51e251" rx="2" ry="2"/>
+<text x="1705.5" y="286.0"></text>
+</g>
+<g>
+<title>ChainedProperties.loadProperties (3 samples, 0.02%)</title><rect x="1702.5" y="259.0" width="0.4" height="15" fill="#53e453" rx="2" ry="2"/>
+<text x="1705.5" y="270.0"></text>
+</g>
+<g>
+<title>ChainedProperties.read (3 samples, 0.02%)</title><rect x="1702.5" y="243.0" width="0.4" height="15" fill="#54e554" rx="2" ry="2"/>
+<text x="1705.5" y="254.0"></text>
+</g>
+<g>
+<title>[unknown_Java] (3 samples, 0.02%)</title><rect x="1703.5" y="627.0" width="0.3" height="15" fill="#e86363" rx="2" ry="2"/>
+<text x="1706.5" y="638.0"></text>
+</g>
+<g>
+<title>start_thread (1,722 samples, 10.85%)</title><rect x="1703.8" y="627.0" width="206.2" height="15" fill="#e55f5f" rx="2" ry="2"/>
+<text x="1706.8" y="638.0">start_thread</text>
+</g>
+<g>
+<title>thread_native_entry(Thread*) (1,722 samples, 10.85%)</title><rect x="1703.8" y="611.0" width="206.2" height="15" fill="#f27171" rx="2" ry="2"/>
+<text x="1706.8" y="622.0">thread_native_entry(Thread*)</text>
+</g>
+<g>
+<title>.annobin__ZN6Thread8call_runEv.start (1,722 samples, 10.85%)</title><rect x="1703.8" y="595.0" width="206.2" height="15" fill="#e25c5c" rx="2" ry="2"/>
+<text x="1706.8" y="606.0">.annobin__ZN6Thread8call_ru..</text>
+</g>
+<g>
+<title>ConcurrentGCThread::run() (124 samples, 0.78%)</title><rect x="1703.8" y="579.0" width="14.9" height="15" fill="#e2e244" rx="2" ry="2"/>
+<text x="1706.8" y="590.0"></text>
+</g>
+<g>
+<title>G1ConcurrentRefineThread::run_service() (123 samples, 0.78%)</title><rect x="1703.8" y="563.0" width="14.8" height="15" fill="#e4e445" rx="2" ry="2"/>
+<text x="1706.8" y="574.0"></text>
+</g>
+<g>
+<title>DirtyCardQueueSet::refine_completed_buffer_concurrently(unsigned int, unsigned long) (123 samples, 0.78%)</title><rect x="1703.8" y="547.0" width="14.8" height="15" fill="#c9c93c" rx="2" ry="2"/>
+<text x="1706.8" y="558.0"></text>
+</g>
+<g>
+<title>G1RemSet::refine_card_concurrently(signed char*, unsigned int) (122 samples, 0.77%)</title><rect x="1703.9" y="531.0" width="14.7" height="15" fill="#e3e345" rx="2" ry="2"/>
+<text x="1706.9" y="542.0"></text>
+</g>
+<g>
+<title>.annobin__ZN10HeapRegion32oops_on_card_seq_iterate_carefulILb0E28G1ConcurrentRefineOopClosureEEb9MemRegionPT0_.start (102 samples, 0.64%)</title><rect x="1705.9" y="515.0" width="12.2" height="15" fill="#ef6c6c" rx="2" ry="2"/>
+<text x="1708.9" y="526.0"></text>
+</g>
+<g>
+<title>G1BlockOffsetTablePart::forward_to_block_containing_addr_slow(HeapWord*, HeapWord*, void const*) (27 samples, 0.17%)</title><rect x="1707.1" y="499.0" width="3.2" height="15" fill="#cfcf3e" rx="2" ry="2"/>
+<text x="1710.1" y="510.0"></text>
+</g>
+<g>
+<title>HeapRegion::block_size(HeapWord const*) const (11 samples, 0.07%)</title><rect x="1709.0" y="483.0" width="1.3" height="15" fill="#d9d941" rx="2" ry="2"/>
+<text x="1712.0" y="494.0"></text>
+</g>
+<g>
+<title>OtherRegionsTable::add_reference(void*, unsigned int) (8 samples, 0.05%)</title><rect x="1710.5" y="499.0" width="1.0" height="15" fill="#cdcd3d" rx="2" ry="2"/>
+<text x="1713.5" y="510.0"></text>
+</g>
+<g>
+<title>void OopOopIterateDispatch&lt;G1ConcurrentRefineOopClosure&gt;::Table::oop_oop_iterate&lt;InstanceKlass, unsigned int&gt;(G1ConcurrentRefineOopClosure*, oopDesc*, Klass*) (55 samples, 0.35%)</title><rect x="1711.5" y="499.0" width="6.6" height="15" fill="#d9d941" rx="2" ry="2"/>
+<text x="1714.5" y="510.0"></text>
+</g>
+<g>
+<title>BitMap::par_at_put(unsigned long, bool) (4 samples, 0.03%)</title><rect x="1717.1" y="483.0" width="0.5" height="15" fill="#d6d640" rx="2" ry="2"/>
+<text x="1720.1" y="494.0"></text>
+</g>
+<g>
+<title>OtherRegionsTable::add_reference(void*, unsigned int) (4 samples, 0.03%)</title><rect x="1717.6" y="483.0" width="0.5" height="15" fill="#e0e044" rx="2" ry="2"/>
+<text x="1720.6" y="494.0"></text>
+</g>
+<g>
+<title>oopDesc::size() (3 samples, 0.02%)</title><rect x="1718.1" y="515.0" width="0.3" height="15" fill="#e3e345" rx="2" ry="2"/>
+<text x="1721.1" y="526.0"></text>
+</g>
+<g>
+<title>GangWorker::loop() (1,545 samples, 9.74%)</title><rect x="1718.7" y="579.0" width="185.0" height="15" fill="#d7d741" rx="2" ry="2"/>
+<text x="1721.7" y="590.0">GangWorker::loop()</text>
+</g>
+<g>
+<title>.annobin__ZN9G1ParTask4workEj.start (1,308 samples, 8.24%)</title><rect x="1718.9" y="563.0" width="156.6" height="15" fill="#f27171" rx="2" ry="2"/>
+<text x="1721.9" y="574.0">.annobin__ZN9G1ParTa..</text>
+</g>
+<g>
+<title>G1ParEvacuateFollowersClosure::do_void() (41 samples, 0.26%)</title><rect x="1718.9" y="547.0" width="4.9" height="15" fill="#dddd43" rx="2" ry="2"/>
+<text x="1721.9" y="558.0"></text>
+</g>
+<g>
+<title>.annobin__ZN19GenericTaskQueueSetI17OverflowTaskQueueI8StarTaskL10MemoryType5ELj131072EELS2_5EE15steal_best_of_2EjPiRS1_.start (5 samples, 0.03%)</title><rect x="1718.9" y="531.0" width="0.6" height="15" fill="#e76363" rx="2" ry="2"/>
+<text x="1721.9" y="542.0"></text>
+</g>
+<g>
+<title>G1ParScanThreadState::trim_queue() (22 samples, 0.14%)</title><rect x="1719.5" y="531.0" width="2.6" height="15" fill="#cfcf3e" rx="2" ry="2"/>
+<text x="1722.5" y="542.0"></text>
+</g>
+<g>
+<title>G1ParScanThreadState::copy_to_survivor_space(InCSetState, oopDesc*, markOopDesc*) (10 samples, 0.06%)</title><rect x="1720.9" y="515.0" width="1.2" height="15" fill="#dbdb42" rx="2" ry="2"/>
+<text x="1723.9" y="526.0"></text>
+</g>
+<g>
+<title>.annobin__ZN30OopOopIterateBackwardsDispatchI25G1ScanEvacuatedObjClosureE5Table25oop_oop_iterate_backwardsI13InstanceKlassjEEvPS0_P7oopDescP5Klass.start (6 samples, 0.04%)</title><rect x="1721.4" y="499.0" width="0.7" height="15" fill="#f16f6f" rx="2" ry="2"/>
+<text x="1724.4" y="510.0"></text>
+</g>
+<g>
+<title>GenericTaskQueue&lt;StarTask, (MemoryType)5, 131072u&gt;::pop_global(StarTask volatile&amp;) (8 samples, 0.05%)</title><rect x="1722.1" y="531.0" width="1.0" height="15" fill="#c8c83c" rx="2" ry="2"/>
+<text x="1725.1" y="542.0"></text>
+</g>
+<g>
+<title>SpinPause (5 samples, 0.03%)</title><rect x="1723.1" y="531.0" width="0.6" height="15" fill="#fc7f7f" rx="2" ry="2"/>
+<text x="1726.1" y="542.0"></text>
+</g>
+<g>
+<title>G1RemSet::oops_into_collection_set_do(G1ParScanThreadState*, unsigned int) (662 samples, 4.17%)</title><rect x="1723.8" y="547.0" width="79.3" height="15" fill="#d2d23f" rx="2" ry="2"/>
+<text x="1726.8" y="558.0">G1RemSet:..</text>
+</g>
+<g>
+<title>G1RemSet::update_rem_set(G1ParScanThreadState*, unsigned int) (662 samples, 4.17%)</title><rect x="1723.8" y="531.0" width="79.3" height="15" fill="#cece3e" rx="2" ry="2"/>
+<text x="1726.8" y="542.0">G1RemSet:..</text>
+</g>
+<g>
+<title>.annobin__ZN15G1CollectedHeap26iterate_dirty_card_closureEP21CardTableEntryClosurej.start (662 samples, 4.17%)</title><rect x="1723.8" y="515.0" width="79.3" height="15" fill="#f06e6e" rx="2" ry="2"/>
+<text x="1726.8" y="526.0">.annobin_..</text>
+</g>
+<g>
+<title>DirtyCardQueueSet::apply_closure_to_completed_buffer(CardTableEntryClosure*, unsigned int, unsigned long, bool) (662 samples, 4.17%)</title><rect x="1723.8" y="499.0" width="79.3" height="15" fill="#d4d440" rx="2" ry="2"/>
+<text x="1726.8" y="510.0">DirtyCard..</text>
+</g>
+<g>
+<title>G1RefineCardClosure::do_card_ptr(signed char*, unsigned int) (660 samples, 4.16%)</title><rect x="1724.1" y="483.0" width="79.0" height="15" fill="#d1d13f" rx="2" ry="2"/>
+<text x="1727.1" y="494.0">G1RefineC..</text>
+</g>
+<g>
+<title>G1ParScanThreadState::trim_queue_partially() (595 samples, 3.75%)</title><rect x="1724.3" y="467.0" width="71.2" height="15" fill="#dcdc42" rx="2" ry="2"/>
+<text x="1727.3" y="478.0">G1ParSca..</text>
+</g>
+<g>
+<title>.annobin__ZN30OopOopIterateBackwardsDispatchI25G1ScanEvacuatedObjClosureE5Table25oop_oop_iterate_backwardsI13InstanceKlassjEEvPS0_P7oopDescP5Klass.start (4 samples, 0.03%)</title><rect x="1754.1" y="451.0" width="0.5" height="15" fill="#f47373" rx="2" ry="2"/>
+<text x="1757.1" y="462.0"></text>
+</g>
+<g>
+<title>G1ParScanThreadState::copy_to_survivor_space(InCSetState, oopDesc*, markOopDesc*) (327 samples, 2.06%)</title><rect x="1754.6" y="451.0" width="39.1" height="15" fill="#d5d540" rx="2" ry="2"/>
+<text x="1757.6" y="462.0">G1P..</text>
+</g>
+<g>
+<title>.annobin__ZN30OopOopIterateBackwardsDispatchI25G1ScanEvacuatedObjClosureE5Table25oop_oop_iterate_backwardsI13InstanceKlassjEEvPS0_P7oopDescP5Klass.start (247 samples, 1.56%)</title><rect x="1763.9" y="435.0" width="29.6" height="15" fill="#e96464" rx="2" ry="2"/>
+<text x="1766.9" y="446.0">.a..</text>
+</g>
+<g>
+<title>__memmove_avx_unaligned_erms (14 samples, 0.09%)</title><rect x="1793.9" y="451.0" width="1.6" height="15" fill="#f67676" rx="2" ry="2"/>
+<text x="1796.9" y="462.0"></text>
+</g>
+<g>
+<title>G1RemSet::refine_card_during_gc(signed char*, G1ScanObjsDuringUpdateRSClosure*) [clone .part.136] (63 samples, 0.40%)</title><rect x="1795.5" y="467.0" width="7.6" height="15" fill="#d1d13f" rx="2" ry="2"/>
+<text x="1798.5" y="478.0"></text>
+</g>
+<g>
+<title>.annobin__ZN10HeapRegion32oops_on_card_seq_iterate_carefulILb1E31G1ScanObjsDuringUpdateRSClosureEEb9MemRegionPT0_.start (62 samples, 0.39%)</title><rect x="1795.5" y="451.0" width="7.5" height="15" fill="#e76262" rx="2" ry="2"/>
+<text x="1798.5" y="462.0"></text>
+</g>
+<g>
+<title>G1BlockOffsetTablePart::forward_to_block_containing_addr_slow(HeapWord*, HeapWord*, void const*) (36 samples, 0.23%)</title><rect x="1796.0" y="435.0" width="4.3" height="15" fill="#dede43" rx="2" ry="2"/>
+<text x="1799.0" y="446.0"></text>
+</g>
+<g>
+<title>G1CollectedHeap::heap() (3 samples, 0.02%)</title><rect x="1798.4" y="419.0" width="0.4" height="15" fill="#cfcf3e" rx="2" ry="2"/>
+<text x="1801.4" y="430.0"></text>
+</g>
+<g>
+<title>HeapRegion::block_size(HeapWord const*) const (13 samples, 0.08%)</title><rect x="1798.8" y="419.0" width="1.5" height="15" fill="#dcdc42" rx="2" ry="2"/>
+<text x="1801.8" y="430.0"></text>
+</g>
+<g>
+<title>void G1ScanObjsDuringUpdateRSClosure::do_oop_work&lt;unsigned int&gt;(unsigned int*) (17 samples, 0.11%)</title><rect x="1800.6" y="435.0" width="2.0" height="15" fill="#c8c83c" rx="2" ry="2"/>
+<text x="1803.6" y="446.0"></text>
+</g>
+<g>
+<title>void OopOopIterateDispatch&lt;G1ScanObjsDuringUpdateRSClosure&gt;::Table::oop_oop_iterate&lt;InstanceKlass, unsigned int&gt;(G1ScanObjsDuringUpdateRSClosure*, oopDesc*, Klass*) (3 samples, 0.02%)</title><rect x="1802.6" y="435.0" width="0.4" height="15" fill="#e1e144" rx="2" ry="2"/>
+<text x="1805.6" y="446.0"></text>
+</g>
+<g>
+<title>G1RemSet::scan_rem_set(G1ParScanThreadState*, unsigned int) (49 samples, 0.31%)</title><rect x="1803.1" y="547.0" width="5.8" height="15" fill="#e1e144" rx="2" ry="2"/>
+<text x="1806.1" y="558.0"></text>
+</g>
+<g>
+<title>G1CollectionSet::iterate_from(HeapRegionClosure*, unsigned int, unsigned int) const (49 samples, 0.31%)</title><rect x="1803.1" y="531.0" width="5.8" height="15" fill="#dada42" rx="2" ry="2"/>
+<text x="1806.1" y="542.0"></text>
+</g>
+<g>
+<title>G1ScanRSForRegionClosure::do_heap_region(HeapRegion*) (49 samples, 0.31%)</title><rect x="1803.1" y="515.0" width="5.8" height="15" fill="#d1d13f" rx="2" ry="2"/>
+<text x="1806.1" y="526.0"></text>
+</g>
+<g>
+<title>G1ScanRSForRegionClosure::scan_rem_set_roots(HeapRegion*) (48 samples, 0.30%)</title><rect x="1803.1" y="499.0" width="5.7" height="15" fill="#dcdc42" rx="2" ry="2"/>
+<text x="1806.1" y="510.0"></text>
+</g>
+<g>
+<title>G1ParScanThreadState::trim_queue_partially() (18 samples, 0.11%)</title><rect x="1803.3" y="483.0" width="2.2" height="15" fill="#d7d741" rx="2" ry="2"/>
+<text x="1806.3" y="494.0"></text>
+</g>
+<g>
+<title>G1ParScanThreadState::copy_to_survivor_space(InCSetState, oopDesc*, markOopDesc*) (10 samples, 0.06%)</title><rect x="1804.3" y="467.0" width="1.2" height="15" fill="#e1e144" rx="2" ry="2"/>
+<text x="1807.3" y="478.0"></text>
+</g>
+<g>
+<title>.annobin__ZN30OopOopIterateBackwardsDispatchI25G1ScanEvacuatedObjClosureE5Table25oop_oop_iterate_backwardsI13InstanceKlassjEEvPS0_P7oopDescP5Klass.start (7 samples, 0.04%)</title><rect x="1804.5" y="451.0" width="0.9" height="15" fill="#e86464" rx="2" ry="2"/>
+<text x="1807.5" y="462.0"></text>
+</g>
+<g>
+<title>HeapRegionRemSetIterator::has_next(unsigned long&amp;) (3 samples, 0.02%)</title><rect x="1805.5" y="483.0" width="0.3" height="15" fill="#cfcf3e" rx="2" ry="2"/>
+<text x="1808.5" y="494.0"></text>
+</g>
+<g>
+<title>HeapRegionRemSetIterator::fine_has_next(unsigned long&amp;) (3 samples, 0.02%)</title><rect x="1805.5" y="467.0" width="0.3" height="15" fill="#caca3c" rx="2" ry="2"/>
+<text x="1808.5" y="478.0"></text>
+</g>
+<g>
+<title>bool HeapRegion::oops_on_card_seq_iterate_careful&lt;true, G1ScanObjsDuringScanRSClosure&gt;(MemRegion, G1ScanObjsDuringScanRSClosure*) (25 samples, 0.16%)</title><rect x="1805.8" y="483.0" width="3.0" height="15" fill="#d7d741" rx="2" ry="2"/>
+<text x="1808.8" y="494.0"></text>
+</g>
+<g>
+<title>.annobin__ZN21OopOopIterateDispatchI29G1ScanObjsDuringScanRSClosureE5Table15oop_oop_iterateI13InstanceKlassjEEvPS0_P7oopDescP5Klass.start (4 samples, 0.03%)</title><rect x="1806.1" y="467.0" width="0.5" height="15" fill="#fb7d7d" rx="2" ry="2"/>
+<text x="1809.1" y="478.0"></text>
+</g>
+<g>
+<title>void G1ScanObjsDuringScanRSClosure::do_oop_work&lt;unsigned int&gt;(unsigned int*) (19 samples, 0.12%)</title><rect x="1806.6" y="467.0" width="2.2" height="15" fill="#dada42" rx="2" ry="2"/>
+<text x="1809.6" y="478.0"></text>
+</g>
+<g>
+<title>G1RootProcessor::evacuate_roots(G1ParScanThreadState*, unsigned int) (556 samples, 3.50%)</title><rect x="1808.9" y="547.0" width="66.6" height="15" fill="#d7d741" rx="2" ry="2"/>
+<text x="1811.9" y="558.0">G1RootP..</text>
+</g>
+<g>
+<title>G1RootProcessor::process_java_roots(G1RootClosures*, G1GCPhaseTimes*, unsigned int) (556 samples, 3.50%)</title><rect x="1808.9" y="531.0" width="66.6" height="15" fill="#e0e044" rx="2" ry="2"/>
+<text x="1811.9" y="542.0">G1RootP..</text>
+</g>
+<g>
+<title>Threads::possibly_parallel_oops_do(bool, OopClosure*, CodeBlobClosure*) (556 samples, 3.50%)</title><rect x="1808.9" y="515.0" width="66.6" height="15" fill="#e4e445" rx="2" ry="2"/>
+<text x="1811.9" y="526.0">Threads..</text>
+</g>
+<g>
+<title>JavaThread::oops_do(OopClosure*, CodeBlobClosure*) (556 samples, 3.50%)</title><rect x="1808.9" y="499.0" width="66.6" height="15" fill="#dede43" rx="2" ry="2"/>
+<text x="1811.9" y="510.0">JavaThr..</text>
+</g>
+<g>
+<title>.annobin__ZN10HandleArea7oops_doEP10OopClosure.start (14 samples, 0.09%)</title><rect x="1808.9" y="483.0" width="1.7" height="15" fill="#eb6767" rx="2" ry="2"/>
+<text x="1811.9" y="494.0"></text>
+</g>
+<g>
+<title>G1ParScanThreadState::trim_queue_partially() (14 samples, 0.09%)</title><rect x="1808.9" y="467.0" width="1.7" height="15" fill="#d2d23f" rx="2" ry="2"/>
+<text x="1811.9" y="478.0"></text>
+</g>
+<g>
+<title>G1ParScanThreadState::copy_to_survivor_space(InCSetState, oopDesc*, markOopDesc*) (4 samples, 0.03%)</title><rect x="1810.0" y="451.0" width="0.5" height="15" fill="#c9c93c" rx="2" ry="2"/>
+<text x="1813.0" y="462.0"></text>
+</g>
+<g>
+<title>.annobin__ZN30OopOopIterateBackwardsDispatchI25G1ScanEvacuatedObjClosureE5Table25oop_oop_iterate_backwardsI13InstanceKlassjEEvPS0_P7oopDescP5Klass.start (4 samples, 0.03%)</title><rect x="1810.0" y="435.0" width="0.5" height="15" fill="#e15a5a" rx="2" ry="2"/>
+<text x="1813.0" y="446.0"></text>
+</g>
+<g>
+<title>frame::oops_do_internal(OopClosure*, CodeBlobClosure*, RegisterMap*, bool) (539 samples, 3.40%)</title><rect x="1810.6" y="483.0" width="64.6" height="15" fill="#c8c83c" rx="2" ry="2"/>
+<text x="1813.6" y="494.0">frame::..</text>
+</g>
+<g>
+<title>OopMapSet::oops_do(frame const*, RegisterMap const*, OopClosure*) (539 samples, 3.40%)</title><rect x="1810.6" y="467.0" width="64.6" height="15" fill="#d6d640" rx="2" ry="2"/>
+<text x="1813.6" y="478.0">OopMapS..</text>
+</g>
+<g>
+<title>G1ParScanThreadState::trim_queue_partially() (537 samples, 3.38%)</title><rect x="1810.9" y="451.0" width="64.3" height="15" fill="#d0d03e" rx="2" ry="2"/>
+<text x="1813.9" y="462.0">G1ParSc..</text>
+</g>
+<g>
+<title>.annobin__ZN30OopOopIterateBackwardsDispatchI25G1ScanEvacuatedObjClosureE5Table25oop_oop_iterate_backwardsI13InstanceKlassjEEvPS0_P7oopDescP5Klass.start (3 samples, 0.02%)</title><rect x="1846.4" y="435.0" width="0.4" height="15" fill="#f67676" rx="2" ry="2"/>
+<text x="1849.4" y="446.0"></text>
+</g>
+<g>
+<title>G1ParScanThreadState::copy_to_survivor_space(InCSetState, oopDesc*, markOopDesc*) (229 samples, 1.44%)</title><rect x="1846.8" y="435.0" width="27.4" height="15" fill="#e0e044" rx="2" ry="2"/>
+<text x="1849.8" y="446.0">G..</text>
+</g>
+<g>
+<title>.annobin__ZN30OopOopIterateBackwardsDispatchI25G1ScanEvacuatedObjClosureE5Table25oop_oop_iterate_backwardsI13InstanceKlassjEEvPS0_P7oopDescP5Klass.start (163 samples, 1.03%)</title><rect x="1854.3" y="419.0" width="19.5" height="15" fill="#f06e6e" rx="2" ry="2"/>
+<text x="1857.3" y="430.0"></text>
+</g>
+<g>
+<title>__memmove_avx_unaligned_erms (8 samples, 0.05%)</title><rect x="1874.2" y="435.0" width="1.0" height="15" fill="#ef6c6c" rx="2" ry="2"/>
+<text x="1877.2" y="446.0"></text>
+</g>
+<g>
+<title>frame::oops_interpreted_do(OopClosure*, RegisterMap const*, bool) (3 samples, 0.02%)</title><rect x="1875.2" y="483.0" width="0.3" height="15" fill="#caca3c" rx="2" ry="2"/>
+<text x="1878.2" y="494.0"></text>
+</g>
+<g>
+<title>InterpreterOopMap::iterate_oop(OffsetClosure*) const (3 samples, 0.02%)</title><rect x="1875.2" y="467.0" width="0.3" height="15" fill="#cdcd3d" rx="2" ry="2"/>
+<text x="1878.2" y="478.0"></text>
+</g>
+<g>
+<title>G1ParScanThreadState::trim_queue_partially() (3 samples, 0.02%)</title><rect x="1875.2" y="451.0" width="0.3" height="15" fill="#d6d640" rx="2" ry="2"/>
+<text x="1878.2" y="462.0"></text>
+</g>
+<g>
+<title>G1CMConcurrentMarkingTask::work(unsigned int) (95 samples, 0.60%)</title><rect x="1875.5" y="563.0" width="11.4" height="15" fill="#e3e345" rx="2" ry="2"/>
+<text x="1878.5" y="574.0"></text>
+</g>
+<g>
+<title>G1CMTask::do_marking_step(double, bool, bool) (93 samples, 0.59%)</title><rect x="1875.5" y="547.0" width="11.2" height="15" fill="#c9c93c" rx="2" ry="2"/>
+<text x="1878.5" y="558.0"></text>
+</g>
+<g>
+<title>G1CMTask::drain_local_queue(bool) [clone .part.173] [clone .constprop.440] (7 samples, 0.04%)</title><rect x="1876.6" y="531.0" width="0.8" height="15" fill="#caca3c" rx="2" ry="2"/>
+<text x="1879.6" y="542.0"></text>
+</g>
+<g>
+<title>void G1CMTask::process_grey_task_entry&lt;true&gt;(G1TaskQueueEntry) (5 samples, 0.03%)</title><rect x="1876.8" y="515.0" width="0.6" height="15" fill="#cfcf3e" rx="2" ry="2"/>
+<text x="1879.8" y="526.0"></text>
+</g>
+<g>
+<title>.annobin__ZN21OopOopIterateDispatchI14G1CMOopClosureE5Table15oop_oop_iterateI13InstanceKlassjEEvPS0_P7oopDescP5Klass.start (3 samples, 0.02%)</title><rect x="1877.0" y="499.0" width="0.3" height="15" fill="#f67676" rx="2" ry="2"/>
+<text x="1880.0" y="510.0"></text>
+</g>
+<g>
+<title>G1CMTask::drain_satb_buffers() (4 samples, 0.03%)</title><rect x="1877.6" y="531.0" width="0.4" height="15" fill="#dada42" rx="2" ry="2"/>
+<text x="1880.6" y="542.0"></text>
+</g>
+<g>
+<title>.annobin__ZN16SATBMarkQueueSet33apply_closure_to_completed_bufferEP17SATBBufferClosure.start (4 samples, 0.03%)</title><rect x="1877.6" y="515.0" width="0.4" height="15" fill="#e35d5d" rx="2" ry="2"/>
+<text x="1880.6" y="526.0"></text>
+</g>
+<g>
+<title>.annobin__ZN21G1CMSATBBufferClosure9do_bufferEPPvm.start (4 samples, 0.03%)</title><rect x="1877.6" y="499.0" width="0.4" height="15" fill="#fd8080" rx="2" ry="2"/>
+<text x="1880.6" y="510.0"></text>
+</g>
+<g>
+<title>G1CMTask::make_reference_grey(oopDesc*) (4 samples, 0.03%)</title><rect x="1877.6" y="483.0" width="0.4" height="15" fill="#e2e244" rx="2" ry="2"/>
+<text x="1880.6" y="494.0"></text>
+</g>
+<g>
+<title>G1CMTask::regular_clock_call() (4 samples, 0.03%)</title><rect x="1878.0" y="531.0" width="0.5" height="15" fill="#cccc3d" rx="2" ry="2"/>
+<text x="1881.0" y="542.0"></text>
+</g>
+<g>
+<title>__getrusage (4 samples, 0.03%)</title><rect x="1878.0" y="515.0" width="0.5" height="15" fill="#ef6d6d" rx="2" ry="2"/>
+<text x="1881.0" y="526.0"></text>
+</g>
+<g>
+<title>void G1CMTask::process_grey_task_entry&lt;true&gt;(G1TaskQueueEntry) (67 samples, 0.42%)</title><rect x="1878.6" y="531.0" width="8.1" height="15" fill="#dede43" rx="2" ry="2"/>
+<text x="1881.6" y="542.0"></text>
+</g>
+<g>
+<title>.annobin__ZN21OopOopIterateDispatchI14G1CMOopClosureE5Table15oop_oop_iterateI13InstanceKlassjEEvPS0_P7oopDescP5Klass.start (62 samples, 0.39%)</title><rect x="1878.9" y="515.0" width="7.4" height="15" fill="#f87979" rx="2" ry="2"/>
+<text x="1881.9" y="526.0"></text>
+</g>
+<g>
+<title>G1CMTask::make_reference_grey(oopDesc*) (33 samples, 0.21%)</title><rect x="1880.9" y="499.0" width="4.0" height="15" fill="#c8c83c" rx="2" ry="2"/>
+<text x="1883.9" y="510.0"></text>
+</g>
+<g>
+<title>oopDesc::size() (12 samples, 0.08%)</title><rect x="1884.9" y="499.0" width="1.4" height="15" fill="#d9d941" rx="2" ry="2"/>
+<text x="1887.9" y="510.0"></text>
+</g>
+<g>
+<title>G1CMRootRegionScanTask::work(unsigned int) (10 samples, 0.06%)</title><rect x="1886.9" y="563.0" width="1.2" height="15" fill="#dede43" rx="2" ry="2"/>
+<text x="1889.9" y="574.0"></text>
+</g>
+<g>
+<title>void OopOopIterateDispatch&lt;G1RootRegionScanClosure&gt;::Table::oop_oop_iterate&lt;InstanceKlass, unsigned int&gt;(G1RootRegionScanClosure*, oopDesc*, Klass*) (9 samples, 0.06%)</title><rect x="1887.0" y="547.0" width="1.1" height="15" fill="#dede43" rx="2" ry="2"/>
+<text x="1890.0" y="558.0"></text>
+</g>
+<g>
+<title>G1RebuildRemSetTask::work(unsigned int) (126 samples, 0.79%)</title><rect x="1888.4" y="563.0" width="15.1" height="15" fill="#e3e345" rx="2" ry="2"/>
+<text x="1891.4" y="574.0"></text>
+</g>
+<g>
+<title>HeapRegionManager::par_iterate(HeapRegionClosure*, HeapRegionClaimer*, unsigned int) const (126 samples, 0.79%)</title><rect x="1888.4" y="547.0" width="15.1" height="15" fill="#caca3c" rx="2" ry="2"/>
+<text x="1891.4" y="558.0"></text>
+</g>
+<g>
+<title>G1CMBitMap::get_next_marked_addr(HeapWord const*, HeapWord const*) const (4 samples, 0.03%)</title><rect x="1888.4" y="531.0" width="0.5" height="15" fill="#dfdf43" rx="2" ry="2"/>
+<text x="1891.4" y="542.0"></text>
+</g>
+<g>
+<title>G1RebuildRemSetTask::G1RebuildRemSetHeapRegionClosure::do_heap_region(HeapRegion*) (121 samples, 0.76%)</title><rect x="1888.9" y="531.0" width="14.5" height="15" fill="#e4e445" rx="2" ry="2"/>
+<text x="1891.9" y="542.0"></text>
+</g>
+<g>
+<title>G1BlockOffsetTablePart::forward_to_block_containing_addr_slow(HeapWord*, HeapWord*, void const*) (3 samples, 0.02%)</title><rect x="1889.9" y="515.0" width="0.3" height="15" fill="#cbcb3d" rx="2" ry="2"/>
+<text x="1892.9" y="526.0"></text>
+</g>
+<g>
+<title>OtherRegionsTable::add_reference(void*, unsigned int) (19 samples, 0.12%)</title><rect x="1890.4" y="515.0" width="2.2" height="15" fill="#d0d03e" rx="2" ry="2"/>
+<text x="1893.4" y="526.0"></text>
+</g>
+<g>
+<title>void G1RebuildRemSetClosure::do_oop_work&lt;unsigned int&gt;(unsigned int*) (57 samples, 0.36%)</title><rect x="1892.6" y="515.0" width="6.9" height="15" fill="#cfcf3e" rx="2" ry="2"/>
+<text x="1895.6" y="526.0"></text>
+</g>
+<g>
+<title>void OopOopIterateDispatch&lt;G1RebuildRemSetClosure&gt;::Table::oop_oop_iterate&lt;InstanceKlass, unsigned int&gt;(G1RebuildRemSetClosure*, oopDesc*, Klass*) (33 samples, 0.21%)</title><rect x="1899.5" y="515.0" width="3.9" height="15" fill="#e0e044" rx="2" ry="2"/>
+<text x="1902.5" y="526.0"></text>
+</g>
+<g>
+<title>BitMap::par_at_put(unsigned long, bool) (10 samples, 0.06%)</title><rect x="1901.3" y="499.0" width="1.2" height="15" fill="#caca3c" rx="2" ry="2"/>
+<text x="1904.3" y="510.0"></text>
+</g>
+<g>
+<title>OtherRegionsTable::add_reference(void*, unsigned int) (8 samples, 0.05%)</title><rect x="1902.5" y="499.0" width="0.9" height="15" fill="#dede43" rx="2" ry="2"/>
+<text x="1905.5" y="510.0"></text>
+</g>
+<g>
+<title>JavaThread::thread_main_inner() (51 samples, 0.32%)</title><rect x="1903.7" y="579.0" width="6.1" height="15" fill="#d0d03e" rx="2" ry="2"/>
+<text x="1906.7" y="590.0"></text>
+</g>
+<g>
+<title>CompileBroker::compiler_thread_loop() (51 samples, 0.32%)</title><rect x="1903.7" y="563.0" width="6.1" height="15" fill="#cdcd3d" rx="2" ry="2"/>
+<text x="1906.7" y="574.0"></text>
+</g>
+<g>
+<title>CompileBroker::invoke_compiler_on_method(CompileTask*) (50 samples, 0.32%)</title><rect x="1903.7" y="547.0" width="5.9" height="15" fill="#e4e445" rx="2" ry="2"/>
+<text x="1906.7" y="558.0"></text>
+</g>
+<g>
+<title>C2Compiler::compile_method(ciEnv*, ciMethod*, int, DirectiveSet*) (43 samples, 0.27%)</title><rect x="1903.7" y="531.0" width="5.1" height="15" fill="#dede43" rx="2" ry="2"/>
+<text x="1906.7" y="542.0"></text>
+</g>
+<g>
+<title>Compile::Compile(ciEnv*, C2Compiler*, ciMethod*, int, bool, bool, bool, bool, DirectiveSet*) (43 samples, 0.27%)</title><rect x="1903.7" y="515.0" width="5.1" height="15" fill="#caca3c" rx="2" ry="2"/>
+<text x="1906.7" y="526.0"></text>
+</g>
+<g>
+<title>Compile::Code_Gen() (27 samples, 0.17%)</title><rect x="1903.7" y="499.0" width="3.2" height="15" fill="#e5e545" rx="2" ry="2"/>
+<text x="1906.7" y="510.0"></text>
+</g>
+<g>
+<title>PhaseCFG::do_global_code_motion() (4 samples, 0.03%)</title><rect x="1904.1" y="483.0" width="0.5" height="15" fill="#e1e144" rx="2" ry="2"/>
+<text x="1907.1" y="494.0"></text>
+</g>
+<g>
+<title>PhaseCFG::global_code_motion() (4 samples, 0.03%)</title><rect x="1904.1" y="467.0" width="0.5" height="15" fill="#d2d23f" rx="2" ry="2"/>
+<text x="1907.1" y="478.0"></text>
+</g>
+<g>
+<title>PhaseChaitin::Register_Allocate() (19 samples, 0.12%)</title><rect x="1904.6" y="483.0" width="2.3" height="15" fill="#dcdc42" rx="2" ry="2"/>
+<text x="1907.6" y="494.0"></text>
+</g>
+<g>
+<title>PhaseChaitin::build_ifg_physical(ResourceArea*) (4 samples, 0.03%)</title><rect x="1905.3" y="467.0" width="0.5" height="15" fill="#d5d540" rx="2" ry="2"/>
+<text x="1908.3" y="478.0"></text>
+</g>
+<g>
+<title>PhaseChaitin::post_allocate_copy_removal() (3 samples, 0.02%)</title><rect x="1905.8" y="467.0" width="0.4" height="15" fill="#d5d540" rx="2" ry="2"/>
+<text x="1908.8" y="478.0"></text>
+</g>
+<g>
+<title>PhaseLive::compute(unsigned int) (4 samples, 0.03%)</title><rect x="1906.4" y="467.0" width="0.5" height="15" fill="#dbdb42" rx="2" ry="2"/>
+<text x="1909.4" y="478.0"></text>
+</g>
+<g>
+<title>PhaseLive::add_liveout(Block*, IndexSet*, VectorSet&amp;) (3 samples, 0.02%)</title><rect x="1906.5" y="451.0" width="0.4" height="15" fill="#d1d13f" rx="2" ry="2"/>
+<text x="1909.5" y="462.0"></text>
+</g>
+<g>
+<title>Compile::Optimize() (10 samples, 0.06%)</title><rect x="1906.9" y="499.0" width="1.2" height="15" fill="#dada42" rx="2" ry="2"/>
+<text x="1909.9" y="510.0"></text>
+</g>
+<g>
+<title>ParseGenerator::generate(JVMState*) (6 samples, 0.04%)</title><rect x="1908.1" y="499.0" width="0.7" height="15" fill="#cbcb3d" rx="2" ry="2"/>
+<text x="1911.1" y="510.0"></text>
+</g>
+<g>
+<title>Parse::Parse(JVMState*, ciMethod*, float) (6 samples, 0.04%)</title><rect x="1908.1" y="483.0" width="0.7" height="15" fill="#caca3c" rx="2" ry="2"/>
+<text x="1911.1" y="494.0"></text>
+</g>
+<g>
+<title>Parse::do_all_blocks() (6 samples, 0.04%)</title><rect x="1908.1" y="467.0" width="0.7" height="15" fill="#d3d33f" rx="2" ry="2"/>
+<text x="1911.1" y="478.0"></text>
+</g>
+<g>
+<title>Parse::do_one_block() (6 samples, 0.04%)</title><rect x="1908.1" y="451.0" width="0.7" height="15" fill="#cccc3d" rx="2" ry="2"/>
+<text x="1911.1" y="462.0"></text>
+</g>
+<g>
+<title>Parse::do_one_bytecode() (6 samples, 0.04%)</title><rect x="1908.1" y="435.0" width="0.7" height="15" fill="#dbdb42" rx="2" ry="2"/>
+<text x="1911.1" y="446.0"></text>
+</g>
+<g>
+<title>Parse::do_call() (6 samples, 0.04%)</title><rect x="1908.1" y="419.0" width="0.7" height="15" fill="#cbcb3d" rx="2" ry="2"/>
+<text x="1911.1" y="430.0"></text>
+</g>
+<g>
+<title>ParseGenerator::generate(JVMState*) (6 samples, 0.04%)</title><rect x="1908.1" y="403.0" width="0.7" height="15" fill="#e2e244" rx="2" ry="2"/>
+<text x="1911.1" y="414.0"></text>
+</g>
+<g>
+<title>Parse::Parse(JVMState*, ciMethod*, float) (6 samples, 0.04%)</title><rect x="1908.1" y="387.0" width="0.7" height="15" fill="#d9d941" rx="2" ry="2"/>
+<text x="1911.1" y="398.0"></text>
+</g>
+<g>
+<title>Parse::do_all_blocks() (6 samples, 0.04%)</title><rect x="1908.1" y="371.0" width="0.7" height="15" fill="#cece3e" rx="2" ry="2"/>
+<text x="1911.1" y="382.0"></text>
+</g>
+<g>
+<title>Parse::do_one_block() (6 samples, 0.04%)</title><rect x="1908.1" y="355.0" width="0.7" height="15" fill="#dcdc42" rx="2" ry="2"/>
+<text x="1911.1" y="366.0"></text>
+</g>
+<g>
+<title>Parse::do_one_bytecode() (6 samples, 0.04%)</title><rect x="1908.1" y="339.0" width="0.7" height="15" fill="#d7d741" rx="2" ry="2"/>
+<text x="1911.1" y="350.0"></text>
+</g>
+<g>
+<title>Parse::do_call() (3 samples, 0.02%)</title><rect x="1908.2" y="323.0" width="0.4" height="15" fill="#d1d13f" rx="2" ry="2"/>
+<text x="1911.2" y="334.0"></text>
+</g>
+<g>
+<title>Compiler::compile_method(ciEnv*, ciMethod*, int, DirectiveSet*) (7 samples, 0.04%)</title><rect x="1908.8" y="531.0" width="0.8" height="15" fill="#e4e445" rx="2" ry="2"/>
+<text x="1911.8" y="542.0"></text>
+</g>
+<g>
+<title>Compilation::Compilation(AbstractCompiler*, ciEnv*, ciMethod*, int, BufferBlob*, DirectiveSet*) (7 samples, 0.04%)</title><rect x="1908.8" y="515.0" width="0.8" height="15" fill="#dfdf43" rx="2" ry="2"/>
+<text x="1911.8" y="526.0"></text>
+</g>
+<g>
+<title>.annobin__ZN11Compilation14compile_methodEv.start (7 samples, 0.04%)</title><rect x="1908.8" y="499.0" width="0.8" height="15" fill="#e45e5e" rx="2" ry="2"/>
+<text x="1911.8" y="510.0"></text>
+</g>
+<g>
+<title>Compilation::compile_java_method() (7 samples, 0.04%)</title><rect x="1908.8" y="483.0" width="0.8" height="15" fill="#c9c93c" rx="2" ry="2"/>
+<text x="1911.8" y="494.0"></text>
+</g>
+<g>
+<title>.annobin__ZN11Compilation8emit_lirEv.start (5 samples, 0.03%)</title><rect x="1908.9" y="467.0" width="0.6" height="15" fill="#f06e6e" rx="2" ry="2"/>
+<text x="1911.9" y="478.0"></text>
+</g>
+<g>
+<title>LinearScan::do_linear_scan() (5 samples, 0.03%)</title><rect x="1908.9" y="451.0" width="0.6" height="15" fill="#d3d33f" rx="2" ry="2"/>
+<text x="1911.9" y="462.0"></text>
+</g>
+<g>
+<title>LinearScan::build_intervals() (3 samples, 0.02%)</title><rect x="1909.0" y="435.0" width="0.4" height="15" fill="#cece3e" rx="2" ry="2"/>
+<text x="1912.0" y="446.0"></text>
+</g>
+</g>
+</svg>
+
