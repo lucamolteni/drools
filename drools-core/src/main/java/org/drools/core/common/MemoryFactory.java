@@ -17,9 +17,57 @@
 package org.drools.core.common;
 
 import org.drools.core.RuleBaseConfiguration;
+import org.drools.core.reteoo.AbstractTerminalNode;
+import org.drools.core.reteoo.AsyncReceiveNode;
+import org.drools.core.reteoo.AsyncSendNode;
+import org.drools.core.reteoo.BetaNode;
+import org.drools.core.reteoo.ConditionalBranchNode;
+import org.drools.core.reteoo.FromNode;
+import org.drools.core.reteoo.LeftInputAdapterNode;
+import org.drools.core.reteoo.ObjectTypeNode;
+import org.drools.core.reteoo.QueryElementNode;
+import org.drools.core.reteoo.RightInputAdapterNode;
+import org.drools.core.reteoo.TimerNode;
+import org.drools.core.reteoo.WindowNode;
+import org.drools.core.rule.EvalCondition;
 
 public interface MemoryFactory<T extends Memory> {
     int getMemoryId();
     
     T createMemory(RuleBaseConfiguration config, InternalWorkingMemory wm);
+
+    // Avoid secondary super cache invalidation by testing for abstract classes first
+    // Then interfaces
+    // See: https://issues.redhat.com/browse/DROOLS-7521
+    static MemoryFactory getMemoryFactory(Object memoryFactory) {
+        if (memoryFactory instanceof AsyncSendNode) {
+            return (MemoryFactory) memoryFactory;
+        } else if (memoryFactory instanceof AsyncReceiveNode) {
+            return (MemoryFactory) memoryFactory;
+        } else if (memoryFactory instanceof EvalCondition) {
+            return (MemoryFactory) memoryFactory;
+        } else if (memoryFactory instanceof ConditionalBranchNode) {
+            return (ConditionalBranchNode) memoryFactory;
+        } else if (memoryFactory instanceof FromNode) {
+            return (FromNode) memoryFactory;
+        } else if (memoryFactory instanceof LeftInputAdapterNode) {
+            return (LeftInputAdapterNode) memoryFactory;
+        } else if (memoryFactory instanceof QueryElementNode) {
+            return (QueryElementNode) memoryFactory;
+        } else if (memoryFactory instanceof TimerNode) {
+            return (TimerNode) memoryFactory;
+        } else if (memoryFactory instanceof WindowNode) {
+            return (WindowNode) memoryFactory;
+        } else if (memoryFactory instanceof BetaNode) {
+            return (BetaNode) memoryFactory;
+        } else if (memoryFactory instanceof RightInputAdapterNode) {
+            return (RightInputAdapterNode) memoryFactory;
+        } else if (memoryFactory instanceof ObjectTypeNode) {
+            return (ObjectTypeNode) memoryFactory;
+        } else if (memoryFactory instanceof AbstractTerminalNode) {
+            return (AbstractTerminalNode) memoryFactory;
+        } else {
+            return (MemoryFactory) memoryFactory;
+        }
+    }
 }
