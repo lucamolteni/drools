@@ -24,14 +24,33 @@ import org.drools.core.reteoo.BetaNode;
 import org.drools.core.reteoo.ConditionalBranchNode;
 import org.drools.core.reteoo.FromNode;
 import org.drools.core.reteoo.LeftInputAdapterNode;
+import org.drools.core.reteoo.LeftTupleSink;
 import org.drools.core.reteoo.ObjectTypeNode;
 import org.drools.core.reteoo.QueryElementNode;
+import org.drools.core.reteoo.QueryTerminalNode;
 import org.drools.core.reteoo.RightInputAdapterNode;
+import org.drools.core.reteoo.RuleTerminalNode;
 import org.drools.core.reteoo.TimerNode;
 import org.drools.core.reteoo.WindowNode;
 import org.drools.core.rule.EvalCondition;
 
 public interface MemoryFactory<T extends Memory> {
+
+    // Avoid secondary super cache invalidation by testing for abstract classes first
+    // Then interfaces
+    // See: https://issues.redhat.com/browse/DROOLS-7521
+    static MemoryFactory getTerminalNode(LeftTupleSink sink) {
+        MemoryFactory terminalNode;
+        if(sink instanceof RuleTerminalNode) {
+            terminalNode = ((RuleTerminalNode) sink);
+        } else if (sink instanceof QueryTerminalNode) {
+            terminalNode = ((QueryTerminalNode) sink);
+        } else {
+            terminalNode = ((MemoryFactory) sink);
+        }
+        return terminalNode;
+    }
+
     int getMemoryId();
     
     T createMemory(RuleBaseConfiguration config, InternalWorkingMemory wm);
