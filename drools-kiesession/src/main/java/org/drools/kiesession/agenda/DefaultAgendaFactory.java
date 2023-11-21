@@ -36,8 +36,9 @@ public class DefaultAgendaFactory implements AgendaFactory, Serializable {
     private DefaultAgendaFactory() { }
 
     public InternalAgenda createAgenda(InternalWorkingMemory workingMemory) {
-        return workingMemory.getKnowledgeBase().getRuleBaseConfiguration().isParallelExecution() ?
-                new CompositeDefaultAgenda( workingMemory ) :
-                new DefaultAgenda( workingMemory );
+//        return workingMemory.getKnowledgeBase().getRuleBaseConfiguration().isParallelExecution() ?
+//                new CompositeDefaultAgenda( workingMemory ) :
+//                new DefaultAgenda( workingMemory );
+        return new SimpleAgenda(workingMemory);
     }
 }

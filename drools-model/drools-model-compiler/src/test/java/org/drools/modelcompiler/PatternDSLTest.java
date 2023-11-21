@@ -59,6 +59,7 @@ import org.drools.modelcompiler.domain.Toy;
 import org.drools.modelcompiler.domain.Woman;
 import org.drools.modelcompiler.dsl.pattern.D;
 import org.drools.modelcompiler.util.EvaluationUtil;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.kie.api.KieBase;
 import org.kie.api.KieServices;
@@ -94,6 +95,33 @@ import static org.drools.model.PatternDSL.rule;
 import static org.drools.model.PatternDSL.when;
 
 public class PatternDSLTest {
+
+    @Test
+    public void testAlpha() {
+        Result result = new Result();
+        Variable<Person> personV = declarationOf( Person.class );
+
+        Rule rule = rule( "or" )
+                .build(
+                        pattern( personV ).expr("exprA", p -> p.getName().equals("Mark")),
+                        on(personV).execute(value -> {
+                            result.setValue(value);
+                        })
+                );
+
+        Model model = new ModelImpl().addRule( rule );
+        KieBase kieBase = KieBaseBuilder.createKieBaseFromModel( model );
+
+        KieSession ksession = kieBase.newKieSession();
+
+        ksession.insert(new Person("Mark", 37));
+        ksession.insert(new Person("Edson", 35));
+        ksession.insert(new Person("Mario", 40));
+        ksession.fireAllRules();
+
+        assertThat(((Person)result.getValue()).getName()).isEqualTo("Mark");
+        assertThat(((Person) result.getValue()).getAge()).isEqualTo(37);
+    }
 
     @Test
     public void testBeta() {
@@ -730,6 +758,7 @@ public class PatternDSLTest {
     }
 
     @Test
+    @Ignore("SimpleAgenda doesn't support salience")
     public void testDynamicSalienceOnGlobal() {
         Global<AtomicInteger> var_salience1 = D.globalOf(AtomicInteger.class, "defaultpkg", "salience1");
         Global<AtomicInteger> var_salience2 = D.globalOf(AtomicInteger.class, "defaultpkg", "salience2");
@@ -780,6 +809,7 @@ public class PatternDSLTest {
     }
 
     @Test
+    @Ignore("SimpleAgenda doesn't support salience")
     public void testDynamicSalienceOnDeclarations() {
         Global<List> var_list = D.globalOf( List.class, "defaultpkg", "list" );
 

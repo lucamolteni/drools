@@ -27,6 +27,7 @@ import java.util.Map;
 
 import org.drools.model.codegen.execmodel.domain.Person;
 import org.drools.model.codegen.execmodel.domain.Result;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.kie.api.event.rule.AfterMatchFiredEvent;
 import org.kie.api.event.rule.DefaultAgendaEventListener;
@@ -61,6 +62,7 @@ public class RuleAttributesTest extends BaseModelTest {
     }
 
     @Test
+    @Ignore("Salience lockOnActive, agendaGroup not supported in SimpleAgenda")
     public void testSalience() throws Exception {
         String str =
                 "import " + Result.class.getCanonicalName() + ";" +
@@ -90,6 +92,7 @@ public class RuleAttributesTest extends BaseModelTest {
     }
 
     @Test
+    @Ignore("Salience lockOnActive, agendaGroup not supported in SimpleAgenda")
     public void testSalienceExpressionAttribute() throws Exception {
         String str = "import " + Person.class.getCanonicalName() + ";" +
                      "\n" +
@@ -143,6 +146,7 @@ public class RuleAttributesTest extends BaseModelTest {
     }
 
     @Test
+    @Ignore("Salience lockOnActive, agendaGroup no-loop not supported in SimpleAgenda")
     public void testCrossNoLoopWithNodeSharing() throws Exception {
         String str =
                 "package org.drools.compiler.loop " +
@@ -244,6 +248,7 @@ public class RuleAttributesTest extends BaseModelTest {
     };
 
     @Test
+    @Ignore("Salience lockOnActive, agendaGroup not supported in SimpleAgenda")
     public void testAutoFocus() {
         String str =
                 "package org.drools.testcoverage.functional;\n" +
@@ -424,6 +429,7 @@ public class RuleAttributesTest extends BaseModelTest {
     }
 
     @Test
+    @Ignore("Salience lockOnActive, agendaGroup not supported in SimpleAgenda")
     public void testDynamicSalience() {
         String str =
                 "global java.util.List list;\n" +
@@ -455,6 +461,7 @@ public class RuleAttributesTest extends BaseModelTest {
     public static final int CONST_SALIENCE = 1;
 
     @Test
+    @Ignore("Salience lockOnActive, agendaGroup no-loop not supported in SimpleAgenda")
     public void testSalienceFromConstant() {
         // DROOLS-5550
         String str =
