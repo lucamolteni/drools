@@ -96,6 +96,33 @@ import static org.drools.model.PatternDSL.when;
 public class PatternDSLTest {
 
     @Test
+    public void testAlpha() {
+        Result result = new Result();
+        Variable<Person> personV = declarationOf( Person.class );
+
+        Rule rule = rule( "or" )
+                .build(
+                        pattern( personV ).expr("exprA", p -> p.getName().equals("Mark")),
+                        on(personV).execute(value -> {
+                            result.setValue(value);
+                        })
+                );
+
+        Model model = new ModelImpl().addRule( rule );
+        KieBase kieBase = KieBaseBuilder.createKieBaseFromModel( model );
+
+        KieSession ksession = kieBase.newKieSession();
+
+        ksession.insert(new Person("Mark", 37));
+        ksession.insert(new Person("Edson", 35));
+        ksession.insert(new Person("Mario", 40));
+        ksession.fireAllRules();
+
+        assertThat(((Person)result.getValue()).getName()).isEqualTo("Mark");
+        assertThat(((Person) result.getValue()).getAge()).isEqualTo(37);
+    }
+
+    @Test
     public void testBeta() {
         Result result = new Result();
         Variable<Person> markV = declarationOf( Person.class );
