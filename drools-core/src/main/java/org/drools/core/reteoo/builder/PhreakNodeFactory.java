@@ -60,6 +60,7 @@ import org.drools.core.reteoo.QueryTerminalNode;
 import org.drools.core.reteoo.ReactiveFromNode;
 import org.drools.core.reteoo.RightInputAdapterNode;
 import org.drools.core.reteoo.RuleTerminalNode;
+import org.drools.core.reteoo.SimpleAccumulateNode;
 import org.drools.core.reteoo.TerminalNode;
 import org.drools.core.reteoo.TimerNode;
 import org.drools.core.reteoo.WindowNode;
@@ -125,7 +126,7 @@ public class PhreakNodeFactory implements NodeFactory, Serializable {
     public AccumulateNode buildAccumulateNode(int id, LeftTupleSource leftInput, ObjectSource rightInput,
                                               AlphaNodeFieldConstraint[] resultConstraints, BetaConstraints sourceBinder,
                                               BetaConstraints resultBinder, Accumulate accumulate, BuildContext context) {
-        return new AccumulateNode(id, leftInput, rightInput, resultConstraints, sourceBinder, resultBinder, accumulate, context );
+        return new SimpleAccumulateNode(id, leftInput, rightInput, resultConstraints, sourceBinder, resultBinder, accumulate, context );
     }
 
     public LeftInputAdapterNode buildLeftInputAdapterNode( int id, ObjectSource objectSource, BuildContext context, boolean terminal ) {

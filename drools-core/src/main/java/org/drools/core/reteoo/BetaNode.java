@@ -98,7 +98,7 @@ public abstract class BetaNode extends LeftTupleSource
 
     private transient ObjectTypeNode objectTypeNode;
 
-    private boolean rightInputIsPassive;
+    protected boolean rightInputIsPassive;
 
     private boolean indexable;
 

@@ -33,6 +33,7 @@ import org.drools.base.rule.Accumulate;
 import org.drools.base.rule.Pattern;
 import org.drools.core.ClockType;
 import org.drools.core.base.accumulators.CollectSetAccumulateFunction;
+import org.drools.core.reteoo.ReteDumper;
 import org.drools.core.rule.consequence.InternalMatch;
 import org.drools.model.DSL;
 import org.drools.model.Global;
@@ -305,6 +306,8 @@ public class PatternDSLTest {
 
         Model model = new ModelImpl().addRule( rule );
         KieBase kieBase = KieBaseBuilder.createKieBaseFromModel(model, EqualityBehaviorOption.EQUALITY);
+
+        ReteDumper.dumpRete(kieBase);
 
         KieSession ksession = kieBase.newKieSession();
 
