@@ -55,6 +55,10 @@ public class PhreakAccumulateNode {
                        TupleSets<LeftTuple> trgLeftTuples,
                        TupleSets<LeftTuple> stagedLeftTuples) {
 
+        if(true) {
+            throw new UnsupportedOperationException();
+        }
+
         BetaMemory bm = am.getBetaMemory();
         TupleSets<RightTuple> srcRightTuples = bm.getStagedRightTuples().takeAll();
 
@@ -155,7 +159,7 @@ public class PhreakAccumulateNode {
                 ltm.add(leftTuple);
             }
 
-            BaseAccumulation accresult = initAccumulationContext( am, reteEvaluator, accumulate, leftTuple );
+//            BaseAccumulation accresult = initAccumulationContext( am, reteEvaluator, accumulate, leftTuple );
             if (accNode.isRightInputIsRiaNode()) {
                 // This is a subnetwork, do not process further. As all matches will processed
                 // by the right insert. This is to avoid double iteration (first right side iteration
@@ -182,7 +186,7 @@ public class PhreakAccumulateNode {
                     // add a match
                     addMatch(accNode, accumulate, leftTuple, rightTuple,
                              null, null, reteEvaluator, am,
-                             accresult, useLeftMemory, true);
+                             null, useLeftMemory, true);
                 }
 
                 rightTuple = nextRightTuple;
@@ -729,11 +733,11 @@ public class PhreakAccumulateNode {
             return;
         }
 
-        accctx.setPropagationContext(rightTuple.getPropagationContext());
+//        accctx.setPropagationContext(rightTuple.getPropagationContext());
 
-        Object value = accumulate.accumulate(am.workingMemoryContext,
-                                             accctx, tuple,
-                                             handle, reteEvaluator);
+//        Object value = accumulate.accumulate(am.workingMemoryContext,
+//                                             accctx, tuple,
+//                                             handle, reteEvaluator);
 
         // in sequential mode, we don't need to keep record of matched tuples
         if (useLeftMemory) {
@@ -742,9 +746,9 @@ public class PhreakAccumulateNode {
                                                       currentLeftChild, currentRightChild,
                                                       accNode,true);
 
-            postAccumulate(accNode, accctx, match);
+            // postAccumulate(accNode, accctx, match);
 
-            match.setContextObject(value);
+//            match.setContextObject(value);
         }
     }
 

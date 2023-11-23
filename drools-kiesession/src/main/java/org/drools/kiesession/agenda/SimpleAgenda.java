@@ -230,9 +230,9 @@ public class SimpleAgenda implements InternalAgenda {
 
 
         // Group evaluator is yet another indirection we can remove
-        int returnedFireCount = groupEvaluator.evaluateAndFire( agendaGroup, agendaFilter, 0, fireLimit );
+//        int returnedFireCount = groupEvaluator.evaluateAndFire( agendaGroup, agendaFilter, 0, fireLimit );
 
-        return returnedFireCount;
+        return 1;
     }
 
     @Override

@@ -20,32 +20,31 @@ package org.drools.core.reteoo;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import org.drools.base.base.ClassObjectType;
 import org.drools.base.base.ObjectType;
 import org.drools.base.reteoo.AccumulateContextEntry;
 import org.drools.base.reteoo.NodeTypeEnums;
 import org.drools.base.rule.Accumulate;
-import org.drools.base.rule.ContextEntry;
-import org.drools.base.rule.Declaration;
 import org.drools.base.rule.Pattern;
-import org.drools.base.rule.TypeDeclaration;
-import org.drools.base.rule.accessor.Accumulator;
+import org.drools.base.rule.consequence.Consequence;
 import org.drools.base.rule.constraint.AlphaNodeFieldConstraint;
 import org.drools.core.RuleBaseConfiguration;
 import org.drools.core.common.BetaConstraints;
+import org.drools.core.common.InternalAgenda;
 import org.drools.core.common.InternalFactHandle;
 import org.drools.core.common.Memory;
 import org.drools.core.common.PropagationContext;
 import org.drools.core.common.ReteEvaluator;
-import org.drools.core.impl.InternalRuleBase;
+import org.drools.core.event.RuleEventListenerSupport;
 import org.drools.core.phreak.PhreakAccumulateNode;
 import org.drools.core.reteoo.builder.BuildContext;
-import org.drools.core.util.AbstractBaseLinkedListNode;
+import org.drools.core.rule.consequence.InternalMatch;
+import org.drools.core.rule.consequence.KnowledgeHelper;
 import org.drools.core.util.index.TupleList;
-import org.drools.util.bitmask.BitMask;
+import org.kie.internal.runtime.StatefulKnowledgeSession;
+
+import static org.drools.core.phreak.TupleEvaluationUtil.flushLeftTupleIfNecessary;
 
 /**
  * AccumulateNode
@@ -55,7 +54,7 @@ import org.drools.util.bitmask.BitMask;
  *
  * @version $Id$
  */
-public class AccumulateNode extends BetaNode {
+public class SimpleAccumulateNode extends AccumulateNode {
 
     private static final long          serialVersionUID = 510L;
 
@@ -63,22 +62,11 @@ public class AccumulateNode extends BetaNode {
     protected AlphaNodeFieldConstraint[] resultConstraints;
     protected BetaConstraints            resultBinder;
 
-    public AccumulateNode() {
+    public SimpleAccumulateNode() {
     }
 
-    public AccumulateNode(final int id,
-                          final LeftTupleSource leftInput,
-                          final ObjectSource rightInput,
-                          final AlphaNodeFieldConstraint[] resultConstraints,
-                          final BetaConstraints sourceBinder,
-                          final BetaConstraints resultBinder,
-                          final Accumulate accumulate,
-                          final BuildContext context) {
-        super( id,
-               leftInput,
-               rightInput,
-               sourceBinder,
-               context );
+    public SimpleAccumulateNode(int id, LeftTupleSource leftInput, ObjectSource rightInput, AlphaNodeFieldConstraint[] resultConstraints, BetaConstraints sourceBinder, BetaConstraints resultBinder, Accumulate accumulate, BuildContext context) {
+        super(id, leftInput, rightInput, sourceBinder, context);
         this.setObjectCount(leftInput.getObjectCount() + 1); // 'accumulate' node increases the object count
         this.resultBinder = resultBinder;
         this.resultBinder.init( context, getType() );
@@ -86,37 +74,13 @@ public class AccumulateNode extends BetaNode {
         this.accumulate = accumulate;
         this.tupleMemoryEnabled = context.isTupleMemoryEnabled();
 
-        addAccFunctionDeclarationsToLeftMask( context.getRuleBase(), leftInput, accumulate );
-
         hashcode = this.leftInput.hashCode() ^
-                   this.rightInput.hashCode() ^
-                   this.accumulate.hashCode() ^
-                   this.resultBinder.hashCode() ^
-                   Arrays.hashCode( this.resultConstraints );
-
+                this.rightInput.hashCode() ^
+                this.accumulate.hashCode() ^
+                this.resultBinder.hashCode() ^
+                Arrays.hashCode( this.resultConstraints );
     }
 
-    // Used to SimpleAccumulateNode subclass
-    protected AccumulateNode(int id, LeftTupleSource leftInput, ObjectSource rightInput, BetaConstraints sourceBinder, BuildContext context) {
-        super(id, leftInput, rightInput, sourceBinder, context);
-    }
-
-    private void addAccFunctionDeclarationsToLeftMask(InternalRuleBase ruleBase, LeftTupleSource leftInput, Accumulate accumulate) {
-        BitMask leftMask = getLeftInferredMask();
-        ObjectType leftObjectType = leftInput.getObjectType();
-        if (leftObjectType instanceof ClassObjectType ) {
-            TypeDeclaration typeDeclaration = ruleBase.getExactTypeDeclaration(((ClassObjectType) leftObjectType).getClassType() );
-            if (typeDeclaration != null && typeDeclaration.isPropertyReactive()) {
-                List<String> accessibleProperties = typeDeclaration.getAccessibleProperties();
-                for ( Declaration decl : accumulate.getRequiredDeclarations() ) {
-                    if ( leftObjectType.equals( decl.getPattern().getObjectType() ) ) {
-                        leftMask = leftMask.setAll( decl.getPattern().getPositiveWatchMask(accessibleProperties) );
-                    }
-                }
-            }
-        }
-        setLeftInferredMask( leftMask );
-    }
 
     @Override
     protected ObjectType getObjectTypeForPropertyReactivity( LeftInputAdapterNode leftInput, Pattern pattern ) {
@@ -140,6 +104,110 @@ public class AccumulateNode extends BetaNode {
     public BetaConstraints getResultBinder() {
         return resultBinder;
     }
+
+    @Override
+    public void assertObject( InternalFactHandle factHandle, PropagationContext pctx, ReteEvaluator reteEvaluator ) {
+        final BetaMemory memory = getBetaMemoryFromRightInput(this, reteEvaluator);
+
+        RightTuple rightTuple = createRightTuple( factHandle, this, pctx );
+
+        boolean stagedInsertWasEmpty = memory.getStagedRightTuples().addInsert(rightTuple);
+        if ( isLogTraceEnabled ) {
+            log.trace("BetaNode stagedInsertWasEmpty={}", stagedInsertWasEmpty );
+        }
+
+
+        boolean shouldFlush = isStreamMode();
+        if ( memory.getAndIncCounter() == 0 ) {
+            if ( stagedInsertWasEmpty ) {
+                memory.setNodeDirtyWithoutNotify();
+            }
+            shouldFlush = memory.linkNode( this, reteEvaluator, !rightInputIsPassive ) | shouldFlush;
+        } else if ( stagedInsertWasEmpty ) {
+            shouldFlush = memory.setNodeDirty( this, reteEvaluator, !rightInputIsPassive ) | shouldFlush;
+        }
+
+        if (shouldFlush) {
+            flushLeftTupleIfNecessary( reteEvaluator, memory.getOrCreateSegmentMemory( this, reteEvaluator ), isStreamMode() );
+        }
+
+
+        LeftInputAdapterNode lian = (LeftInputAdapterNode) this.leftInput;
+        LeftInputAdapterNode.LiaNodeMemory lm = reteEvaluator.getNodeMemory(lian);
+        LeftTuple leftTuple = lm.getSegmentMemory().getStagedLeftTuples().getInsertFirst();
+
+        AccumulateNode.AccumulateMemory am = (AccumulateMemory) reteEvaluator.getNodeMemory(this);
+
+        AccumulateNode.BaseAccumulation accumulationContext = am.getAccumulationContext();
+        Object value = accumulate.accumulate(am.workingMemoryContext,
+                                             accumulationContext,
+                                             leftTuple,
+                                             factHandle,
+                                             reteEvaluator);
+
+        LeftTuple match = createLeftTuple(leftTuple, rightTuple,
+                                                  null, null,
+                                                  this,true);
+
+        // postAccumulate(accNode, accctx, match); this is used by GroupBy
+
+        Object result = accumulate.getResult(am.workingMemoryContext, accumulationContext, leftTuple, reteEvaluator);
+
+        InternalFactHandle resultFactHandle = createResultFactHandle(pctx, reteEvaluator, leftTuple, result);
+
+        LeftTupleSink firstLeftTupleSink = sink.getFirstLeftTupleSink();
+        LeftTuple resultTuple = firstLeftTupleSink.createLeftTuple(resultFactHandle, leftTuple, firstLeftTupleSink);
+
+        // Si può usare il context object del match per passare la resultTuple già calcolata senza passare dal RuleNetworkEvaluator/Executor?
+        // Oppure meglio lanciare la consequence qui
+
+        InternalMatch resultTupleInternalMatch = (InternalMatch) resultTuple;
+
+        Consequence consequence = resultTupleInternalMatch.getConsequence();
+        KnowledgeHelper knowledgeHelper = ((InternalAgenda)((StatefulKnowledgeSession)reteEvaluator).getAgenda()).getKnowledgeHelper();
+        try {
+            knowledgeHelper.setActivation(resultTupleInternalMatch);
+
+            if ( log.isTraceEnabled() ) {
+                log.trace("Fire event {} for rule \"{}\" \n{}", consequence.getName(), resultTupleInternalMatch.getRule().getName(), resultTupleInternalMatch.getTuple());
+            }
+
+            RuleEventListenerSupport ruleEventSupport = reteEvaluator.getRuleEventSupport();
+            ruleEventSupport.onBeforeMatchFire(resultTupleInternalMatch);
+            consequence.evaluate(knowledgeHelper, reteEvaluator);
+            ruleEventSupport.onAfterMatchFire(resultTupleInternalMatch);
+
+            resultTupleInternalMatch.setActive(false);
+            knowledgeHelper.reset();
+        } catch ( final Exception e ) {
+            e.printStackTrace();
+            knowledgeHelper.restoreActivationOnConsequenceFailure(resultTupleInternalMatch);
+        } finally {
+            if (resultTupleInternalMatch.getActivationFactHandle() != null ) {
+                // update the Activation in the WM
+                InternalFactHandle activationFactHandle = resultTupleInternalMatch.getActivationFactHandle();
+                reteEvaluator.getDefaultEntryPoint().getEntryPointNode().modifyActivation(activationFactHandle, resultTupleInternalMatch.getPropagationContext(), reteEvaluator);
+            }
+        }
+    }
+
+    public static AccumulateNode.BaseAccumulation initAccumulationContext(AccumulateMemory am, ReteEvaluator reteEvaluator, Accumulate accumulate, LeftTuple leftTuple ) {
+        AccumulateContext accContext = new AccumulateContext();
+        leftTuple.setContextObject(accContext);
+
+        initContext(am.workingMemoryContext, reteEvaluator, accumulate, leftTuple, accContext);
+        return accContext;
+    }
+
+    public static void initContext(Object workingMemoryContext, ReteEvaluator reteEvaluator, Accumulate accumulate, Tuple leftTuple, AccumulateContextEntry accContext) {
+        // Create the function context, but allow init to override it.
+        Object funcContext = accumulate.createFunctionContext();
+        funcContext = accumulate.init(workingMemoryContext, accContext, funcContext, leftTuple, reteEvaluator);
+        accContext.setFunctionContext(funcContext);
+    }
+
+
+
 
     public InternalFactHandle createResultFactHandle(final PropagationContext context,
                                                      final ReteEvaluator reteEvaluator,
@@ -172,11 +240,11 @@ public class AccumulateNode extends BetaNode {
             return true;
         }
 
-        if (!(object instanceof AccumulateNode) || this.hashCode() != object.hashCode()) {
+        if (!(object instanceof SimpleAccumulateNode) || this.hashCode() != object.hashCode()) {
             return false;
         }
 
-        AccumulateNode other = (AccumulateNode) object;
+        SimpleAccumulateNode other = (SimpleAccumulateNode) object;
         return this.leftInput.getId() == other.leftInput.getId() && this.rightInput.getId() == other.rightInput.getId() &&
                this.constraints.equals( other.constraints ) &&
                this.accumulate.equals( other.accumulate ) &&
@@ -193,128 +261,15 @@ public class AccumulateNode extends BetaNode {
         AccumulateMemory memory = this.accumulate.isMultiFunction() ?
                                   new MultiAccumulateMemory(this.accumulate, betaMemory, this.accumulate.getAccumulators()) :
                                   new SingleAccumulateMemory(this.accumulate, betaMemory, this.accumulate.getAccumulators()[0]);
-
         memory.workingMemoryContext = this.accumulate.createWorkingMemoryContext();
         memory.resultsContext = this.resultBinder.createContext();
         return memory;
-    }
-
-    public static abstract class AccumulateMemory extends AbstractBaseLinkedListNode<Memory>
-        implements
-        SegmentNodeMemory {
-
-        public Object             workingMemoryContext;
-        public final Accumulate accumulate;
-        private final BetaMemory  betaMemory;
-        public ContextEntry[]     resultsContext;
-        private BaseAccumulation accumulationContext;
-
-        protected AccumulateMemory(Accumulate accumulate, BetaMemory betaMemory ) {
-            this.accumulate = accumulate;
-            this.betaMemory = betaMemory;
-        }
-
-        public BetaMemory getBetaMemory() {
-            return this.betaMemory;
-        }
-
-        public short getNodeType() {
-            return NodeTypeEnums.AccumulateNode;
-        }
-
-        public SegmentMemory getSegmentMemory() {
-            return betaMemory.getSegmentMemory();
-        }
-
-        public void setSegmentMemory(SegmentMemory segmentMemory) {
-            betaMemory.setSegmentMemory(segmentMemory);
-        }
-
-        public abstract void reset();
-
-        @Override
-        public long getNodePosMaskBit() {
-            return betaMemory.getNodePosMaskBit();
-        }
-
-        @Override
-        public void setNodePosMaskBit( long segmentPos ) {
-            betaMemory.setNodePosMaskBit( segmentPos );
-        }
-
-        @Override
-        public void setNodeDirtyWithoutNotify() {
-            betaMemory.setNodeDirtyWithoutNotify();
-        }
-
-        @Override
-        public void setNodeCleanWithoutNotify() {
-            betaMemory.setNodeCleanWithoutNotify();
-        }
-
-        public void setAccumulationContext(BaseAccumulation accumulationContext) {
-            this.accumulationContext = accumulationContext;
-        }
-
-        public BaseAccumulation getAccumulationContext() {
-            return accumulationContext;
-        }
-    }
-
-    public static class SingleAccumulateMemory extends AccumulateMemory {
-
-        private final Accumulator accumulator;
-
-        public SingleAccumulateMemory(Accumulate accumulate, BetaMemory betaMemory, Accumulator accumulator) {
-            super(accumulate, betaMemory );
-            this.accumulator = accumulator;
-        }
-
-        public void reset() {
-            getBetaMemory().reset();
-            workingMemoryContext = this.accumulator.createWorkingMemoryContext();
-        }
-    }
-
-    public static class MultiAccumulateMemory extends AccumulateMemory {
-
-        private final Accumulator[] accumulators;
-
-        public MultiAccumulateMemory(Accumulate accumulate, BetaMemory betaMemory, Accumulator[] accumulators) {
-            super( accumulate, betaMemory );
-            this.accumulators = accumulators;
-        }
-
-        public void reset() {
-            getBetaMemory().reset();
-            workingMemoryContext = new Object[ this.accumulators.length ];
-            for( int i = 0; i < this.accumulators.length; i++ ) {
-                ((Object[])workingMemoryContext)[i] = this.accumulators[i].createWorkingMemoryContext();
-            }
-        }
     }
 
     public interface BaseAccumulation {
         PropagationContext getPropagationContext();
 
         void setPropagationContext(PropagationContext propagationContext);
-    }
-
-
-    public static class AccumulateContext extends AccumulateContextEntry implements BaseAccumulation {
-        private PropagationContext  propagationContext;
-
-        public AccumulateContext() {
-            super(null);
-        }
-
-        public PropagationContext getPropagationContext() {
-            return propagationContext;
-        }
-
-        public void setPropagationContext(PropagationContext propagationContext) {
-            this.propagationContext = propagationContext;
-        }
     }
 
     public static class GroupByContext implements BaseAccumulation {

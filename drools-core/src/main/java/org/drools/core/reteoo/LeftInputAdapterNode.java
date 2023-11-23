@@ -29,6 +29,7 @@ import org.drools.base.common.NetworkNode;
 import org.drools.base.common.RuleBasePartitionId;
 import org.drools.base.reteoo.BaseTerminalNode;
 import org.drools.base.reteoo.NodeTypeEnums;
+import org.drools.base.rule.Accumulate;
 import org.drools.base.rule.Pattern;
 import org.drools.core.RuleBaseConfiguration;
 import org.drools.core.common.InternalFactHandle;
@@ -198,6 +199,18 @@ public class LeftInputAdapterNode extends LeftTupleSource
         LeftTupleSink sink = liaNode.getSinkPropagator().getFirstLeftTupleSink();
         LeftTuple leftTuple = sink.createLeftTuple(factHandle, useLeftMemory );
         leftTuple.setPropagationContext( context );
+
+        // We need to initialise the accumulate context before calling assertObject
+        for(Memory m : sm.getNodeMemories()) {
+            if ( m instanceof AccumulateNode.AccumulateMemory) {
+                Accumulate accumulate = ((AccumulateNode.AccumulateMemory) m).accumulate;
+                AccumulateNode.BaseAccumulation accumulateContext = SimpleAccumulateNode.initAccumulationContext((AccumulateNode.AccumulateMemory)m,
+                                                                                                                 reteEvaluator,
+                                                                                                                 accumulate,
+                                                                                                                 leftTuple );
+                ((AccumulateNode.AccumulateMemory)m).setAccumulationContext(accumulateContext );
+            }
+        }
 
         if ( sm.getRootNode() == liaNode ) {
             doInsertSegmentMemoryWithFlush(reteEvaluator, notifySegment, lm, sm, leftTuple, liaNode.isStreamMode());
