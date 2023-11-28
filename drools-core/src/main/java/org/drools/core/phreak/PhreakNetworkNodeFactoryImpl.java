@@ -51,8 +51,8 @@ public class PhreakNetworkNodeFactoryImpl implements PhreakNetworkNodeFactory {
     }
 
     @Override
-    public PhreakAccumulateNode createPhreakAccumulateNode() {
-        return new PhreakAccumulateNode();
+    public SimplePhreakAccumulateNode createPhreakAccumulateNode() {
+        return new SimplePhreakAccumulateNode();
     }
 
     @Override

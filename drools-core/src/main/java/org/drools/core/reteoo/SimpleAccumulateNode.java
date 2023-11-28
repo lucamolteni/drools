@@ -134,8 +134,9 @@ public class SimpleAccumulateNode extends AccumulateNode {
 
         AccumulateNode.AccumulateMemory am = (AccumulateMemory) reteEvaluator.getNodeMemory(this);
 
+        AccumulateNode.BaseAccumulation accumulationContext = am.getAccumulationContext();
         Object value = accumulate.accumulate(am.workingMemoryContext,
-                                             am.getAccumulationContext(),
+                                             accumulationContext,
                                              leftTuple,
                                              factHandle,
                                              reteEvaluator);

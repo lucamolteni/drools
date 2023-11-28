@@ -92,7 +92,7 @@ public class RuleNetworkEvaluator {
     private static final PhreakReactiveFromNode pReactiveFromNode = PhreakNetworkNodeFactory.Factory.get().createPhreakReactiveFromNode();
     private static final PhreakNotNode          pNotNode    = PhreakNetworkNodeFactory.Factory.get().createPhreakNotNode();
     private static final PhreakExistsNode       pExistsNode = PhreakNetworkNodeFactory.Factory.get().createPhreakExistsNode();
-    private static final PhreakAccumulateNode   pAccNode    = PhreakNetworkNodeFactory.Factory.get().createPhreakAccumulateNode();
+    private static final SimplePhreakAccumulateNode   pAccNode    = PhreakNetworkNodeFactory.Factory.get().createPhreakAccumulateNode();
     private static final PhreakAccumulateNode   pGroupByNode = PhreakNetworkNodeFactory.Factory.get().createPhreakGroupByNode();
     private static final PhreakBranchNode       pBranchNode = PhreakNetworkNodeFactory.Factory.get().createPhreakBranchNode();
     private static final PhreakQueryNode        pQueryNode  = PhreakNetworkNodeFactory.Factory.get().createPhreakQueryNode();

@@ -34,6 +34,7 @@ import org.drools.core.phreak.PhreakQueryTerminalNode;
 import org.drools.core.phreak.PhreakReactiveFromNode;
 import org.drools.core.phreak.PhreakRuleTerminalNode;
 import org.drools.core.phreak.PhreakTimerNode;
+import org.drools.core.phreak.SimplePhreakAccumulateNode;
 import org.drools.metric.util.MetricLogUtils;
 
 public class MetricPhreakNetworkNodeFactoryImpl implements PhreakNetworkNodeFactory {
@@ -93,12 +94,8 @@ public class MetricPhreakNetworkNodeFactoryImpl implements PhreakNetworkNodeFact
     }
 
     @Override
-    public PhreakAccumulateNode createPhreakAccumulateNode() {
-        if (MetricLogUtils.getInstance().isEnabled()) {
-            return new PhreakAccumulateNodeMetric();
-        } else {
-            return new PhreakAccumulateNode();
-        }
+    public SimplePhreakAccumulateNode createPhreakAccumulateNode() {
+        return new SimplePhreakAccumulateNode();
     }
 
     @Override

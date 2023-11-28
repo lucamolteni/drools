@@ -34,7 +34,7 @@ public interface PhreakNetworkNodeFactory extends KieService {
 
     PhreakExistsNode createPhreakExistsNode();
 
-    PhreakAccumulateNode createPhreakAccumulateNode();
+    SimplePhreakAccumulateNode createPhreakAccumulateNode();
 
     PhreakGroupByNode createPhreakGroupByNode();
 

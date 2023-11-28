@@ -55,6 +55,10 @@ public class PhreakAccumulateNode {
                        TupleSets<LeftTuple> trgLeftTuples,
                        TupleSets<LeftTuple> stagedLeftTuples) {
 
+        if(true) {
+            throw new UnsupportedOperationException();
+        }
+
         BetaMemory bm = am.getBetaMemory();
         TupleSets<RightTuple> srcRightTuples = bm.getStagedRightTuples().takeAll();
 
