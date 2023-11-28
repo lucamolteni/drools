@@ -147,7 +147,16 @@ public class SimpleAccumulateNode extends AccumulateNode {
 
         // postAccumulate(accNode, accctx, match); this is used by GroupBy
 
-        match.setContextObject(value);
+        Object result = accumulate.getResult(am.workingMemoryContext, accumulationContext, leftTuple, reteEvaluator);
+
+        InternalFactHandle resultFactHandle = createResultFactHandle(pctx, reteEvaluator, leftTuple, result);
+
+        LeftTupleSink firstLeftTupleSink = sink.getFirstLeftTupleSink();
+        LeftTuple resultTuple = firstLeftTupleSink.createLeftTuple(resultFactHandle, leftTuple, firstLeftTupleSink);
+
+        // Si può usare il context object del match per passare la resultTuple già calcolata senza passare dal RuleNetworkEvaluator/Executor?
+        // Oppure meglio lanciare la consequence qui
+//        match.setContextObject(resultTuple);
     }
 
     public static AccumulateNode.BaseAccumulation initAccumulationContext(AccumulateMemory am, ReteEvaluator reteEvaluator, Accumulate accumulate, LeftTuple leftTuple ) {
