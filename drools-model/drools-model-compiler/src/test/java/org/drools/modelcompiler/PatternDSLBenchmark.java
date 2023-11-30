@@ -30,6 +30,7 @@ import org.drools.model.impl.ModelImpl;
 import org.drools.modelcompiler.domain.Person;
 import org.drools.modelcompiler.domain.Result;
 import org.kie.api.KieBase;
+import org.kie.api.conf.EqualityBehaviorOption;
 import org.kie.api.runtime.ClassObjectFilter;
 import org.kie.api.runtime.KieSession;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -74,8 +75,11 @@ public class PatternDSLBenchmark {
                                 .execute((sum, avg, r) -> r.setValue( "total = " + sum + "; average = " + avg ))
                 );
 
-        Model model = new ModelImpl().addRule( rule ).addGlobal(resultG);
-        kieBase = KieBaseBuilder.createKieBaseFromModel(model );
+        Model model = new ModelImpl()
+                .addRule( rule )
+                .addGlobal(resultG);
+
+        kieBase = KieBaseBuilder.createKieBaseFromModel(model, EqualityBehaviorOption.EQUALITY);
     }
 
     @Benchmark

@@ -63,6 +63,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.kie.api.KieBase;
 import org.kie.api.KieServices;
+import org.kie.api.conf.EqualityBehaviorOption;
 import org.kie.api.conf.EventProcessingOption;
 import org.kie.api.runtime.ClassObjectFilter;
 import org.kie.api.runtime.KieSession;
@@ -273,7 +274,7 @@ public class PatternDSLTest {
                 );
 
         Model model = new ModelImpl().addRule( rule );
-        KieBase kieBase = KieBaseBuilder.createKieBaseFromModel( model );
+        KieBase kieBase = KieBaseBuilder.createKieBaseFromModel( model);
 
         KieSession ksession = kieBase.newKieSession();
 
@@ -303,7 +304,7 @@ public class PatternDSLTest {
                 );
 
         Model model = new ModelImpl().addRule( rule );
-        KieBase kieBase = KieBaseBuilder.createKieBaseFromModel( model );
+        KieBase kieBase = KieBaseBuilder.createKieBaseFromModel(model, EqualityBehaviorOption.EQUALITY);
 
         KieSession ksession = kieBase.newKieSession();
 
