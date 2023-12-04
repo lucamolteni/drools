@@ -54,7 +54,7 @@ import static org.drools.core.phreak.TupleEvaluationUtil.flushLeftTupleIfNecessa
  *
  * @version $Id$
  */
-public class SimpleAccumulateNode extends AccumulateNode {
+public class SimpleGroupByNode extends AccumulateNode {
 
     private static final long          serialVersionUID = 510L;
 
@@ -62,10 +62,10 @@ public class SimpleAccumulateNode extends AccumulateNode {
     protected AlphaNodeFieldConstraint[] resultConstraints;
     protected BetaConstraints            resultBinder;
 
-    public SimpleAccumulateNode() {
+    public SimpleGroupByNode() {
     }
 
-    public SimpleAccumulateNode(int id, LeftTupleSource leftInput, ObjectSource rightInput, AlphaNodeFieldConstraint[] resultConstraints, BetaConstraints sourceBinder, BetaConstraints resultBinder, Accumulate accumulate, BuildContext context) {
+    public SimpleGroupByNode(int id, LeftTupleSource leftInput, ObjectSource rightInput, AlphaNodeFieldConstraint[] resultConstraints, BetaConstraints sourceBinder, BetaConstraints resultBinder, Accumulate accumulate, BuildContext context) {
         super(id, leftInput, rightInput, sourceBinder, context);
         this.setObjectCount(leftInput.getObjectCount() + 1); // 'accumulate' node increases the object count
         this.resultBinder = resultBinder;
@@ -136,7 +136,7 @@ public class SimpleAccumulateNode extends AccumulateNode {
         LeftInputAdapterNode.LiaNodeMemory lm = reteEvaluator.getNodeMemory(lian);
         LeftTuple leftTuple = lm.getSegmentMemory().getStagedLeftTuples().getInsertFirst();
 
-        AccumulateNode.AccumulateMemory am = (AccumulateMemory) reteEvaluator.getNodeMemory(this);
+        AccumulateMemory am = (AccumulateMemory) reteEvaluator.getNodeMemory(this);
 
         AccumulateNode.BaseAccumulation accumulationContext = am.getAccumulationContext();
         Object value = accumulate.accumulate(am.workingMemoryContext,
@@ -193,21 +193,12 @@ public class SimpleAccumulateNode extends AccumulateNode {
         }
     }
 
-    public static AccumulateNode.BaseAccumulation initAccumulationContext(AccumulateMemory am, ReteEvaluator reteEvaluator, Accumulate accumulate, LeftTuple leftTuple ) {
-        AccumulateContext accContext = new AccumulateContext();
-        leftTuple.setContextObject(accContext);
-
-        initContext(am.workingMemoryContext, reteEvaluator, accumulate, leftTuple, accContext);
+    AccumulateNode.BaseAccumulation initAccumulationContext(AccumulateMemory am, ReteEvaluator reteEvaluator, Accumulate accumulate, LeftTuple leftTuple) {
+        AccumulateNode.GroupByContext accContext = new AccumulateNode.GroupByContext();
+        leftTuple.setContextObject( accContext );
+        // A lot less is done here, compared to super, as it needs to be done on demand during the Group creation.
         return accContext;
     }
-
-    public static void initContext(Object workingMemoryContext, ReteEvaluator reteEvaluator, Accumulate accumulate, Tuple leftTuple, AccumulateContextEntry accContext) {
-        // Create the function context, but allow init to override it.
-        Object funcContext = accumulate.createFunctionContext();
-        funcContext = accumulate.init(workingMemoryContext, accContext, funcContext, leftTuple, reteEvaluator);
-        accContext.setFunctionContext(funcContext);
-    }
-
 
 
 
@@ -242,11 +233,11 @@ public class SimpleAccumulateNode extends AccumulateNode {
             return true;
         }
 
-        if (!(object instanceof SimpleAccumulateNode) || this.hashCode() != object.hashCode()) {
+        if (!(object instanceof SimpleGroupByNode) || this.hashCode() != object.hashCode()) {
             return false;
         }
 
-        SimpleAccumulateNode other = (SimpleAccumulateNode) object;
+        SimpleGroupByNode other = (SimpleGroupByNode) object;
         return this.leftInput.getId() == other.leftInput.getId() && this.rightInput.getId() == other.rightInput.getId() &&
                this.constraints.equals( other.constraints ) &&
                this.accumulate.equals( other.accumulate ) &&
